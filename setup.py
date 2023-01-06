@@ -19,8 +19,8 @@ setup(
     ],
     install_requires=[
         'attrs',
-        'cattrs',
         'requests',
+        'tenacity',
     ],
     zip_safe=False,
 )

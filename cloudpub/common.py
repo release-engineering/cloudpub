@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from abc import ABC, abstractmethod
-from typing import NoReturn
+from typing import Any, Dict, Generic, NoReturn, Type, TypeVar
 
 from requests import HTTPError, Response
 
@@ -57,11 +57,14 @@ class PublishingMetadata:
                 raise ValueError(f"The parameter \"{param}\" must not be None.")
 
 
-class BaseService(ABC):
+T = TypeVar('T', bound=PublishingMetadata)
+
+
+class BaseService(ABC, Generic[T]):
     """Base class for all cloud provider services."""
 
     @staticmethod
-    def _raise_error(exception: Exception, message=str) -> NoReturn:
+    def _raise_error(exception: Type[Exception], message=str) -> NoReturn:
         """
         Log and raise an error.
 
@@ -94,8 +97,24 @@ class BaseService(ABC):
         except HTTPError:
             self._raise_error(HTTPError, f"Response content:\n{response.text}")
 
+    def _assert_dict(self, response: Response) -> Dict[str, Any]:
+        """
+        Ensure the JSON object in response is a dictionary.
+
+        Args:
+            response (requests.Response)
+                The response object
+        Raises:
+            ValueError: if the response's JSON is not a dictionary.
+        """
+        self._raise_for_status(response)
+        data = response.json()
+        if not isinstance(data, dict):
+            self._raise_error(ValueError, f"Expected response to be a dictionary, got {type(data)}")
+        return data
+
     @abstractmethod
-    def publish(self, metadata: PublishingMetadata):
+    def publish(self, metadata: T) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it.
 
