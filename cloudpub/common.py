@@ -13,16 +13,25 @@ class PublishingMetadata:
     Args:
         image_path (str)
             The image URL or ID to be associated with a product listing
+        architecture (str)
+            The VM Image architecture
         destination (str)
             The product listing to update with the given ``image_path``
         overwrite (bool)
             Whether to overwrite the product listing with the given image or not (append only).
+        keepdraft (bool):
+            Whether to just associate the VM Image with the destination but avoid publishing or not.
+            When set to ``False`` it will publish the content as GA.
     """
 
-    def __init__(self, image_path: str, destination: str, overwrite: bool) -> None:
+    def __init__(
+        self, image_path: str, architecture: str, destination: str, overwrite: bool, keepdraft: bool
+    ) -> None:
         self.image_path = image_path
+        self.architecture = architecture
         self.destination = destination
         self.overwrite = overwrite
+        self.keepdraft = keepdraft
 
 
 class BaseService(ABCMeta):
