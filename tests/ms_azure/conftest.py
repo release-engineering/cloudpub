@@ -14,7 +14,7 @@ from cloudpub.models.ms_azure import (
     PriceAndAvailabilityPlan,
     Product,
     ProductProperty,
-    ProductResseller,
+    ProductReseller,
     ProductSubmission,
     ProductSummary,
     TestDrive,
@@ -349,7 +349,7 @@ def technical_config(disk_version: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @pytest.fixture
-def resseller() -> Dict[str, Any]:
+def reseller() -> Dict[str, Any]:
     return {
         "$schema": "https://product-ingestion.azureedge.net/schema/reseller/2022-03-01-preview2",
         "id": "reseller/ffffffff-ffff-ffff-ffff-ffffffffffff",
@@ -389,7 +389,7 @@ def product(
     prav_offer: Dict[str, Any],
     prav_plan: Dict[str, Any],
     technical_config: Dict[str, Any],
-    resseller: Dict[str, Any],
+    reseller: Dict[str, Any],
     submission: Dict[str, Any],
 ) -> Dict[str, Any]:
     return {
@@ -408,7 +408,7 @@ def product(
             listing_asset,
             prav_offer,
             prav_plan,
-            resseller,
+            reseller,
             submission,
         ],
     }
@@ -485,8 +485,8 @@ def technical_config_obj(technical_config: Dict[str, Any]) -> VMIPlanTechConfig:
 
 
 @pytest.fixture
-def resseller_obj(resseller: Dict[str, Any]) -> ProductResseller:
-    return ProductResseller.from_json(resseller)
+def reseller_obj(reseller: Dict[str, Any]) -> ProductReseller:
+    return ProductReseller.from_json(reseller)
 
 
 @pytest.fixture

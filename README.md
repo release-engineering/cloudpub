@@ -35,6 +35,10 @@ of [pydantic](https://docs.pydantic.dev/) for its models in order to have a bett
 Pub (which uses [attrs](https://www.attrs.org/en/stable/)) as well as
 [several other reasons](https://threeofwands.com/why-i-use-attrs-instead-of-pydantic/).
 
+## Documentation
+
+The documentation of `CloudPub` is [available here](https://stratosphere.pages.redhat.com/cloudpub/).
+
 ## Installation
 
 To install this library go to the project's root directory and execute:
