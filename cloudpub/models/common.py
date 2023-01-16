@@ -107,7 +107,8 @@ class AttrsJSONDecodeMixin:
                     value = value.to_json()
                 else:
                     log.warning(
-                        "Not converting the object \"%s\" with value \"%s\" to JSON.", type(value),
+                        "Not converting the object \"%s\" with value \"%s\" to JSON.",
+                        type(value),
                         value,
                     )
                 setattr(self_copy, at.name, value)

@@ -11,21 +11,20 @@ def get_url_params(url: str) -> Dict[str, str]:
 
     Example:
         >>> url = "https://foo.com/bar?key1=value1&key2=value2"
-        >>> self._parse_next_link(url)
+        >>> get_url_params(url)
         {"key1": "value1", "key2": "value2"}
 
     Args:
-        next_link (str)
-            The full next link URL
+        url (str)
+            The full URL to parse the parameters
     Returns:
         dict: The parsed parameters
     """
-    link_params = url.split("?")
+    parser = urlparse.urlparse(url)
+    params = parser.query
     # Check if URL has params
-    if len(link_params) == 1:  # Just the URL, no params
+    if not params:
         return {}
-    # We don't want to get the URL, just the params
-    params = link_params[-1]
     # The URL parameters separator is '&' while '=' is the key/value assignment for each param.
     return {k: v for k, v in (x.split("=") for x in params.split("&") if x)}
 
