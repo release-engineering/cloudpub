@@ -19,3 +19,7 @@ class InvalidStateError(RuntimeError):
 
 class NotFoundError(ValueError):
     """Represent a missing resource."""
+
+
+class Timeout(Exception):
+    """Represent a missing resource."""
