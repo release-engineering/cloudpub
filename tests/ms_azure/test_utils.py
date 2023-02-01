@@ -32,7 +32,6 @@ from cloudpub.ms_azure.utils import (
     ],
 )
 def test_is_job_not_complete(job_details: Dict[str, Any], caplog: LogCaptureFixture) -> None:
-
     with caplog.at_level(logging.DEBUG):
         res = is_azure_job_not_complete(job_details)
 
@@ -47,7 +46,6 @@ def test_is_job_not_complete(job_details: Dict[str, Any], caplog: LogCaptureFixt
 
 class TestAzurePublishingMetadata:
     def test_metadata_with_defaults(self, metadata_azure: Dict[str, Any]) -> None:
-
         # Test for generation 2 without legacy support
         m = AzurePublishingMetadata(**metadata_azure)
         plan_name = metadata_azure["destination"].split("/")[-1]

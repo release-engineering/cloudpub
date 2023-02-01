@@ -291,7 +291,6 @@ class TestAzureService:
         azure_service: AzureService,
         product_summary: Dict[str, str],
     ) -> None:
-
         # Test uncached list
         azure_service._products = []
         mock_products.__iter__.return_value = [product_summary]
