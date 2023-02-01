@@ -32,7 +32,6 @@ def test_azure_resource_props(
     plan_listing_obj: PlanListing,
     listing_asset_obj: ListingAsset,
 ) -> None:
-
     # Test the properties of AzureResource
     assert product_obj.id == "ffffffff-ffff-ffff-ffff-ffffffffffff"
     assert product_obj.resource == "product"

@@ -269,7 +269,6 @@ def update_skus(
 
     # Update the SKUs for each image in DiskVersions
     for disk_version in disk_versions:
-
         # Each disk version may have multiple images (Gen1 / Gen2)
         for vmid in disk_version.vm_images:
             # We'll name the main generation SKU as "{plan_name}" and
