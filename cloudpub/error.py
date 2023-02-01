@@ -14,4 +14,8 @@ class UnexpectedRuntimeType(RuntimeError):
 
 
 class InvalidStateError(RuntimeError):
-    """Report invalid state which should not happen in code"""
+    """Report invalid state which should not happen in code."""
+
+
+class NotFoundError(ValueError):
+    """Represent a missing resource."""

@@ -1,0 +1,6 @@
+coverage
+pytest
+pytest-cov
+httmock
+mypy
+types-requests
