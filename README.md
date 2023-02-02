@@ -2,9 +2,9 @@
 
 A library for publishing product listings on various clouds
 
-![pipeline](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/pipeline.svg)
-![coverage](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/coverage.svg)
-![releases](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/badges/release.svg)
+[![pipeline](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/pipeline.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/pipelines)
+[![coverage](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/coverage.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/jobs)
+[![releases](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/badges/release.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/releases/)
 
 ## Overview
 
