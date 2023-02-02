@@ -1,0 +1,684 @@
+{
+  "$defs": {
+    "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "description": "A durable-id to an existing resource.",
+      "pattern": "^[a-z](-?[a-z0-9]+)*/[a-z0-9-]+(\\/?[a-z0-9-])*$",
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "code": {
+          "enum": [
+            "businessValidationError",
+            "collectionLimitExceeded",
+            "invalidId",
+            "invalidEntityStatus",
+            "invalidRequest",
+            "invalidResource",
+            "invalidState",
+            "notDeployed",
+            "notSupported",
+            "operationCanceled",
+            "productLocked",
+            "resourceNotFound",
+            "schemaValidationError"
+          ],
+          "readOnly": true,
+          "type": "string"
+        },
+        "details": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2"
+          },
+          "type": "array"
+        },
+        "message": {
+          "type": "string"
+        },
+        "resourceId": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-audience/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-audience/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "PriceAndAvailability audience definition",
+      "properties": {
+        "id": {
+          "maxLength": 50,
+          "minLength": 1,
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "none",
+            "subscription",
+            "ea",
+            "msdn",
+            "tenant"
+          ]
+        }
+      },
+      "title": "audience",
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-audiences/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-audiences/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "default": [],
+      "description": "PriceAndAvailability audience definition",
+      "items": {
+        "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-audience/2022-03-01-preview2"
+      },
+      "title": "audiences",
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-core-price/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-core-price/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "priceInputOption": {
+                "const": "free"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "price"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCore"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCoreSize"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "prices"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "priceInputOption": {
+                "const": "flat"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "required": [
+                  "price"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCore"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCoreSize"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "prices"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "priceInputOption": {
+                "const": "perCore"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "required": [
+                  "pricePerCore"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "price"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCoreSize"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "prices"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "priceInputOption": {
+                "const": "perCoreSize"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "required": [
+                  "pricePerCoreSize"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "price"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCore"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "prices"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "priceInputOption": {
+                "const": "perMarketAndCoreSize"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "required": [
+                  "prices"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "price"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCore"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "pricePerCoreSize"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "description": "PriceAndAvailability audience definition",
+      "properties": {
+        "price": {
+          "default": 0,
+          "type": "number"
+        },
+        "priceInputOption": {
+          "enum": [
+            "free",
+            "flat",
+            "perCore",
+            "perCoreSize",
+            "perMarketAndCoreSize"
+          ]
+        },
+        "pricePerCore": {
+          "default": 0,
+          "type": "number"
+        },
+        "pricePerCoreSize": {
+          "additionalProperties": {
+            "default": 0,
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "prices": {
+          "default": [],
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "currency": {
+                "pattern": "[a-z]{3}",
+                "type": "string"
+              },
+              "markets": {
+                "default": [],
+                "items": {
+                  "pattern": "[a-z]{2,3}",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "prices": {
+                "additionalProperties": {
+                  "default": 0,
+                  "type": "number"
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "markets",
+              "prices",
+              "currency"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "title": "price",
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-market/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-market/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "default": [],
+      "description": "PriceAndAvailability audience definition",
+      "items": {
+        "pattern": "[a-z]{2,3}",
+        "type": "string"
+      },
+      "title": "markets",
+      "type": "array"
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-price/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-price/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "licenseModel": {
+                "const": "byol"
+              }
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "pricing"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "description": "PriceAndAvailability audience definition",
+      "properties": {
+        "corePricing": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-core-price/2022-03-01-preview2"
+        },
+        "licenseModel": {
+          "enum": [
+            "byol",
+            "payAsYouGo"
+          ]
+        }
+      },
+      "title": "price",
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-software-reservation/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-software-reservation/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "default": [],
+      "description": "PriceAndAvailability audience definition",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "percentageSave": {
+            "default": 0,
+            "type": "number"
+          },
+          "term": {
+            "default": 0,
+            "type": "number"
+          },
+          "type": {
+            "enum": [
+              "month",
+              "year"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "term",
+          "percentageSave"
+        ],
+        "type": "object"
+      },
+      "title": "softwareReservation",
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/price-and-availability-trail/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-trail/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "PriceAndAvailability audience definition",
+      "properties": {
+        "type": {
+          "enum": [
+            "day",
+            "week",
+            "month",
+            "year"
+          ]
+        },
+        "value": {
+          "default": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ],
+      "title": "trail",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "oneOf": [
+        {
+          "$ref": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2"
+        },
+        {
+          "properties": {
+            "externalId": {
+              "$example": {
+                "plan": {
+                  "externalId": "customerNamedPlan123"
+                }
+              },
+              "description": "ExternalId for product and plan references. Property reference must be named product or plan.",
+              "maxLength": 50,
+              "minLength": 3,
+              "pattern": "^[a-z0-9][a-z0-9-_]{2,49}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "externalId"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "resourceName": {
+              "$example": {
+                "plan": {
+                  "resourceName": "resourcePlan1"
+                }
+              },
+              "description": "Resource Name that can be referenced using this value by another resource.",
+              "maxLength": 50,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9-_]+$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resourceName"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2": {
+      "$comment": "This schema is extended by a resource type schema. We allow additional properties to enable that",
+      "$id": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2"
+        },
+        "resourceName": {
+          "maxLength": 50,
+          "minLength": 1,
+          "type": "string"
+        },
+        "validations": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2"
+          },
+          "readonly": true,
+          "type": "array"
+        }
+      },
+      "required": [
+        "$schema"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2": {
+      "$comment": "This pattern is only valid for -dev schemas. When publishing to preview or public, remove (-int)? from it",
+      "$id": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "pattern": "^https://product-ingestion\\.azureedge\\.net/schema/[a-z][a-z0-9]+(?:-[a-z0-9]+)*/\\d{4}(?:-\\d\\d){2}(?:-dev|-preview\\d+)?$",
+      "title": "Product Ingestion schema uri",
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "allOf": [
+        {
+          "$ref": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2"
+        },
+        {
+          "properties": {
+            "$schema": {
+              "$ref": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2"
+            },
+            "level": {
+              "enum": [
+                "informational",
+                "warning"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "level"
+          ]
+        }
+      ]
+    }
+  },
+  "$id": "https://product-ingestion.azureedge.net/schema/price-and-availability-plan/2022-03-01-preview2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2"
+    },
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "customerMarkets": {
+                "const": "allMarkets"
+              }
+            },
+            "required": [
+              "customerMarkets"
+            ]
+          },
+          {
+            "properties": {
+              "customerMarkets": {
+                "const": "allTaxRemittedMarkets"
+              }
+            },
+            "required": [
+              "customerMarkets"
+            ]
+          }
+        ]
+      },
+      "properties": {
+        "audience": {
+          "enum": [
+            "public",
+            "private"
+          ]
+        },
+        "billingTag": {
+          "type": "string"
+        },
+        "customerMarkets": {
+          "default": "customMarkets",
+          "enum": [
+            "customMarkets",
+            "allMarkets",
+            "allTaxRemittedMarkets"
+          ]
+        },
+        "markets": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-market/2022-03-01-preview2"
+        },
+        "plan": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "pricing": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-price/2022-03-01-preview2"
+        },
+        "privateAudiences": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-audiences/2022-03-01-preview2"
+        },
+        "product": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "softwareReservation": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-software-reservation/2022-03-01-preview2"
+        },
+        "trial": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/price-and-availability-trail/2022-03-01-preview2"
+        },
+        "visibility": {
+          "enum": [
+            "visible",
+            "hidden"
+          ]
+        }
+      },
+      "required": [
+        "product",
+        "plan",
+        "visibility",
+        "audience"
+      ],
+      "then": {
+        "not": {
+          "required": [
+            "markets"
+          ]
+        }
+      },
+      "title": "plan",
+      "type": "object"
+    }
+  ],
+  "description": "PriceAndAvailability plan level resource schema definition"
+}

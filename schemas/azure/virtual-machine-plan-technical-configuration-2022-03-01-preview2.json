@@ -1,0 +1,649 @@
+{
+  "$defs": {
+    "https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "Defines a <what> schedule for a deprecated resource",
+      "properties": {
+        "$schema": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2"
+        },
+        "alternative": {
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "product": {
+                  "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+                }
+              },
+              "required": [
+                "product"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "plan": {
+                  "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+                }
+              },
+              "required": [
+                "plan"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        "date": {
+          "format": "date",
+          "readOnly": true,
+          "type": "string"
+        },
+        "dateOffset": {
+          "format": "duration",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "criticalSecurityIssue",
+            "endOfSupport",
+            "other"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "description": "A durable-id to an existing resource.",
+      "pattern": "^[a-z](-?[a-z0-9]+)*/[a-z0-9-]+(\\/?[a-z0-9-])*$",
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "code": {
+          "enum": [
+            "businessValidationError",
+            "collectionLimitExceeded",
+            "invalidId",
+            "invalidEntityStatus",
+            "invalidRequest",
+            "invalidResource",
+            "invalidState",
+            "notDeployed",
+            "notSupported",
+            "operationCanceled",
+            "productLocked",
+            "resourceNotFound",
+            "schemaValidationError"
+          ],
+          "readOnly": true,
+          "type": "string"
+        },
+        "details": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2"
+          },
+          "type": "array"
+        },
+        "message": {
+          "type": "string"
+        },
+        "resourceId": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2": {
+      "$comment": "deleted only if in draft and never published. Deprecated replaces StopSold",
+      "$id": "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "enum": [
+        "notAvailable",
+        "neverUsed",
+        "test",
+        "preview",
+        "generallyAvailable",
+        "deprecated",
+        "decommissioned",
+        "deleted"
+      ],
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "oneOf": [
+        {
+          "$ref": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2"
+        },
+        {
+          "properties": {
+            "externalId": {
+              "$example": {
+                "plan": {
+                  "externalId": "customerNamedPlan123"
+                }
+              },
+              "description": "ExternalId for product and plan references. Property reference must be named product or plan.",
+              "maxLength": 50,
+              "minLength": 3,
+              "pattern": "^[a-z0-9][a-z0-9-_]{2,49}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "externalId"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "resourceName": {
+              "$example": {
+                "plan": {
+                  "resourceName": "resourcePlan1"
+                }
+              },
+              "description": "Resource Name that can be referenced using this value by another resource.",
+              "maxLength": 50,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9-_]+$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resourceName"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2": {
+      "$comment": "This schema is extended by a resource type schema. We allow additional properties to enable that",
+      "$id": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2"
+        },
+        "resourceName": {
+          "maxLength": 50,
+          "minLength": 1,
+          "type": "string"
+        },
+        "validations": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2"
+          },
+          "readonly": true,
+          "type": "array"
+        }
+      },
+      "required": [
+        "$schema"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2": {
+      "$comment": "This pattern is only valid for -dev schemas. When publishing to preview or public, remove (-int)? from it",
+      "$id": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "pattern": "^https://product-ingestion\\.azureedge\\.net/schema/[a-z][a-z0-9]+(?:-[a-z0-9]+)*/\\d{4}(?:-\\d\\d){2}(?:-dev|-preview\\d+)?$",
+      "title": "Product Ingestion schema uri",
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "allOf": [
+        {
+          "$ref": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2"
+        },
+        {
+          "properties": {
+            "$schema": {
+              "$ref": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2"
+            },
+            "level": {
+              "enum": [
+                "informational",
+                "warning"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "level"
+          ]
+        }
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/virtual-machine-data-disk/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/virtual-machine-data-disk/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "The json schema of azure virtual machine data disk.",
+      "properties": {
+        "lunNumber": {
+          "maximum": 15,
+          "minimum": 0,
+          "type": "number"
+        },
+        "uri": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "lunNumber",
+        "uri"
+      ],
+      "title": "Microsoft Product Ingestion Virtual Machine Data Disk",
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/virtual-machine-open-port/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/virtual-machine-open-port/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "The json schema of azure virtual machine open port.",
+      "properties": {
+        "label": {
+          "maxLength": 20,
+          "minLength": 3,
+          "pattern": "^[a-zA-Z_0-9.\\- ]*[a-zA-Z_0-9]$",
+          "type": "string"
+        },
+        "portRange": {
+          "pattern": "^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-6])(?:\\s*-\\s*([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-6]))?$",
+          "type": "string"
+        },
+        "protocol": {
+          "enum": [
+            "tcp",
+            "udp",
+            "both"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "portRange",
+        "protocol"
+      ],
+      "title": "Microsoft Product Ingestion Virtual Machine Open Port",
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/virtual-machine-operating-system/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/virtual-machine-operating-system/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "description": "The json schema of azure virtual machine operating system.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "family": {
+              "const": "windows"
+            },
+            "friendlyName": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "windowsServer2008R2",
+                "windowsServer2012",
+                "windowsServer2012R2",
+                "windowsServer2012R2Datacenter",
+                "windowsServer2016",
+                "windowsServer2019",
+                "windowsServer2022",
+                "windowsServer2022DatacenterAzureEdition",
+                "windowsServerVersion20H2",
+                "windowsServerVersion2004",
+                "other"
+              ],
+              "type": "string"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "family": {
+              "const": "linux"
+            },
+            "friendlyName": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "debian",
+                "centos",
+                "openSolaris",
+                "redHat",
+                "ubuntu",
+                "suse",
+                "cblMariner",
+                "oracleLinux",
+                "other"
+              ],
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "required": [
+        "family",
+        "type",
+        "friendlyName"
+      ],
+      "title": "Microsoft Product Ingestion Virtual Machine Operating System",
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/virtual-machine-os-disk/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/virtual-machine-os-disk/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "description": "The json schema of azure virtual machine os disk.",
+      "properties": {
+        "uri": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri"
+      ],
+      "title": "Microsoft Product Ingestion Virtual Machine Os Disk",
+      "type": "object"
+    },
+    "imageSource": {
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "osDisk"
+                ]
+              },
+              {
+                "required": [
+                  "dataDisks"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "sourceType": {
+              "const": "sharedImageGallery"
+            }
+          },
+          "required": [
+            "sharedImage"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "sharedImage"
+            ]
+          },
+          "properties": {
+            "sourceType": {
+              "const": "sasUri"
+            }
+          },
+          "required": [
+            "osDisk"
+          ]
+        }
+      ],
+      "properties": {
+        "dataDisks": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/virtual-machine-data-disk/2022-03-01-preview2"
+          },
+          "maxItems": 16,
+          "minItems": 0,
+          "type": "array"
+        },
+        "osDisk": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/virtual-machine-os-disk/2022-03-01-preview2"
+        },
+        "sharedImage": {
+          "$ref": "#/$defs/sharedImage"
+        },
+        "sourceType": {
+          "enum": [
+            "sharedImageGallery",
+            "sasUri"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "imageType": {
+      "enum": [
+        "x64Gen1",
+        "x64Gen2"
+      ]
+    },
+    "sharedImage": {
+      "additionalProperties": false,
+      "properties": {
+        "resourceId": {
+          "type": "string"
+        },
+        "tenantId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenantId",
+        "resourceId"
+      ],
+      "type": "object"
+    },
+    "sku": {
+      "additionalProperties": false,
+      "properties": {
+        "imageType": {
+          "$ref": "#/$defs/imageType"
+        },
+        "skuId": {
+          "pattern": "^[a-z0-9-_]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "imageType",
+        "skuId"
+      ],
+      "type": "object"
+    },
+    "vmImage": {
+      "additionalProperties": false,
+      "properties": {
+        "imageType": {
+          "$ref": "#/$defs/imageType"
+        },
+        "source": {
+          "$ref": "#/$defs/imageSource"
+        }
+      },
+      "required": [
+        "imageType",
+        "source"
+      ],
+      "type": "object"
+    },
+    "vmImageVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "deprecationSchedule": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2"
+        },
+        "lifecycleState": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2",
+          "default": "generallyAvailable",
+          "enum": [
+            "generallyAvailable",
+            "deprecated",
+            "deleted"
+          ]
+        },
+        "versionNumber": {
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "type": "string"
+        },
+        "vmImages": {
+          "items": {
+            "$ref": "#/$defs/vmImage"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "versionNumber",
+        "vmImages"
+      ],
+      "type": "object"
+    },
+    "vmProperties": {
+      "additionalProperties": false,
+      "properties": {
+        "isNetworkVirtualAppliance": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresCustomArmTemplate": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsAadLogin": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsAcceleratedNetworking": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsBackup": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsCloudInit": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsExtensions": {
+          "default": true,
+          "type": "boolean"
+        },
+        "supportsHibernation": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsNVMe": {
+          "default": false,
+          "type": "boolean"
+        },
+        "supportsRemoteConnection": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "https://product-ingestion.azureedge.net/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2"
+    },
+    {
+      "properties": {
+        "basePlan": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "openPorts": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/virtual-machine-open-port/2022-03-01-preview2"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "operatingSystem": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/virtual-machine-operating-system/2022-03-01-preview2"
+        },
+        "plan": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "product": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "recommendedVmSizes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "type": "array"
+        },
+        "reuseTechnicalConfigurationState": {
+          "enum": [
+            "enable",
+            "detach"
+          ]
+        },
+        "skus": {
+          "items": {
+            "$ref": "#/$defs/sku"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "type": "array"
+        },
+        "vmImageVersions": {
+          "items": {
+            "$ref": "#/$defs/vmImageVersion"
+          },
+          "type": "array"
+        },
+        "vmProperties": {
+          "$ref": "#/$defs/vmProperties"
+        }
+      },
+      "required": [
+        "product",
+        "plan"
+      ],
+      "type": "object"
+    }
+  ],
+  "description": "The json schema of azure virtual machine plan technical configuration.",
+  "title": "Microsoft Product Ingestion Virtual Machine Plan Technical Configuration"
+}

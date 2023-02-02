@@ -1,0 +1,333 @@
+{
+  "$defs": {
+    "azureVirtualMachine": {
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {},
+        "cloudSolutionProviderContact": {
+          "$ref": "#/$defs/contact"
+        },
+        "cloudSolutionProviderMarketingMaterials": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "engineeringContact": {
+          "$ref": "#/$defs/contact"
+        },
+        "generalLinks": {
+          "items": {
+            "properties": {
+              "displayText": {
+                "type": "string"
+              },
+              "link": {
+                "pattern": "^(http|https)://",
+                "type": "string"
+              }
+            },
+            "required": [
+              "displayText",
+              "link"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "globalSupportWebsite": {
+          "type": "string"
+        },
+        "governmentSupportWebsite": {
+          "type": "string"
+        },
+        "id": {},
+        "kind": {
+          "const": "azureVM"
+        },
+        "languageId": {
+          "type": "string"
+        },
+        "lifecycleState": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2",
+          "default": "generallyAvailable",
+          "enum": [
+            "generallyAvailable",
+            "deleted"
+          ]
+        },
+        "privacyPolicyLink": {
+          "type": "string"
+        },
+        "product": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "resourceName": {},
+        "searchResultSummary": {
+          "type": "string"
+        },
+        "shortDescription": {
+          "type": "string"
+        },
+        "supportContact": {
+          "$ref": "#/$defs/contact"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "product",
+        "languageId"
+      ],
+      "type": "object"
+    },
+    "contact": {
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "format": "email",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "url": {
+          "pattern": "^https?://",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "description": "A durable-id to an existing resource.",
+      "pattern": "^[a-z](-?[a-z0-9]+)*/[a-z0-9-]+(\\/?[a-z0-9-])*$",
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "code": {
+          "enum": [
+            "businessValidationError",
+            "collectionLimitExceeded",
+            "invalidId",
+            "invalidEntityStatus",
+            "invalidRequest",
+            "invalidResource",
+            "invalidState",
+            "notDeployed",
+            "notSupported",
+            "operationCanceled",
+            "productLocked",
+            "resourceNotFound",
+            "schemaValidationError"
+          ],
+          "readOnly": true,
+          "type": "string"
+        },
+        "details": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2"
+          },
+          "type": "array"
+        },
+        "message": {
+          "type": "string"
+        },
+        "resourceId": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2": {
+      "$comment": "deleted only if in draft and never published. Deprecated replaces StopSold",
+      "$id": "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "enum": [
+        "notAvailable",
+        "neverUsed",
+        "test",
+        "preview",
+        "generallyAvailable",
+        "deprecated",
+        "decommissioned",
+        "deleted"
+      ],
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "oneOf": [
+        {
+          "$ref": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2"
+        },
+        {
+          "properties": {
+            "externalId": {
+              "$example": {
+                "plan": {
+                  "externalId": "customerNamedPlan123"
+                }
+              },
+              "description": "ExternalId for product and plan references. Property reference must be named product or plan.",
+              "maxLength": 50,
+              "minLength": 3,
+              "pattern": "^[a-z0-9][a-z0-9-_]{2,49}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "externalId"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "resourceName": {
+              "$example": {
+                "plan": {
+                  "resourceName": "resourcePlan1"
+                }
+              },
+              "description": "Resource Name that can be referenced using this value by another resource.",
+              "maxLength": 50,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9-_]+$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "resourceName"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2": {
+      "$comment": "This schema is extended by a resource type schema. We allow additional properties to enable that",
+      "$id": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/durable-id/2022-03-01-preview2"
+        },
+        "resourceName": {
+          "maxLength": 50,
+          "minLength": 1,
+          "type": "string"
+        },
+        "validations": {
+          "items": {
+            "$ref": "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2"
+          },
+          "readonly": true,
+          "type": "array"
+        }
+      },
+      "required": [
+        "$schema"
+      ],
+      "type": "object"
+    },
+    "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2": {
+      "$comment": "This pattern is only valid for -dev schemas. When publishing to preview or public, remove (-int)? from it",
+      "$id": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "pattern": "^https://product-ingestion\\.azureedge\\.net/schema/[a-z][a-z0-9]+(?:-[a-z0-9]+)*/\\d{4}(?:-\\d\\d){2}(?:-dev|-preview\\d+)?$",
+      "title": "Product Ingestion schema uri",
+      "type": "string"
+    },
+    "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2": {
+      "$id": "https://product-ingestion.azureedge.net/schema/validation/2022-03-01-preview2",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "allOf": [
+        {
+          "$ref": "https://product-ingestion.azureedge.net/schema/inner-error/2022-03-01-preview2"
+        },
+        {
+          "properties": {
+            "$schema": {
+              "$ref": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2"
+            },
+            "level": {
+              "enum": [
+                "informational",
+                "warning"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "level"
+          ]
+        }
+      ]
+    },
+    "xbox360NonBackCompat": {
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {},
+        "description": {
+          "type": "string"
+        },
+        "id": {},
+        "kind": {
+          "const": "xbox360NonBackCompat"
+        },
+        "languageId": {
+          "type": "string"
+        },
+        "product": {
+          "$comment": "Resource ref to product",
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "resourceName": {},
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "product",
+        "languageId"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://product-ingestion.azureedge.net/schema/listing/2022-03-01-preview2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2"
+    },
+    {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/azureVirtualMachine"
+        },
+        {
+          "$ref": "#/$defs/xbox360NonBackCompat"
+        }
+      ]
+    }
+  ],
+  "title": "Listing resource schemas",
+  "type": "object"
+}
