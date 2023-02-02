@@ -2,6 +2,10 @@
 
 A library for publishing product listings on various clouds
 
+![pipeline](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/pipeline.svg)
+![coverage](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/coverage.svg)
+![releases](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/badges/release.svg)
+
 ## Overview
 
 The `CloudPub` is a library to allow associating and publishing VM images into product listings on
