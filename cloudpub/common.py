@@ -111,6 +111,7 @@ class BaseService(ABC, Generic[T]):
         data = response.json()
         if not isinstance(data, dict):
             self._raise_error(ValueError, f"Expected response to be a dictionary, got {type(data)}")
+        log.debug("Response: %s", data)
         return data
 
     @abstractmethod
