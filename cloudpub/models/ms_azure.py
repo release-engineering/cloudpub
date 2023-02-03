@@ -581,70 +581,70 @@ class OSDetails(AttrsJSONDecodeMixin):
 class VMIProperties(AttrsJSONDecodeMixin):
     """Represent the properties of a Virtual Machine Image."""
 
-    supportsExtensions: bool = field(default=True)
+    supportsExtensions: bool = field(default=True, metadata={"hide_unset": True})
     """
     Boolean indicating the extensions support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsBackup: bool = field(default=False)
+    supportsBackup: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the backup support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsAcceleratedNetworking: bool = field(default=False)
+    supportsAcceleratedNetworking: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the accelerated network support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    isNetworkVirtualAppliance: bool = field(default=False)
+    isNetworkVirtualAppliance: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the network virtual appliance support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsNVMe: bool = field(default=False)
+    supportsNVMe: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the NVMe support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsCloudInit: bool = field(default=False)
+    supportsCloudInit: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the cloud-init configuration support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsAadLogin: bool = field(default=False)
+    supportsAadLogin: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the AAD login support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsHibernation: bool = field(default=False)
+    supportsHibernation: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the hibernation support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    supportsRemoteConnection: bool = field(default=True)
+    supportsRemoteConnection: bool = field(default=True, metadata={"hide_unset": True})
     """
     Boolean indicating the RDP/SSH support. `See the docs`_ for more details.
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
-    requiresCustomArmTemplate: bool = field(default=False)
+    requiresCustomArmTemplate: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the image requires to use a custom ARM template for deployment.
     `See the docs`_ for more details.

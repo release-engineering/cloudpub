@@ -98,7 +98,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.debug("Received the following data to create/modify: %s" % data)
         resp = self.session.post(path="configure", json=data)
         self._raise_for_status(response=resp)
-        return cast(Dict[str, Any], resp.json())
+        json_resp = cast(Dict[str, Any], resp.json())
+        log.debug("Create/modify request response: %s", json_resp)
+        return json_resp
 
     def _query_job_details(self, job_id: str) -> Dict[str, Any]:
         """
@@ -113,7 +115,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.debug(f"Query job details for \"{job_id}\"")
         resp = self.session.get(path=f"configure/{job_id}/status")
         self._raise_for_status(response=resp)
-        return cast(Dict[str, Any], resp.json())
+        json_resp = cast(Dict[str, Any], resp.json())
+        log.debug("Query Job details response: %s", json_resp)
+        return json_resp
 
     @retry(
         retry=retry_if_result(predicate=is_azure_job_not_complete),
@@ -176,6 +180,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         params: Dict[str, str] = {}
 
         while has_next:
+            log.debug("Requesting the products list.")
             resp = self.session.get(path="/product", params=params)
             data = self._assert_dict(resp)
 
@@ -214,6 +219,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             Product: the requested product
         """
+        log.debug("Requesting the product ID \"%s\".", product_id)
         resp = self.session.get(path=f"/resource-tree/product/{product_id}")
         data = self._assert_dict(resp)
         return Product.from_json(data)
@@ -232,6 +238,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """
         for product in self.products:
             if product.identity.name == product_name:
+                log.debug("Product alias \"%s\" has the ID \"%s\"", product_name, product.id)
                 return self.get_product(product.id)
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
@@ -253,10 +260,12 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             err = f"Invalid resource type \"{resource}\". Expected {RESOURCE_MAPING.keys()}"
             self._raise_error(ValueError, err)
 
+        log.debug("Filtering the resource \"%s\" for product ID \"%s\"", resource, product.id)
         res = []
         for r in product.resources:
             if isinstance(r, RESOURCE_MAPING[resource]):
                 res.append(r)
+        log.debug("Filtered resources \"%s\" for product ID \"%s\": %s", resource, product.id, res)
         return cast(List[AZURE_PRODUCT_RESOURCES], res)
 
     def get_plan_by_name(self, product: Product, plan_name: str) -> PlanSummary:
@@ -277,6 +286,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         for p in resources:
             if p.identity.name == plan_name:
+                log.debug("Plan alias \"%s\" has the ID \"%s\"", plan_name, p.id)
                 return p
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
@@ -315,6 +325,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The technical configuration for the requested product/plan.
         """
+        log.debug("Retrieving the plan \"%s\" technical configuration.", plan.id)
         tconfigs = cast(
             List[VMIPlanTechConfig],
             [
@@ -345,16 +356,28 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The expected disk version when found.
         """
+        log.debug(
+            "Seeking the DiskVersion with version number \"%s\" for plan \"%s\"",
+            version_number,
+            tech_config.plan_id,
+        )
         pre_disk_version = None
+        max_dv = None
         for dv in tech_config.disk_versions:
             if version_number and dv.version_number == version_number:  # Metadata set
+                log.debug("Found the DiskVersion \"%s\" for plan \"%s\"", dv, tech_config.plan_id)
                 return dv
             else:  # Metadata not set: Get the max dv.version_number
                 current_version = getattr(pre_disk_version, "version_number", "0.0.0")
                 pre_disk_version = current_version
                 if is_disk_version_gt(dv.version_number, current_version):
-                    return dv
-        return None
+                    max_dv = dv
+        log.debug(
+            "Returning the following DiskVersion for plan ID \"%s\": %s",
+            tech_config.plan_id,
+            max_dv,
+        )
+        return max_dv
 
     def _vm_images_by_generation(
         self, disk_version: DiskVersion, architecture: str
@@ -372,6 +395,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             Gen1 and Gen2 VMImageDefinitions when they exist.
         """
+        log.debug("Sorting the VMImageDefinition by generation.")
         # Here we have 3 possibilities:
         # 1. vm_images => "Gen1" only
         # 2. vm_images => "Gen2" only
@@ -391,6 +415,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 if len(disk_version.vm_images) > 0
                 else None
             )
+        log.debug("Image for current generation: %s", img)
+        log.debug("Image for legacy generation: %s", img_legacy)
         return img, img_legacy
 
     def _create_vm_images(
@@ -407,6 +433,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             A list with the new VMImageDefinitions.
         """
+        log.debug("Creating VMImageDefinitions for \"%s\"", metadata.destination)
         vm_images = []
 
         vm_images.append(
@@ -422,6 +449,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                     source=source.to_json(),
                 )
             )
+        log.debug("VMImageDefinitions created for \"%s\": %s", metadata.destination, vm_images)
         return vm_images
 
     def _publish_live(self, product: Product, product_name: str) -> None:
