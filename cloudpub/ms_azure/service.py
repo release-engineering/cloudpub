@@ -13,6 +13,7 @@ from cloudpub.error import InvalidStateError, NotFoundError
 from cloudpub.models.ms_azure import (
     RESOURCE_MAPING,
     AzureResource,
+    ConfigureStatus,
     CustomerLeads,
     DiskVersion,
     Listing,
@@ -85,7 +86,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         self.session = PartnerPortalSession.make_graph_api_session(auth_keys=credentials)
         self._products: List[ProductSummary] = []
 
-    def _configure(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _configure(self, data: Dict[str, Any]) -> ConfigureStatus:
         """
         Submit a `configure` request to create or modify an Azure resource.
 
@@ -93,16 +94,16 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             data (dict)
                 The configure request data to send to the Product Ingestion API.
         Returns:
-            dict: The job ID to track its status alongside the initial status.
+            The job ID to track its status alongside the initial status.
         """
         log.debug("Received the following data to create/modify: %s" % data)
         resp = self.session.post(path="configure", json=data)
         self._raise_for_status(response=resp)
-        json_resp = cast(Dict[str, Any], resp.json())
-        log.debug("Create/modify request response: %s", json_resp)
-        return json_resp
+        parsed_resp = ConfigureStatus.from_json(resp.json())
+        log.debug("Create/modify request response: %s", parsed_resp)
+        return parsed_resp
 
-    def _query_job_details(self, job_id: str) -> Dict[str, Any]:
+    def _query_job_details(self, job_id: str) -> ConfigureStatus:
         """
         Get a `configure` job status.
 
@@ -110,14 +111,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             job_id (str)
                 The job ID from a `configure` request.
         Returns:
-            dict: The updated job status.
+            The updated job status.
         """
         log.debug(f"Query job details for \"{job_id}\"")
         resp = self.session.get(path=f"configure/{job_id}/status")
         self._raise_for_status(response=resp)
-        json_resp = cast(Dict[str, Any], resp.json())
-        log.debug("Query Job details response: %s", json_resp)
-        return json_resp
+        parsed_resp = ConfigureStatus.from_json(resp.json())
+        log.debug("Query Job details response: %s", parsed_resp)
+        return parsed_resp
 
     @retry(
         retry=retry_if_result(predicate=is_azure_job_not_complete),
@@ -129,7 +130,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         ),
         stop=stop_after_delay(max_delay=60 * 60 * 24 * 7),  # Give up after retrying for 7 days
     )
-    def _wait_for_job_completion(self, job_id: str) -> Dict[str, Any]:
+    def _wait_for_job_completion(self, job_id: str) -> ConfigureStatus:
         """
         Wait until the specified job ID is complete.
 
@@ -143,20 +144,19 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             job_id (str)
                 The job id to get the details for.
         Returns:
-            dict: The job details in case of success
+            The job details in case of success
         Raises:
             InvalidStateError if the job failed
         """
         job_details = self._query_job_details(job_id=job_id)
-        if job_details["jobResult"] == "failed":
-            errors: List[Dict[str, Any]] = job_details["errors"]
-            error_message = f"Job {job_id} failed: \n{errors}"
+        if job_details.job_result == "failed":
+            error_message = f"Job {job_id} failed: \n{job_details.errors}"
             self._raise_error(InvalidStateError, error_message)
-        elif job_details["jobResult"] == "succeeded":
+        elif job_details.job_result == "succeeded":
             log.debug(f"Job {job_id} succeeded")
         return job_details
 
-    def configure(self, resource: AzureResource) -> Dict[str, Any]:
+    def configure(self, resource: AzureResource) -> ConfigureStatus:
         """
         Create or update a resource and wait until it's done.
 
@@ -171,7 +171,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             "resources": [resource.to_json()],
         }
         res = self._configure(data=data)
-        return self._wait_for_job_completion(job_id=res['jobId'])
+        return self._wait_for_job_completion(job_id=res.job_id)
 
     @property
     def products(self) -> Iterator[ProductSummary]:
@@ -290,7 +290,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 return p
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
-    def submit_to_status(self, product_id: str, status: str) -> Dict[str, Any]:
+    def submit_to_status(self, product_id: str, status: str) -> ConfigureStatus:
         """
         Send a submission request to Microsoft with a new Product status.
 

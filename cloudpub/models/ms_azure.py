@@ -27,6 +27,49 @@ def _mask_secret(value: str) -> str:
 
 
 @define
+class ConfigureStatus(AttrsJSONDecodeMixin):
+    """Represent a response from a :meth:`~AzureService.configure` request."""
+
+    job_id: str = field(metadata={"alias": "jobId"})
+    """The configure Job ID."""
+
+    job_status: str = field(metadata={"alias": "jobStatus"})
+    """
+    The status of the configure job.
+
+    Expected value (one of):
+
+    * ``notStarted``
+    * ``running``
+    * ``completed``
+    """
+
+    job_result: str = field(metadata={"alias": "jobResult"})
+    """
+    The result of the configure job when finished.
+
+    Expected value (one of):
+
+    * ``pending``
+    * ``succeeded``
+    * ``failed``
+    * ``cancelled``
+    """
+
+    job_start: str = field(metadata={"alias": "jobStart"})
+    """The date when the configure job started."""
+
+    job_end: Optional[str] = field(metadata={"alias": "jobEnd", "hide_unset": True})
+    """The date when the configure job finished."""
+
+    resource_uri: Optional[str] = field(metadata={"alias": "resourceUri", "hide_unset": True})
+    """The resource URI related to the configure job."""
+
+    errors: List[str]
+    """List of errors when the ``job_result`` is ``failed``."""
+
+
+@define
 class AzureResource(AttrsJSONDecodeMixin):
     """The base class for all Azure Resources."""
 

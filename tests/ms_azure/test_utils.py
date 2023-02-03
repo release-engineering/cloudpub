@@ -6,6 +6,7 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 
 from cloudpub.models.ms_azure import (
+    ConfigureStatus,
     DiskVersion,
     VMImageDefinition,
     VMImageSource,
@@ -24,21 +25,25 @@ from cloudpub.ms_azure.utils import (
 
 
 @pytest.mark.parametrize(
-    "job_details",
+    "status",
     [
-        {"foo": "bar", "jobStatus": "completed", "jobId": 'job-id'},
-        {"test": True, "jobStatus": "incomplete", "jobId": 1},
-        {"count": 1, "jobStatus": "whatever", "jobId": "test"},
+        {"jobStatus": "completed", "jobId": 'job-id'},
+        {"jobStatus": "incomplete", "jobId": 1},
+        {"jobStatus": "whatever", "jobId": "test"},
     ],
 )
-def test_is_job_not_complete(job_details: Dict[str, Any], caplog: LogCaptureFixture) -> None:
+def test_is_job_not_complete(
+    status: Dict[str, Any], caplog: LogCaptureFixture, job_details_not_started: Dict[str, Any]
+) -> None:
     with caplog.at_level(logging.DEBUG):
+        job_details_not_started.update(status)
+        job_details = ConfigureStatus.from_json(job_details_not_started)
         res = is_azure_job_not_complete(job_details)
 
-        assert f"Checking if the job \"{job_details['jobId']}\" is still running" in caplog.text
-        assert f"job {job_details['jobId']} is in {job_details['jobStatus']} state" in caplog.text
+        assert f"Checking if the job \"{job_details.job_id}\" is still running" in caplog.text
+        assert f"job {job_details.job_id} is in {job_details.job_status} state" in caplog.text
 
-        if job_details['jobStatus'] != "completed":
+        if job_details.job_status != "completed":
             assert res is True
         else:
             assert res is False

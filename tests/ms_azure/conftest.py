@@ -4,6 +4,7 @@ from unittest import mock
 import pytest
 
 from cloudpub.models.ms_azure import (
+    ConfigureStatus,
     CustomerLeads,
     DiskVersion,
     Listing,
@@ -507,3 +508,27 @@ def disk_version_obj(disk_version: Dict[str, Any]) -> DiskVersion:
 @pytest.fixture
 def vmimage_source_obj(vmimage_source: Dict[str, Any]) -> VMImageSource:
     return VMImageSource.from_json(vmimage_source)
+
+
+@pytest.fixture
+def job_details_not_started_obj(job_details_not_started: Dict[str, Any]) -> ConfigureStatus:
+    return ConfigureStatus.from_json(job_details_not_started)
+
+
+@pytest.fixture
+def job_details_running_obj(job_details_running: Dict[str, Any]) -> ConfigureStatus:
+    return ConfigureStatus.from_json(job_details_running)
+
+
+@pytest.fixture
+def job_details_completed_successfully_obj(
+    job_details_completed_successfully: Dict[str, Any]
+) -> ConfigureStatus:
+    return ConfigureStatus.from_json(job_details_completed_successfully)
+
+
+@pytest.fixture
+def job_details_completed_failure_obj(
+    job_details_completed_failure: Dict[str, Any]
+) -> ConfigureStatus:
+    return ConfigureStatus.from_json(job_details_completed_failure)
