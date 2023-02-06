@@ -1,0 +1,467 @@
+{
+  "$defs": {
+    "blobLeadConfiguration": {
+      "properties": {
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "containerName": {
+          "pattern": "^[a-z0-9](([a-z0-9\\-[^\\-])){1,61}[a-z0-9]$",
+          "type": "string"
+        },
+        "storageAccountConnectionString": {
+          "oneOf": [
+            {
+              "pattern": "^DefaultEndpointsProtocol=https;AccountName=[a-z0-9]{3,24};AccountKey=[0-9a-zA-Z=+/]*(;|;EndpointSuffix=(core\\.chinacloudapi\\.cn|core\\.cloudapi\\.de|core\\.usgovcloudapi\\.net|core\\.windows\\.net))?$",
+              "type": "string"
+            },
+            {
+              "$ref": "https://product-ingestion.azureedge.net/schema/masked-secret/2022-03-01-preview2"
+            }
+          ]
+        }
+      },
+      "required": [
+        "storageAccountConnectionString",
+        "containerName"
+      ],
+      "type": "object"
+    },
+    "dynamicsLeadConfiguration": {
+      "oneOf": [
+        {
+          "not": {
+            "required": [
+              "username",
+              "password"
+            ]
+          },
+          "properties": {
+            "authentication": {
+              "const": "azureAD"
+            }
+          },
+          "required": [
+            "applicationId",
+            "applicationKey",
+            "directoryId"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "applicationId",
+              "applicationKey",
+              "directoryId"
+            ]
+          },
+          "properties": {
+            "authentication": {
+              "const": "office365"
+            }
+          },
+          "required": [
+            "username",
+            "password"
+          ]
+        }
+      ],
+      "properties": {
+        "applicationId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "applicationKey": {
+          "oneOf": [
+            {
+              "maxLength": 2048,
+              "minLength": 1,
+              "not": {
+                "$ref": "https://product-ingestion.azureedge.net/schema/masked-secret/2022-03-01-preview2"
+              },
+              "type": "string"
+            },
+            {
+              "$ref": "https://product-ingestion.azureedge.net/schema/masked-secret/2022-03-01-preview2"
+            }
+          ]
+        },
+        "authentication": {
+          "enum": [
+            "azureAD",
+            "office365"
+          ]
+        },
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "directoryId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "instanceUrl": {
+          "pattern": "^(http|https)://[a-zA-Z0-9/?$+-~!@#%^&*()_='.:[\\]@,;]+$",
+          "type": "string"
+        },
+        "password": {
+          "oneOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "not": {
+                "$ref": "https://product-ingestion.azureedge.net/schema/masked-secret/2022-03-01-preview2"
+              },
+              "type": "string"
+            },
+            {
+              "$ref": "https://product-ingestion.azureedge.net/schema/masked-secret/2022-03-01-preview2"
+            }
+          ]
+        },
+        "username": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "instanceUrl",
+        "authentication"
+      ],
+      "type": "object"
+    },
+    "emailLeadConfiguration": {
+      "properties": {
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "contactEmail"
+      ],
+      "type": "object"
+    },
+    "httpsEndpointLeadConfiguration": {
+      "properties": {
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "httpsEndpointUrl": {
+          "pattern": "^https://[a-zA-Z0-9/?$+-~!@#%^&*()_='.:[\\]@,;]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "httpsEndpointUrl"
+      ],
+      "type": "object"
+    },
+    "marketoLeadConfiguration": {
+      "properties": {
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "formId": {
+          "pattern": "^\\d{1,8}$",
+          "type": "string"
+        },
+        "munchkinId": {
+          "pattern": "^[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}-[a-zA-Z0-9]{3}$",
+          "type": "string"
+        },
+        "serverId": {
+          "pattern": "^[-a-zA-Z0-9\\.]{1,255}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "serverId",
+        "munchkinId",
+        "formId"
+      ],
+      "type": "object"
+    },
+    "salesforceLeadConfiguration": {
+      "properties": {
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "objectIdentifier": {
+          "pattern": "^[a-zA-Z0-9]{15}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "objectIdentifier"
+      ],
+      "type": "object"
+    },
+    "tableLeadConfiguration": {
+      "properties": {
+        "contactEmail": {
+          "items": {
+            "format": "email",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "storageAccountConnectionString": {
+          "oneOf": [
+            {
+              "pattern": "^DefaultEndpointsProtocol=https;AccountName=[a-z0-9]{3,24};AccountKey=[0-9a-zA-Z=+/]*(;|;EndpointSuffix=(core\\.chinacloudapi\\.cn|core\\.cloudapi\\.de|core\\.usgovcloudapi\\.net|core\\.windows\\.net))?$",
+              "type": "string"
+            },
+            {
+              "$ref": "https://product-ingestion.azureedge.net/schema/masked-secret/2022-03-01-preview2"
+            }
+          ]
+        }
+      },
+      "required": [
+        "storageAccountConnectionString"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://product-ingestion.azureedge.net/schema/customer-leads/2022-03-01-preview2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "allOf": [
+    {
+      "$ref": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2"
+    },
+    {
+      "properties": {
+        "blobLeadConfiguration": {
+          "$ref": "#/$defs/blobLeadConfiguration"
+        },
+        "dynamicsLeadConfiguration": {
+          "$ref": "#/$defs/dynamicsLeadConfiguration"
+        },
+        "emailLeadConfiguration": {
+          "$ref": "#/$defs/emailLeadConfiguration"
+        },
+        "httpsEndpointLeadConfiguration": {
+          "$ref": "#/$defs/httpsEndpointLeadConfiguration"
+        },
+        "leadDestination": {
+          "enum": [
+            "none",
+            "blob",
+            "dynamics",
+            "email",
+            "httpsEndpoint",
+            "marketo",
+            "salesforce",
+            "table"
+          ]
+        },
+        "marketoLeadConfiguration": {
+          "$ref": "#/$defs/marketoLeadConfiguration"
+        },
+        "product": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "salesforceLeadConfiguration": {
+          "$ref": "#/$defs/salesforceLeadConfiguration"
+        },
+        "tableLeadConfiguration": {
+          "$ref": "#/$defs/tableLeadConfiguration"
+        }
+      },
+      "required": [
+        "product",
+        "leadDestination"
+      ],
+      "type": "object"
+    },
+    {
+      "oneOf": [
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "dynamicsLeadConfiguration",
+              "emailLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "marketoLeadConfiguration",
+              "salesforceLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "none"
+            }
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "dynamicsLeadConfiguration",
+              "emailLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "marketoLeadConfiguration",
+              "salesforceLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "blob"
+            }
+          },
+          "required": [
+            "blobLeadConfiguration"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "emailLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "marketoLeadConfiguration",
+              "salesforceLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "dynamics"
+            }
+          },
+          "required": [
+            "dynamicsLeadConfiguration"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "dynamicsLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "marketoLeadConfiguration",
+              "salesforceLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "email"
+            }
+          },
+          "required": [
+            "emailLeadConfiguration"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "dynamicsLeadConfiguration",
+              "emailLeadConfiguration",
+              "marketoLeadConfiguration",
+              "salesforceLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "httpsEndpoint"
+            }
+          },
+          "required": [
+            "httpsEndpointLeadConfiguration"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "dynamicsLeadConfiguration",
+              "emailLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "salesforceLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "marketo"
+            }
+          },
+          "required": [
+            "marketoLeadConfiguration"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "dynamicsLeadConfiguration",
+              "emailLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "marketoLeadConfiguration",
+              "tableLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "salesforce"
+            }
+          },
+          "required": [
+            "salesforceLeadConfiguration"
+          ]
+        },
+        {
+          "not": {
+            "required": [
+              "blobLeadConfiguration",
+              "dynamicsLeadConfiguration",
+              "emailLeadConfiguration",
+              "httpsEndpointLeadConfiguration",
+              "marketoLeadConfiguration",
+              "salesforceLeadConfiguration"
+            ]
+          },
+          "properties": {
+            "leadDestination": {
+              "const": "table"
+            }
+          },
+          "required": [
+            "tableLeadConfiguration"
+          ]
+        }
+      ]
+    }
+  ],
+  "description": "Connect a CRM system to receive customer leads",
+  "title": "CustomerLeads"
+}

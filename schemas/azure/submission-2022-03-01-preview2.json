@@ -1,0 +1,62 @@
+{
+  "$id": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "https://product-ingestion.azureedge.net/schema/resource/2022-03-01-preview2"
+    },
+    {
+      "properties": {
+        "$schema": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/schema-uri/2022-03-01-preview2"
+        },
+        "created": {
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string"
+        },
+        "deprecationSchedule": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2"
+        },
+        "lifecycleState": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-lifecycle-state/2022-03-01-preview2",
+          "default": "generallyAvailable",
+          "enum": [
+            "generallyAvailable",
+            "deprecated"
+          ]
+        },
+        "product": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-reference/2022-03-01-preview2"
+        },
+        "result": {
+          "enum": [
+            "pending",
+            "succeeded",
+            "failed"
+          ],
+          "readOnly": true,
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "notStarted",
+            "running",
+            "completed"
+          ],
+          "readOnly": true,
+          "type": "string"
+        },
+        "target": {
+          "$ref": "https://product-ingestion.azureedge.net/schema/resource-target/2022-03-01-preview2"
+        }
+      },
+      "required": [
+        "target",
+        "product"
+      ],
+      "type": "object"
+    }
+  ],
+  "title": "Product ingestion submission schema"
+}
