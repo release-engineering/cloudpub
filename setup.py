@@ -21,6 +21,7 @@ setup(
         'attrs',
         'requests',
         'tenacity',
+        "boto3",
     ],
     zip_safe=False,
 )
