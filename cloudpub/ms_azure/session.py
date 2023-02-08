@@ -69,18 +69,23 @@ class PartnerPortalSession:
         self._additional_args = kwargs
 
     @classmethod
-    def make_graph_api_session(cls, auth_keys: Dict[str, Any]) -> 'PartnerPortalSession':
+    def make_graph_api_session(
+        cls, auth_keys: Dict[str, Any], api_version: str = '2022-07-01'
+    ) -> 'PartnerPortalSession':
         """
         Create a PartnerPortalSession for the Microsoft Graph API.
 
         Args:
             auth_keys (dict)
                 Dictionary with the required secrets to login into a Microsoft API.
+            api_version (str)
+                The API version to use on each request.
+                Defaults to ``2022-07-01``.
         Raises:
             ValueError on authentication failure.
         """
         log.debug("Creating a session with Azure Private Offer API")
-        mparams = {'$version': '2022-07-01'}
+        mparams = {'$version': api_version}
         prefix_url = "https://graph.microsoft.com/rp/product-ingestion"
         return cls(auth_keys=auth_keys, prefix_url=prefix_url, mandatory_params=mparams)
 

@@ -1,0 +1,132 @@
+Azure Models
+------------
+
+The models used by :class:`~cloudpub.ms_azure.AzureService`.
+
+The models are defined with `attrs`_ using the class :class:`~cloudpub.models.common.AttrsJSONDecodeMixin` to
+serialize/deserialize the JSON values for each request.
+
+.. note::
+
+   These models implement the resources defined on `Microsoft Product Ingestion API`_ compatible with the version ``2022-03-01-preview2``.
+
+   Future updates in the API might require adjustments in these models or even the creation
+   of new ones to be compatible with newer versions.
+
+
+**Contents:**
+
+- `Azure Product`_
+- `Product Resources`_
+- `Resources internal elements`_
+
+
+Azure Product
+.............
+
+.. autoclass:: cloudpub.models.ms_azure.Product()
+   :members:
+
+
+Product Resources
+.................
+
+The following models are elements of :class:`~cloudpub.models.ms_azure.Product`'s :attr:`~cloudpub.models.ms_azure.Product.resources`.
+
+.. autoclass:: cloudpub.models.ms_azure.AzureResource()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.AzureProductLinkedResource()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.AzurePlanLinkedResource()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.CustomerLeads()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.Listing()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.ListingAsset()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.PlanSummary()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.PlanListing()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.PriceAndAvailabilityOffer()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.PriceAndAvailabilityPlan()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.ProductProperty()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.ProductReseller()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.ProductSubmission()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.ProductSummary()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.TestDrive()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.VMIPlanTechConfig()
+   :members:
+
+
+Resources internal elements
+...........................
+
+The following models are inner elements of some subclasses of :class:`~cloudpub.models.ms_azure.AzureResource`.
+
+.. autoclass:: cloudpub.models.ms_azure.Audience()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.Contact()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.DiskVersion()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.Identity()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.OSDetails()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.OSDiskURI()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.Pricing()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.PublishTarget()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.VMImageDefinition()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.VMImageSource()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.VMIProperties()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.VMISku()
+   :members:
+
+.. seealso:: 
+   .. toctree::
+      base
+
+
+.. _`attrs`: https://www.attrs.org/en/stable/
+.. _`Microsoft Product Ingestion API`: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference

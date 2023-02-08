@@ -23,7 +23,7 @@ from cloudpub.models.ms_azure import (
     PriceAndAvailabilityPlan,
     Product,
     ProductProperty,
-    ProductResseller,
+    ProductReseller,
     ProductSubmission,
     ProductSummary,
     TestDrive,
@@ -378,7 +378,7 @@ class TestAzureService:
         prav_offer_obj: PriceAndAvailabilityOffer,
         prav_plan_obj: PriceAndAvailabilityPlan,
         technical_config_obj: VMIPlanTechConfig,
-        resseller_obj: ProductResseller,
+        reseller_obj: ProductReseller,
         submission_obj: ProductSubmission,
         product_obj: Product,
     ) -> None:
@@ -394,7 +394,7 @@ class TestAzureService:
             "price-and-availability-offer": prav_offer_obj,
             "price-and-availability-plan": prav_plan_obj,
             "virtual-machine-plan-technical-configuration": technical_config_obj,
-            "reseller": resseller_obj,
+            "reseller": reseller_obj,
             "submission": submission_obj,
         }
 
