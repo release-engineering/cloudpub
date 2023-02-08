@@ -47,7 +47,7 @@ Session
    The include below will make `Azure Models` available in this page.
    The extension had to be changed to avoid duplicate parsing on Sphinx
 
-.. include:: models/azure.rst.incl 
+.. include:: models/azure.rst.incl
 
 
 .. _Product Ingestion API: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api

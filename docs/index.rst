@@ -17,6 +17,7 @@ Cloud Providers
 
    cloud_providers/base
    cloud_providers/azure
+   cloud_providers/aws
 
 
 Quick Start
@@ -35,7 +36,7 @@ Example for Azure:
 
 .. code-block:: python
 
-    from cloudpub.ms_azure import AzurePublishingMetadata, AzureService 
+    from cloudpub.ms_azure import AzurePublishingMetadata, AzureService
 
     # Instantiate the AzurePublishingMetadata with the required information
     metadata = AzurePublishingMetadata(
@@ -47,4 +48,61 @@ Example for Azure:
 
     # Associate the image with the destination and publish the changes
     svc = AzureService(credentials={...})
+    svc.publish(metadata)
+
+Example for AWS:
+
+.. code-block:: python
+
+    from cloudpub.ms_azure import AWSVersionMetadata, AWSProductService
+    from cloudpub.models.aws import VersionMapping
+
+    # Fill out the version metadata
+
+    example_version_mapping = VersionMapping({
+      "Version": {
+        "VersionTitle": "example-changeset",
+        "ReleaseNotes": "https://access.redhat.com/foo/bar"
+      },
+      "DeliveryOptions": [
+      {
+        "Details": {
+          "AmiDeliveryOptionDetails": {
+          "AmiSource": {
+            "AmiId": "ami-123412341234",
+            "AccessRoleArn": "arn:aws:iam::12341234:role/example",
+            "UserName": "example-user",
+            "OperatingSystemName": "EXAMPLE",
+            "OperatingSystemVersion": "EXAMPLE-1.2",
+            "ScanningPort": 22
+          },
+          "UsageInstructions": "Example.",
+          "RecommendedInstanceType": "m5.large",
+          "SecurityGroups": [
+            {
+              "FromPort": 22,
+              "IpProtocol": "tcp",
+              "IpRanges": [
+              "0.0.0.0/0"
+              ],
+              "ToPort": 22
+            }
+          ]
+        }
+      }
+    })
+
+    # Instantiate the AWSVersionMetadata with the required information
+    metadata = AWSVersionMetadata(
+      destination="product-example/plan-example",
+      sas_uri="https://foo.com/bar/image.vhd",
+      disk_version="2.1.0",
+      keepdraft=False,  # When `False` it means publish to live.
+      product_type = "AmiProduct",
+      entity_id = "1234-1234-1234-2134",
+      version_mapping = example_version_mapping
+    )
+
+    # Associate the image with the destination and publish the changes
+    svc = AWSProductService(access_id=example_id, secret_key=example_secret)
     svc.publish(metadata)
