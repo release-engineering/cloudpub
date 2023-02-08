@@ -951,7 +951,7 @@ class ProductReseller(AzureProductLinkedResource):
     """
 
     audiences: List[Audience] = field(
-        converter=lambda x: [Audience(a) for a in x], on_setattr=NO_OP  # type: ignore
+        converter=lambda x: [Audience(a) for a in x] if x else [], on_setattr=NO_OP  # type: ignore
     )
     """List of :class:`~cloudpub.models.ms_azure.Audience` for the reseller offer."""
 
@@ -1257,7 +1257,7 @@ class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
 
     private_audiences: List[Audience] = field(
         metadata={"alias": "privateAudiences"},
-        converter=lambda x: [Audience.from_json(a) for a in x],
+        converter=lambda x: [Audience.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """
@@ -1276,7 +1276,7 @@ class PriceAndAvailabilityOffer(AzureProductLinkedResource):
 
     preview_audiences: List[Audience] = field(
         metadata={"alias": "previewAudiences"},
-        converter=lambda x: [Audience.from_json(a) for a in x],
+        converter=lambda x: [Audience.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """
@@ -1482,7 +1482,7 @@ class DiskVersion(AttrsJSONDecodeMixin):
 
     vm_images: List[VMImageDefinition] = field(
         metadata={"alias": "vmImages"},
-        converter=lambda x: [VMImageDefinition.from_json(a) for a in x],
+        converter=lambda x: [VMImageDefinition.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """The list of :class:`~cloudpub.models.ms_azure.VMImageDefinition` for this disk version."""
@@ -1542,13 +1542,13 @@ class VMIPlanTechConfig(AzurePlanLinkedResource):
     """The plan's :class:`~cloudpub.models.ms_azure.VMIProperties`."""
 
     skus: List[VMISku] = field(
-        converter=lambda x: [VMISku.from_json(a) for a in x], on_setattr=NO_OP
+        converter=lambda x: [VMISku.from_json(a) for a in x] if x else [], on_setattr=NO_OP
     )
     """The list of available :class:`~cloudpub.models.ms_azure.VMISku` in the plan."""
 
     disk_versions: List[DiskVersion] = field(
         metadata={"alias": "vmImageVersions"},
-        converter=lambda x: [DiskVersion.from_json(a) for a in x],
+        converter=lambda x: [DiskVersion.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """The list of available :class:`~cloudpub.models.ms_azure.DiskVersion` in the plan."""
