@@ -52,6 +52,10 @@ class AttrsJSONDecodeMixin:
         Returns:
             The converted object from JSON.
         """
+        if not json:
+            log.debug("Not converting an empty JSON.")
+            return
+
         # Ensure it's a dictionary
         log.debug("Converting the following json into class %s: %s" % (cls.__name__, json))
         cls._assert_json_dict(json)
@@ -88,7 +92,7 @@ class AttrsJSONDecodeMixin:
         self_copy = deepcopy(self)
 
         # Convert the instance sub-elements into dictionary
-        attributes: Tuple[Attribute] = self_copy.__attrs_attrs__  # type.ignore
+        attributes: Tuple[Attribute] = self_copy.__attrs_attrs__  # type: ignore
         klass_name = self_copy.__class__.__name__
         for at in attributes:
             value = getattr(self_copy, at.name, None)

@@ -12,6 +12,7 @@ from requests.exceptions import HTTPError
 from cloudpub.common import BaseService
 from cloudpub.error import InvalidStateError, NotFoundError
 from cloudpub.models.ms_azure import (
+    ConfigureStatus,
     CustomerLeads,
     DiskVersion,
     Listing,
@@ -134,7 +135,7 @@ class TestAzureService:
 
                 mock_post.assert_called_once_with(path="configure", json=req_json)
                 mock_raise_status.assert_called_once_with(response=res_obj)
-                assert res == res_json
+                assert res == ConfigureStatus.from_json(res_json)
                 assert f"Received the following data to create/modify: {req_json}" in caplog.text
 
     @mock.patch("cloudpub.ms_azure.AzureService._raise_for_status")
@@ -153,7 +154,7 @@ class TestAzureService:
 
                 mock_get.assert_called_once_with(path="configure/job-id/status")
                 mock_raise_status.assert_called_once_with(response=res_obj)
-                assert res == res_json
+                assert res == ConfigureStatus.from_json(res_json)
                 assert "Query job details for \"job-id\"" in caplog.text
 
     @mock.patch("cloudpub.ms_azure.utils.is_azure_job_not_complete")
@@ -164,15 +165,15 @@ class TestAzureService:
         mock_is_job_not_complete: mock.MagicMock,
         azure_service: AzureService,
         caplog: LogCaptureFixture,
-        job_details_running: Dict[str, Any],
-        job_details_completed_successfully: Dict[str, Any],
+        job_details_running_obj: ConfigureStatus,
+        job_details_completed_successfully_obj: ConfigureStatus,
     ) -> None:
         mock_job_details.side_effect = [
-            job_details_running,
-            job_details_running,
-            job_details_running,
-            job_details_completed_successfully,
-            job_details_running,
+            job_details_running_obj,
+            job_details_running_obj,
+            job_details_running_obj,
+            job_details_completed_successfully_obj,
+            job_details_running_obj,
         ]
 
         azure_service._wait_for_job_completion.retry.sleep = mock.Mock()  # type: ignore
@@ -180,7 +181,7 @@ class TestAzureService:
         with caplog.at_level(logging.DEBUG):
             res = azure_service._wait_for_job_completion(job_id=job_id)
             assert mock_job_details.call_count == 4
-            assert res == job_details_completed_successfully
+            assert res == job_details_completed_successfully_obj
             assert f"Job {job_id} failed" not in caplog.text
             assert f"Job {job_id} succeeded" in caplog.text
 
@@ -192,16 +193,16 @@ class TestAzureService:
         mock_is_job_not_completed: mock.MagicMock,
         azure_service: AzureService,
         caplog: LogCaptureFixture,
-        job_details_running: Dict[str, Any],
-        job_details_completed_failure: Dict[str, Any],
+        job_details_running_obj: ConfigureStatus,
+        job_details_completed_failure_obj: ConfigureStatus,
         errors: List[Dict[str, Any]],
     ) -> None:
         mock_job_details.side_effect = [
-            job_details_running,
-            job_details_running,
-            job_details_running,
-            job_details_completed_failure,
-            job_details_running,
+            job_details_running_obj,
+            job_details_running_obj,
+            job_details_running_obj,
+            job_details_completed_failure_obj,
+            job_details_running_obj,
         ]
 
         azure_service._wait_for_job_completion.retry.sleep = mock.Mock()  # type: ignore
@@ -221,11 +222,11 @@ class TestAzureService:
         mock_configure: mock.MagicMock,
         mock_wait_completion: mock.MagicMock,
         azure_service: AzureService,
-        job_details_completed_successfully: Dict[str, Any],
+        job_details_completed_successfully_obj: ConfigureStatus,
         submission_obj: ProductSubmission,
     ) -> None:
-        mock_configure.return_value = job_details_completed_successfully
-        job_id = job_details_completed_successfully['jobId']
+        mock_configure.return_value = job_details_completed_successfully_obj
+        job_id = job_details_completed_successfully_obj.job_id
         expected_data = {
             "$schema": f"https://schema.mp.microsoft.com/schema/configure/{azure_service.AZURE_API_VERSION}",  # noqa E501
             "resources": [submission_obj.to_json()],

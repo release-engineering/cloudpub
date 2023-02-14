@@ -1,10 +1,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from operator import attrgetter
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from cloudpub.common import PublishingMetadata  # Cannot circular import AzurePublishingMetadata
-from cloudpub.models.ms_azure import DiskVersion, VMImageDefinition, VMImageSource, VMISku
+from cloudpub.models.ms_azure import (
+    ConfigureStatus,
+    DiskVersion,
+    VMImageDefinition,
+    VMImageSource,
+    VMISku,
+)
 from cloudpub.utils import get_url_params
 
 log = logging.getLogger(__name__)
@@ -180,7 +186,7 @@ def is_sas_present(disk_version: DiskVersion, sas_uri: str) -> bool:
     return False
 
 
-def is_azure_job_not_complete(job_details: Dict[str, Any]) -> bool:
+def is_azure_job_not_complete(job_details: ConfigureStatus) -> bool:
     """
     Check if the job status from a `configure` request is not completed.
 
@@ -190,9 +196,9 @@ def is_azure_job_not_complete(job_details: Dict[str, Any]) -> bool:
     Returns:
         bool: False if job completed, True otherwise
     """
-    log.debug(f"Checking if the job \"{job_details['jobId']}\" is still running")
-    log.debug(f"job {job_details['jobId']} is in {job_details['jobStatus']} state")
-    if job_details["jobStatus"] != "completed":
+    log.debug(f"Checking if the job \"{job_details.job_id}\" is still running")
+    log.debug(f"job {job_details.job_id} is in {job_details.job_status} state")
+    if job_details.job_status != "completed":
         return True
     return False
 

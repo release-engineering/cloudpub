@@ -4,6 +4,7 @@ import pytest
 
 from cloudpub.models.ms_azure import (
     CustomerLeads,
+    DeprecationAlternative,
     DiskVersion,
     ListingAsset,
     PlanListing,
@@ -11,6 +12,8 @@ from cloudpub.models.ms_azure import (
     Product,
     PublishTarget,
     VMImageSource,
+    VMIPlanTechConfig,
+    _mask_secret,
 )
 
 
@@ -69,3 +72,46 @@ def test_vm_image_source_invalid(vmimage_source: Dict[str, Any]) -> None:
     )
     with pytest.raises(ValueError, match=expected_error):
         VMImageSource.from_json(vmimage_source)
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["super_secret_value", "another_secret_value", "*********"],
+)
+def test_mask_secrets(value: str) -> None:
+    assert _mask_secret(value) == "*********"
+
+
+def test_deprecation_alternative_properties() -> None:
+    product_id = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    product_durable = f"product/{product_id}"
+    plan_id = "00000000-0000-0000-0000-000000000000"
+    plan_durable = f"plan/{product_id}/{plan_id}"
+
+    # Test deprecation for "product"
+    obj = DeprecationAlternative.from_json({"product": product_durable})
+
+    assert obj.product_id == product_id
+    assert obj.plan_id is None
+
+    # Test deprecation for "plan"
+    obj = DeprecationAlternative.from_json({"plan": plan_durable})
+
+    assert obj.product_id is None
+    assert obj.plan_id == plan_id
+
+
+def test_vmi_plan_tech_config_property(technical_config: Dict[str, Any]) -> None:
+    # Test base_plan_id not set
+    obj = VMIPlanTechConfig.from_json(technical_config)
+
+    assert obj.base_plan_id is None
+
+    # Test base_plan_id set
+    plan_id = "00000000-0000-0000-0000-000000000000"
+    plan_durable = f"plan/ffffffff-ffff-ffff-ffff-ffffffffffff/{plan_id}"
+    technical_config.update({"basePlan": plan_durable})
+
+    obj = VMIPlanTechConfig.from_json(technical_config)
+
+    assert obj.base_plan_id == plan_id

@@ -90,10 +90,25 @@ The following models are inner elements of some subclasses of :class:`~cloudpub.
 .. autoclass:: cloudpub.models.ms_azure.Audience()
    :members:
 
+.. autoclass:: cloudpub.models.ms_azure.BlobLeadConfiguration()
+   :members:
+
 .. autoclass:: cloudpub.models.ms_azure.Contact()
    :members:
 
+.. autoclass:: cloudpub.models.ms_azure.DataDisk()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.DeprecationAlternative()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.DeprecationSchedule()
+   :members:
+
 .. autoclass:: cloudpub.models.ms_azure.DiskVersion()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.DynamicsLeadConfiguration()
    :members:
 
 .. autoclass:: cloudpub.models.ms_azure.Identity()
@@ -105,10 +120,37 @@ The following models are inner elements of some subclasses of :class:`~cloudpub.
 .. autoclass:: cloudpub.models.ms_azure.OSDiskURI()
    :members:
 
+.. autoclass:: cloudpub.models.ms_azure.EmailLeadConfiguration()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.GovernmentCertification()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.HttpsEndpointLeadConfiguration()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.LeadConfiguration()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.MarketoLeadConfiguration()
+   :members:
+
 .. autoclass:: cloudpub.models.ms_azure.Pricing()
    :members:
 
 .. autoclass:: cloudpub.models.ms_azure.PublishTarget()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.SalesforceLeadConfiguration()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.SoftwareReservation()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.SoftwareTrial()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.TableLeadConfiguration()
    :members:
 
 .. autoclass:: cloudpub.models.ms_azure.VMImageDefinition()

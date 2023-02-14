@@ -1,14 +1,72 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
+import sys
 from typing import Any, Dict, List, Optional
+
+if sys.version_info >= (3, 8):
+    from typing import Literal  # pragma: no cover
+else:
+    from typing_extensions import Literal  # pragma: no cover
 
 from attrs import Attribute, define, field
 from attrs.setters import NO_OP
-from attrs.validators import deep_iterable, instance_of
+from attrs.validators import deep_iterable, instance_of, optional
 
 from cloudpub.models.common import AttrsJSONDecodeMixin
 
+MASKED_SECRET = Literal["*********"]
+
 log = logging.getLogger(__name__)
+
+
+def _mask_secret(value: str) -> str:
+    """Replace a possible secret string with ``*********``."""
+    if value and value != "*********":
+        value = "*********"
+    return value
+
+
+@define
+class ConfigureStatus(AttrsJSONDecodeMixin):
+    """Represent a response from a :meth:`~AzureService.configure` request."""
+
+    job_id: str = field(metadata={"alias": "jobId"})
+    """The configure Job ID."""
+
+    job_status: str = field(metadata={"alias": "jobStatus"})
+    """
+    The status of the configure job.
+
+    Expected value (one of):
+
+    * ``notStarted``
+    * ``running``
+    * ``completed``
+    """
+
+    job_result: str = field(metadata={"alias": "jobResult"})
+    """
+    The result of the configure job when finished.
+
+    Expected value (one of):
+
+    * ``pending``
+    * ``succeeded``
+    * ``failed``
+    * ``cancelled``
+    """
+
+    job_start: str = field(metadata={"alias": "jobStart"})
+    """The date when the configure job started."""
+
+    job_end: Optional[str] = field(metadata={"alias": "jobEnd", "hide_unset": True})
+    """The date when the configure job finished."""
+
+    resource_uri: Optional[str] = field(metadata={"alias": "resourceUri", "hide_unset": True})
+    """The resource URI related to the configure job."""
+
+    errors: List[str]
+    """List of errors when the ``job_result`` is ``failed``."""
 
 
 @define
@@ -115,6 +173,105 @@ class Identity(AttrsJSONDecodeMixin):
 
 
 @define
+class DeprecationAlternative(AttrsJSONDecodeMixin):
+    """
+    Define an alternative product or plan for a deprecated one.
+
+    It's part of :class:`~cloudpub.models.ms_azure.DeprecationSchedule`.
+    """
+
+    product_durable_id: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "product", "hide_unset": True}
+    )
+    """
+    The deprecated product `durable ID`_.
+
+    .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+    """  # noqa E501
+
+    plan_durable_id: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "plan", "hide_unset": True}
+    )
+    """
+    The deprecated plan `durable ID`_.
+
+    .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+    """  # noqa E501
+
+    @property
+    def plan_id(self) -> Optional[str]:
+        """
+        Resolve the plan ID from its `durable ID`_.
+
+        .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+        """  # noqa E501
+        # durable ID format example:
+        #   plan/62c171e9-a2e1-45ab-9af0-d17e769da954
+        # what do we want:
+        #   62c171e9-a2e1-45ab-9af0-d17e769da954
+        if self.plan_durable_id:
+            return self.plan_durable_id.split("/")[-1]
+        return None
+
+    @property
+    def product_id(self) -> Optional[str]:
+        """
+        Resolve the product ID from its `durable ID`_.
+
+        .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+        """  # noqa E501
+        # durable ID format example:
+        #   product/62c171e9-a2e1-45ab-9af0-d17e769da954
+        # what do we want:
+        #   62c171e9-a2e1-45ab-9af0-d17e769da954
+        if self.product_durable_id:
+            return self.product_durable_id.split("/")[-1]
+        return None
+
+
+@define
+class DeprecationSchedule(AttrsJSONDecodeMixin):
+    """
+    Represent a deprecation schedule.
+
+    It's part of :class:`~cloudpub.models.ms_azure.ProductSummary`,
+    :class:`~cloudpub.models.ms_azure.PlanSummary` and
+    :class:`~cloudpub.models.ms_azure.ProductSubmission`.
+
+    `Schema definition for DeprecationSchedule <https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2>`_
+    """  # noqa E501
+
+    schema: str = field(validator=instance_of(str), metadata={"alias": "$schema"})
+    """
+    The `resource schema`_ for Graph API.
+
+    .. _resource schema: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference
+    """  # noqa E501
+
+    date: str
+    """The date for deprecation."""
+
+    date_offset: str
+    """The date offset for deprecation."""
+
+    reason: str
+    """
+    The deprecation reason.
+
+    Expected value (one of):
+
+    * ``criticalSecurityIssue``
+    * ``endOfSupport``
+    * ``other``
+    """
+
+    alternative: DeprecationAlternative = field(
+        converter=DeprecationAlternative.from_json, on_setattr=NO_OP  # type: ignore
+    )
+    """The alternative product or plan for the deprecated one."""
+
+
+@define
 class ProductSummary(AzureResource):
     """
     Represent a product summary.
@@ -131,10 +288,213 @@ class ProductSummary(AzureResource):
     """  # noqa E501
 
     type: str = field(validator=instance_of(str))
-    """The resource type. It's expected to be ``azureVirtualMachine``."""
+    """
+    The resource type.
+
+    Expected type (one of):
+
+    * ``azureApplication``
+    * ``azureContainer``
+    * ``azureVirtualMachine``
+    * ``consultingService``
+    * ``containerApp``
+    * ``coreVirtualMachine``
+    * ``cosellOnly``
+    * ``dynamics365BusinessCentral``
+    * ``dynamics365ForCustomerEngagement``
+    * ``dynamics365ForOperations``
+    * ``iotEdgeModule``
+    * ``managedService``
+    * ``powerBiApp``
+    * ``powerBiVisual``
+    * ``softwareAsAService``
+    * ``xbox360NonBackcompat``
+    """
 
     alias: str
     """The product name to display in the Marketplace for customers."""
+
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
+    """
+    The product lifecycle state.
+
+    Expected value (one of):
+
+    * ``generallyAvailable``
+    * ``deprecated``
+    * ``deleted``
+    """
+
+    deprecation_schedule: Optional[DeprecationSchedule] = field(
+        metadata={"alias": "deprecationSchedule", "hide_unset": True},
+        converter=DeprecationSchedule.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The deprecation schedule for the product if going to be deprecated."""
+
+
+@define
+class LeadConfiguration(AttrsJSONDecodeMixin):
+    """
+    Define the common fields for all lead configuration models.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    contact_email: Optional[List[str]] = field(
+        metadata={"alias": "contactEmail", "hide_unset": True}
+    )
+    """List of e-mails for a lead configuration."""
+
+
+@define
+class BlobLeadConfiguration(LeadConfiguration):
+    """
+    Define the blob lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    storage_connection_string: MASKED_SECRET = field(
+        metadata={"alias": "storageAccountConnectionString"}, converter=_mask_secret
+    )
+    """
+    The storage connection string.
+
+    It can be either the plain text connection string or a masked value.
+    """
+
+    container_name: str = field(metadata={"alias": "containerName"})
+    """The storage container name."""
+
+
+@define
+class DynamicsLeadConfiguration(LeadConfiguration):
+    """
+    Define the dynamics lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    instance_url: str = field(metadata={"alias": "instanceUrl"})
+    """The dynamics instance URL."""
+
+    authentication: str
+    """
+    The authentication type for dynamics.
+
+    Expected value (one of):
+
+    * ``azureAD``
+    * ``office365``
+    """
+
+    username: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"hide_unset": True}
+    )
+    """The username for dynamics."""
+
+    password: Optional[MASKED_SECRET] = field(
+        validator=optional(instance_of(str)), metadata={"hide_unset": True}, converter=_mask_secret
+    )
+    """
+    The password for dynamics.
+
+    It can be either the plain text connection string or a masked value.
+    """
+
+    application_id: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "applicationId", "hide_unset": True},
+    )
+    """The dynamics application UUID."""
+
+    application_key: Optional[MASKED_SECRET] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "applicationKey", "hide_unset": True},
+        converter=_mask_secret,
+    )
+    """The dynamics application key."""
+
+    directory_id: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "directoryId", "hide_unset": True}
+    )
+    """The dynamics directory UUID."""
+
+
+@define
+class EmailLeadConfiguration(AttrsJSONDecodeMixin):
+    """
+    Define the e-mail lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    contact_email: List[str] = field(metadata={"alias": "contactEmail"})
+    """List of e-mails for the e-mail lead configuration."""
+
+
+@define
+class HttpsEndpointLeadConfiguration(LeadConfiguration):
+    """
+    Define the https lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    endpoint_url: str = field(metadata={"alias": "httpsEndpointUrl"})
+    """The HTTPS endpoint for the lead configuration."""
+
+
+@define
+class MarketoLeadConfiguration(LeadConfiguration):
+    """
+    Define the marketo lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    server_id: str = field(metadata={"alias": "serverId"})
+    """The marketo server ID."""
+
+    munchkin_id: str = field(metadata={"alias": "munchkinId"})
+    """The marketo munchkin ID."""
+
+    form_id: str = field(metadata={"alias": "formId"})
+    """The marketo form ID."""
+
+
+@define
+class SalesforceLeadConfiguration(LeadConfiguration):
+    """
+    Define the salesforce lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    object_identifier: str = field(metadata={"alias": "objectIdentifier"})
+    """The salesforce object identifier."""
+
+
+@define
+class TableLeadConfiguration(LeadConfiguration):
+    """
+    Define the table lead configuration.
+
+    It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
+    """
+
+    storage_connection_string: MASKED_SECRET = field(
+        metadata={"alias": "storageAccountConnectionString"}, converter=_mask_secret
+    )
+    """
+    The storage connection string.
+
+    It can be either the plain text connection string as well as a masked value.
+    """
 
 
 @define
@@ -146,7 +506,69 @@ class CustomerLeads(AzureProductLinkedResource):
     """  # noqa E501
 
     destination: str = field(validator=instance_of(str), metadata={"alias": "leadDestination"})
-    """The lead destination for the product."""
+    """
+    The lead destination type for the product.
+
+    Expected value (one of):
+
+    * ``none``
+    * ``blob``
+    * ``dynamics``
+    * ``email``
+    * ``httpsEndpoint``
+    * ``marketo``
+    * ``salesforce``
+    * ``table``
+    """
+
+    blob_lead_config: Optional[BlobLeadConfiguration] = field(
+        metadata={"alias": "blobLeadConfiguration", "hide_unset": True},
+        converter=BlobLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``blob``."""
+
+    dynamic_lead_config: Optional[DynamicsLeadConfiguration] = field(
+        metadata={"alias": "dynamicsLeadConfiguration", "hide_unset": True},
+        converter=DynamicsLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``dynamics``."""
+
+    email_lead_config: Optional[EmailLeadConfiguration] = field(
+        metadata={"alias": "emailLeadConfiguration", "hide_unset": True},
+        converter=EmailLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``email``."""
+
+    https_endpoint_lead_config: Optional[HttpsEndpointLeadConfiguration] = field(
+        metadata={"alias": "httpsEndpointLeadConfiguration", "hide_unset": True},
+        converter=HttpsEndpointLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``httpsEndpoint``."""
+
+    marketo_lead_config: Optional[MarketoLeadConfiguration] = field(
+        metadata={"alias": "marketoLeadConfiguration", "hide_unset": True},
+        converter=MarketoLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``marketo``."""
+
+    salesforce_lead_config: Optional[SalesforceLeadConfiguration] = field(
+        metadata={"alias": "salesforceLeadConfiguration", "hide_unset": True},
+        converter=SalesforceLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``salesforce``."""
+
+    table_lead_config: Optional[TableLeadConfiguration] = field(
+        metadata={"alias": "tableLeadConfiguration", "hide_unset": True},
+        converter=TableLeadConfiguration.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The lead configuration for ``table``."""
 
 
 @define
@@ -157,11 +579,37 @@ class TestDrive(AzureProductLinkedResource):
     `Schema definition for TestDrive <https://product-ingestion.azureedge.net/schema/test-drive/2022-03-01-preview2>`_
     """  # noqa E501
 
-    # FIXME: Expecting `enabled == False`
-    # At the moment I have no idea if there are
-    # other attributes when `enabled == True`
     enabled: bool
     """Whether the TestDrive is enabled or not."""
+
+    type: Optional[str] = field(validator=optional(instance_of(str)), metadata={"hide_unset": True})
+    """
+    The Test drive type, required only when ``enabled == True``.
+
+    Expected value (one of):
+
+    * ``azureResourceManager``
+    * ``dynamicsForBusinessCentral``
+    * ``dynamicsForCustomerEngagement``
+    * ``dynamicsForOperations``
+    * ``logicApp``
+    * ``powerBi``
+    """
+
+
+@define
+class GovernmentCertification(AttrsJSONDecodeMixin):
+    """
+    Define a government certification.
+
+    It's part of :class:`~cloudpub.models.ms_azure.PlanSummary`.
+    """
+
+    name: str
+    """The certification name."""
+
+    link: str
+    """The URL for the certification web-page."""
 
 
 @define
@@ -190,7 +638,58 @@ class PlanSummary(AzureProductLinkedResource):
         ),
         metadata={"alias": "azureRegions"},
     )
-    """The regions where this plan is available."""
+    """
+    The regions where this plan is available.
+
+    Valid values (unique):
+
+    * ``azureGlobal``
+    * ``azureGovernment``
+    * ``azureGermany``
+    * ``azureChina``
+    """
+
+    gov_certifications: Optional[List[GovernmentCertification]] = field(
+        metadata={"alias": "azureGovernmentCertifications", "hide_unset": True},
+        converter=GovernmentCertification.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """Certifications for government plans."""
+
+    display_rank: Optional[int] = field(metadata={"alias": "displayRank", "hide_unset": True})
+
+    subtype: str = field(metadata={"hide_unset": True})
+    """
+    Specifies the plan type (AzureApplication-type products only).
+
+    Expected value (one of):
+
+    * ``managedApplication``
+    * ``solutionTemplate``
+
+    For more details: https://go.microsoft.com/fwlink/?linkid=2106322
+    """
+
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
+    """
+    The plan lifecycle state.
+
+    Expected value (one of):
+
+    * ``generallyAvailable``
+    * ``deprecated``
+    * ``deleted``
+    """
+
+    deprecation_schedule: Optional[DeprecationSchedule] = field(
+        metadata={"alias": "deprecationSchedule", "hide_unset": True},
+        converter=DeprecationSchedule.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The deprecation schedule for the plan if going to be deprecated."""
 
 
 @define
@@ -204,13 +703,17 @@ class ProductProperty(AzureProductLinkedResource):
     kind: str
     """Expected to be ``azureVM``"""
 
-    terms_of_use: Optional[str] = field(metadata={"alias": "termsOfUse"})
+    terms_of_use: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "termsOfUse"}
+    )
     """The product terms of use."""
 
-    terms_conditions: Optional[str] = field(metadata={"alias": "termsConditions"})
+    terms_conditions: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "termsConditions"}
+    )
     """The product terms and conditions."""
 
-    categories: Dict[str, Any]  # FIXME: We don't need to process this yet so let it be like this
+    categories: Dict[str, List[str]]
     """
     The Azure `categories`_ for the product.
 
@@ -260,12 +763,29 @@ class Listing(AzureProductLinkedResource):
     privacy_policy: str = field(metadata={"alias": "privacyPolicyLink"})
     """The privacy policy link for the product."""
 
+    general_links: Optional[List[str]] = field(
+        metadata={"alias": "generalLinks", "hide_unset": True}
+    )
+    """General links for the product listing."""
+
     cspmm: str = field(metadata={"alias": "cloudSolutionProviderMarketingMaterials"})
     """
     The `CSP`_ marketing materials for the product.
 
     .. _CSP: https://learn.microsoft.com/en-us/azure/marketplace/cloud-solution-providers
     """
+
+    gov_support_site: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "governmentSupportWebsite", "hide_unset": True},
+    )
+    """The support web-site for government product listing."""
+
+    global_support_site: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "globalSupportWebsite", "hide_unset": True},
+    )
+    """The support web-site for product listing."""
 
     support_contact: Contact = field(
         metadata={"alias": "supportContact"},
@@ -281,8 +801,28 @@ class Listing(AzureProductLinkedResource):
     )
     """The :class:`~cloudpub.models.ms_azure.Contact` for engineering support."""
 
+    cloud_solution_provider_contact: Optional[Contact] = field(
+        metadata={"alias": "cloudSolutionProviderContact", "hide_unset": True},
+        converter=Contact.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The :class:`~cloudpub.models.ms_azure.Contact` for cloud provider support."""
+
     language: str = field(metadata={"alias": "languageId"})
     """The language ID for the listing."""
+
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
+    """
+    The Listing lifecycle state.
+
+    Expected value (one of):
+
+    * ``generallyAvailable``
+    * ``deleted``
+    """
 
 
 @define
@@ -335,6 +875,19 @@ class ListingAsset(AzureProductLinkedResource):
 
     url: str
     """The asset public URL."""
+
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
+    """
+    The Listing lifecycle state.
+
+    Expected value (one of):
+
+    * ``generallyAvailable``
+    * ``deleted``
+    """
 
     @property
     def listing_id(self):
@@ -398,7 +951,7 @@ class ProductReseller(AzureProductLinkedResource):
     """
 
     audiences: List[Audience] = field(
-        converter=lambda x: [Audience(a) for a in x], on_setattr=NO_OP  # type: ignore
+        converter=lambda x: [Audience(a) for a in x] if x else [], on_setattr=NO_OP  # type: ignore
     )
     """List of :class:`~cloudpub.models.ms_azure.Audience` for the reseller offer."""
 
@@ -441,7 +994,41 @@ class ProductSubmission(AzureProductLinkedResource):
     )
     """The product's :class:`~cloudpub.models.ms_azure.PublishTarget`."""
 
-    lifecycle_state: str = field(validator=instance_of(str), metadata={"alias": "lifecycleState"})
+    status: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"hide_unset": True}
+    )
+    """
+    The publishing status.
+
+    Expected value when set (one of):
+
+    * ``notStarted``
+    * ``running``
+    * ``completed``
+    """
+
+    result: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"hide_unset": True}
+    )
+    """
+    The submission result when ``status == completed``.
+
+    Expected value when set (one of):
+
+    * ``pending``
+    * ``succeeded``
+    * ``failed``
+    """
+
+    created: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"hide_unset": True}
+    )
+    """The creation date for the submission."""
+
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
     """
     The product publishing lifecycle state.
 
@@ -450,6 +1037,13 @@ class ProductSubmission(AzureProductLinkedResource):
     * ``generallyAvailable``
     * ``deprecated``
     """
+
+    deprecation_schedule: Optional[DeprecationSchedule] = field(
+        metadata={"alias": "deprecationSchedule", "hide_unset": True},
+        converter=DeprecationSchedule.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The deprecation schedule for the VM submission if it's going to be deprecated."""
 
 
 @define
@@ -474,6 +1068,19 @@ class PlanListing(AzurePlanLinkedResource):
 
     language: str = field(validator=instance_of(str), metadata={"alias": "languageId"})
     """Language ID for the plan."""
+
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
+    """
+    The Listing lifecycle state.
+
+    Expected value (one of):
+
+    * ``generallyAvailable``
+    * ``deleted``
+    """
 
 
 @define
@@ -526,6 +1133,59 @@ class Pricing(AttrsJSONDecodeMixin):
 
 
 @define
+class SoftwareReservation(AttrsJSONDecodeMixin):
+    """
+    Define the reservation prices for a plan.
+
+    It's part of :class:`~cloudpub.models.ms_azure.PriceAndAvailabilityPlan`.
+
+    `Schema definition for SoftwareReservation <https://product-ingestion.azureedge.net/schema/price-and-availability-software-reservation/2022-03-01-preview2>`_
+    """  # noqa E501
+
+    type: str
+    """
+    The reservation type.
+
+    Expected value (one of):
+
+    * ``month``
+    * ``year``
+    """
+
+    term: int
+    """The amount of months or years for reservation."""
+
+    percentage_save: int = field(metadata={"alias": "percentageSave"})
+    """The percentual of discount to be applied for the reservation."""
+
+
+@define
+class SoftwareTrial(AttrsJSONDecodeMixin):
+    """
+    Represent the software free trial period definition.
+
+    It's part of :class:`~cloudpub.models.ms_azure.PriceAndAvailabilityPlan`.
+
+    `Schema definition for SoftwareTrial <https://product-ingestion.azureedge.net/schema/price-and-availability-trail/2022-03-01-preview2>`_
+    """  # noqa E501
+
+    type: str
+    """
+    The time type of trial.
+
+    Expected value (one of):
+
+    * ``day``
+    * ``week``
+    * ``month``
+    * ``year``
+    """
+
+    value: int
+    """The amount of time for the trial."""
+
+
+@define
 class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
     """
     Represent the price and availability of a plan.
@@ -543,6 +1203,11 @@ class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
     * ``hidden``
     """
 
+    billing_tag: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "billingTag", "hide_unset": True}
+    )
+    """The billing tag."""
+
     markets: List[str]
     """
     The countries which the plan is available.
@@ -553,16 +1218,29 @@ class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
     pricing: Pricing = field(converter=Pricing.from_json, on_setattr=NO_OP)  # type: ignore
     """The plan's :class:`~cloudpub.models.ms_azure.Pricing`."""
 
-    trial: Optional[str]
-    """
-    When  set it allows customers to have a free trial of the plan during a period of:
+    trial: Optional[SoftwareTrial] = field(
+        converter=SoftwareTrial.from_json, on_setattr=NO_OP  # type: ignore
+    )
+    """When set it allows customers to have a free trial during a certain period of time."""
 
-    * One month; or
-    * Three months; or
-    * Six months
+    customer_markets: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "customerMarkets", "hide_unset": True},
+    )
+    """
+    The market type.
+
+    Expected value when set (one of):
+
+    * ``customMarkets``
+    * ``allMarkets``
+    * ``allTaxRemittedMarkets``
     """
 
-    software_reservation: List[Dict[str, Any]] = field(metadata={"alias": "softwareReservation"})
+    software_reservation: List[SoftwareReservation] = field(
+        metadata={"alias": "softwareReservation"},
+        converter=lambda x: [SoftwareReservation.from_json(r) for r in x] if x else [],
+    )
     """
     When set it allows a pricing discount for customers doing a reservation for one or three years.
     """
@@ -579,7 +1257,7 @@ class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
 
     private_audiences: List[Audience] = field(
         metadata={"alias": "privateAudiences"},
-        converter=lambda x: [Audience.from_json(a) for a in x],
+        converter=lambda x: [Audience.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """
@@ -598,7 +1276,7 @@ class PriceAndAvailabilityOffer(AzureProductLinkedResource):
 
     preview_audiences: List[Audience] = field(
         metadata={"alias": "previewAudiences"},
-        converter=lambda x: [Audience.from_json(a) for a in x],
+        converter=lambda x: [Audience.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """
@@ -720,6 +1398,22 @@ class OSDiskURI(AttrsJSONDecodeMixin):
     """The full SAS URI for the Virtual Machine Image."""
 
 
+class DataDisk(AttrsJSONDecodeMixin):
+    """
+    Define a data disk.
+
+    It's part of :class:`~cloudpub.models.ms_azure.VMImageSource`.
+
+    `Schema definition for DataDisk <https://product-ingestion.azureedge.net/schema/virtual-machine-data-disk/2022-03-01-preview2>`_
+    """  # noqa: E501
+
+    lun_number: int = field(metadata={"alias": "lunNumber"})
+    """The LUN number for the data disk (max = 15)."""
+
+    uri: str
+    """The data disk URI."""
+
+
 @define
 class VMImageSource(AttrsJSONDecodeMixin):
     """Represent a Virtual Machine Image Source."""
@@ -741,7 +1435,10 @@ class VMImageSource(AttrsJSONDecodeMixin):
     )
     """The :class:`~cloudpub.models.ms_azure.OSDiskURI` with the OS disk URI."""
 
-    data_disks: List[Any] = field(metadata={"alias": "dataDisks"})  # TODO: Implement DataDisk model
+    data_disks: List[DataDisk] = field(
+        metadata={"alias": "dataDisks"},
+        converter=lambda x: [DataDisk.from_json(a) for a in x] if x else [],
+    )
     """The list of data disks to mount within the OS."""
 
     @source_type.validator
@@ -785,12 +1482,15 @@ class DiskVersion(AttrsJSONDecodeMixin):
 
     vm_images: List[VMImageDefinition] = field(
         metadata={"alias": "vmImages"},
-        converter=lambda x: [VMImageDefinition.from_json(a) for a in x],
+        converter=lambda x: [VMImageDefinition.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """The list of :class:`~cloudpub.models.ms_azure.VMImageDefinition` for this disk version."""
 
-    lifecycle_state: str = field(metadata={"alias": "lifecycleState"})
+    lifecycle_state: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "lifecycleState", "hide_unset": True},
+    )
     """
     The disk lifeclycle state.
 
@@ -800,6 +1500,13 @@ class DiskVersion(AttrsJSONDecodeMixin):
     * ``deprecated``
     * ``deleted``
     """
+
+    deprecation_schedule: Optional[DeprecationSchedule] = field(
+        metadata={"alias": "deprecationSchedule", "hide_unset": True},
+        converter=DeprecationSchedule.from_json,  # type: ignore
+        on_setattr=NO_OP,
+    )
+    """The deprecation schedule for the VM image if it's going to be deprecated."""
 
 
 @define
@@ -835,16 +1542,40 @@ class VMIPlanTechConfig(AzurePlanLinkedResource):
     """The plan's :class:`~cloudpub.models.ms_azure.VMIProperties`."""
 
     skus: List[VMISku] = field(
-        converter=lambda x: [VMISku.from_json(a) for a in x], on_setattr=NO_OP
+        converter=lambda x: [VMISku.from_json(a) for a in x] if x else [], on_setattr=NO_OP
     )
     """The list of available :class:`~cloudpub.models.ms_azure.VMISku` in the plan."""
 
     disk_versions: List[DiskVersion] = field(
         metadata={"alias": "vmImageVersions"},
-        converter=lambda x: [DiskVersion.from_json(a) for a in x],
+        converter=lambda x: [DiskVersion.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
     """The list of available :class:`~cloudpub.models.ms_azure.DiskVersion` in the plan."""
+
+    base_plan_durable_id: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "basePlan", "hide_unset": True}
+    )
+    """
+    The base plan `durable ID`_ when reusing.
+
+    .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+    """  # noqa E501
+
+    @property
+    def base_plan_id(self) -> Optional[str]:
+        """
+        Resolve the base plan ID from its `durable ID`_.
+
+        .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+        """  # noqa E501
+        # durable ID format example:
+        #   plan/62c171e9-a2e1-45ab-9af0-d17e769da954
+        # what do we want:
+        #   62c171e9-a2e1-45ab-9af0-d17e769da954
+        if self.base_plan_durable_id:
+            return self.base_plan_durable_id.split("/")[-1]
+        return None
 
 
 RESOURCE_MAPING = {
