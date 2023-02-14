@@ -1,0 +1,39 @@
+AWS Models
+------------
+
+The models used by :class:`~cloudpub.aws.AWSProductService`.
+
+The models are defined with `attrs`_ using the class :class:`~cloudpub.models.common.AttrsJSONDecodeMixin` to
+serialize/deserialize the JSON values for each request.
+
+.. note::
+
+   This interacts with `start_change_set`_ in Boto3's `AWS Marketplace`_ implementation.
+
+
+**Contents:**
+
+- `AWS Version`_
+
+
+AWS Version
+.............
+
+.. autoclass:: cloudpub.models.aws.VersionMapping()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.DeliveryOptions()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.SecurityGroup()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.Version()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.AMISource()
+   :members:
+
+.. _`attrs`: https://www.attrs.org/en/stable/
+.. _`start_change_set`: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/marketplace-catalog.html#MarketplaceCatalog.Client.start_change_set
+.. _`AWS Marketplace`: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/marketplace-catalog.html
