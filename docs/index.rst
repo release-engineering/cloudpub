@@ -98,7 +98,7 @@ Example for AWS:
       sas_uri="https://foo.com/bar/image.vhd",
       disk_version="2.1.0",
       keepdraft=False,  # When `False` it means publish to live.
-      product_type = "AmiProduct",
+      marketplace_entity_type = "AmiProduct",
       entity_id = "1234-1234-1234-2134",
       version_mapping = example_version_mapping
     )

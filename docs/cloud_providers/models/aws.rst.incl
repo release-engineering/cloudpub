@@ -13,16 +13,22 @@ serialize/deserialize the JSON values for each request.
 
 **Contents:**
 
-- `AWS Version`_
+- `AWS Version Mapping`_
 
 
-AWS Version
+AWS Version Mapping
 .............
 
 .. autoclass:: cloudpub.models.aws.VersionMapping()
    :members:
 
 .. autoclass:: cloudpub.models.aws.DeliveryOptions()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.DeliveryOptionsDetails()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.AmiDeliveryOptionsDetails()
    :members:
 
 .. autoclass:: cloudpub.models.aws.SecurityGroup()

@@ -4,7 +4,15 @@ from unittest import mock
 import pytest
 
 from cloudpub.aws.service import AWSProductService, AWSVersionMetadata
-from cloudpub.models.aws import AMISource, DeliveryOptions, SecurityGroup, Version, VersionMapping
+from cloudpub.models.aws import (
+    AmiDeliveryOptionsDetails,
+    AMISource,
+    DeliveryOptions,
+    DeliveryOptionsDetails,
+    SecurityGroup,
+    Version,
+    VersionMapping,
+)
 
 
 @pytest.fixture
@@ -35,7 +43,9 @@ def security_group() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def delivery_options(ami_source: Dict[str, Any], security_group: Dict[str, Any]) -> Dict[str, Any]:
+def ami_delivery_options_details(
+    ami_source: Dict[str, Any], security_group: Dict[str, Any]
+) -> Dict[str, Any]:
     return {
         "AmiSource": ami_source,
         "UsageInstructions": "Test notes",
@@ -45,10 +55,20 @@ def delivery_options(ami_source: Dict[str, Any], security_group: Dict[str, Any])
 
 
 @pytest.fixture
+def delivery_options_details(ami_delivery_options_details: Dict[str, Any]) -> Dict[str, Any]:
+    return {"AmiDeliveryOptionDetails": ami_delivery_options_details}
+
+
+@pytest.fixture
+def delivery_options(delivery_options_details: Dict[str, Any]) -> Dict[str, Any]:
+    return {"Details": delivery_options_details}
+
+
+@pytest.fixture
 def version_mapping(version: Dict[str, Any], delivery_options: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "Version": version,
-        "DeliveryOptions": delivery_options,
+        "DeliveryOptions": [delivery_options],
     }
 
 
@@ -68,6 +88,18 @@ def security_group_obj(security_group: Dict[str, Any]) -> SecurityGroup:
 
 
 @pytest.fixture
+def delivery_options_details_obj(delivery_options_details: Dict[str, Any]) -> DeliveryOptions:
+    return DeliveryOptionsDetails.from_json(delivery_options_details)
+
+
+@pytest.fixture
+def ami_delivery_options_details_obj(
+    ami_delivery_options_details: Dict[str, Any]
+) -> DeliveryOptions:
+    return AmiDeliveryOptionsDetails.from_json(ami_delivery_options_details)
+
+
+@pytest.fixture
 def delivery_options_obj(delivery_options: Dict[str, Any]) -> DeliveryOptions:
     return DeliveryOptions.from_json(delivery_options)
 
@@ -82,10 +114,9 @@ def version_metadata_obj(version_mapping: Dict[str, Any]) -> AWSVersionMetadata:
     aws_version_metadata = AWSVersionMetadata(
         image_path="path/to/dir",
         architecture="x86",
-        destination="NA",
+        destination="fake-entity-id",
         version_mapping=VersionMapping.from_json(version_mapping),
-        entity_id="fake-entity-id",
-        product_type="fake-product-type",
+        marketplace_entity_type="fake-product-type",
     )
 
     return aws_version_metadata

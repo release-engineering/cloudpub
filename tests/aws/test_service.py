@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from cloudpub.aws.service import AWSProductService, AWSVersionMetadata
+from cloudpub.aws import AWSProductService, AWSVersionMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
 from cloudpub.models.aws import VersionMapping
 
@@ -13,10 +13,9 @@ class TestAWSVersionMetadata:
         aws_version_metadata = AWSVersionMetadata(
             image_path="path/to/dir",
             architecture="x86",
-            destination="NA",
+            destination="fake-entity-id",
             version_mapping=version_mapping_obj,
-            entity_id="fake-entity-id",
-            product_type="fake-product-type",
+            marketplace_entity_type="fake-product-type",
         )
 
         assert aws_version_metadata.version_mapping == version_mapping_obj
@@ -240,8 +239,7 @@ class TestAWSProductService:
         mock_describe_entity.assert_called_once_with(
             Catalog="AWSMarketplace", EntityId='fake-entity-id'
         )
-        assert version_details[0]["Id"] == "fake-id1"
-        assert version_details[1]["Id"] == "fake-id2"
+        assert version_details["Id"] == "fake-id1"
 
     def test_get_product_version_by_name_no_version(
         self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
@@ -331,7 +329,8 @@ class TestAWSProductService:
                 "failures": "happened",
             }
         ]
-        ret = {"Status": "Failed", "FailureCode": "fake-code", "ErrorDetailList": failure_list}
+        change_set = [{"ErrorDetailList": failure_list}]
+        ret = {"Status": "Failed", "FailureCode": "fake-code", "ChangeSet": change_set}
         mock_describe_change_set.return_value = ret
         with pytest.raises(InvalidStateError):
             _ = aws_service.check_publish_status("fake-change-set-id")
@@ -382,25 +381,57 @@ class TestAWSProductService:
                         "Type": "fake-product-type@1.0",
                         "Identifier": "fake-entity-id",
                     },
-                    "Details": version_metadata_obj.version_mapping.to_json(),
+                    "Details": mock.ANY,
                 },
             ],
         )
         mock_wait_for_publish_task.assert_called_once_with("fake-change-set-id")
 
+        _, asserted_kwargs = mock_start_change_set.call_args
+        details_json = json.loads(asserted_kwargs["ChangeSet"][0]["Details"])
+        assert isinstance(details_json, dict)
+        assert isinstance(details_json["DeliveryOptions"], list)
+        assert isinstance(details_json["DeliveryOptions"][0], dict)
+        assert "Id" not in details_json["DeliveryOptions"][0]
+
     @mock.patch("cloudpub.aws.AWSProductService.wait_for_publish_task")
     def test_publish_overwrite(
         self,
         mock_wait_for_publish_task: mock.MagicMock,
+        mock_describe_entity: mock.MagicMock,
         aws_service: AWSProductService,
         version_metadata_obj: AWSVersionMetadata,
         mock_start_change_set: mock.MagicMock,
     ) -> None:
+        details_json = json.dumps(
+            {
+                "Versions": [
+                    {
+                        "VersionTitle": "Test-Version-Title",
+                        "DeliveryOptions": [
+                            {"Id": "fake-id1"},
+                            {"Id": "fake-id2"},
+                        ],
+                    },
+                    {
+                        "VersionTitle": "Fake-Version2",
+                        "DeliveryOptions": [
+                            {"Id": "fake-id1"},
+                            {"Id": "fake-id2"},
+                        ],
+                    },
+                ]
+            }
+        )
+        mock_describe_entity.return_value = {"Details": details_json}
         mock_start_change_set.return_value = {"ChangeSetId": "fake-change-set-id"}
 
         version_metadata_obj.overwrite = True
         aws_service.publish(version_metadata_obj)
 
+        mock_describe_entity.assert_called_once_with(
+            Catalog="AWSMarketplace", EntityId='fake-entity-id'
+        )
         mock_start_change_set.assert_called_once_with(
             Catalog="AWSMarketplace",
             ChangeSet=[
@@ -410,11 +441,18 @@ class TestAWSProductService:
                         "Type": "fake-product-type@1.0",
                         "Identifier": "fake-entity-id",
                     },
-                    "Details": version_metadata_obj.version_mapping.to_json(),
+                    "Details": mock.ANY,
                 },
             ],
         )
         mock_wait_for_publish_task.assert_called_once_with("fake-change-set-id")
+
+        _, asserted_kwargs = mock_start_change_set.call_args
+        details_json = json.loads(asserted_kwargs["ChangeSet"][0]["Details"])
+        assert isinstance(details_json, dict)
+        assert isinstance(details_json["DeliveryOptions"], list)
+        assert isinstance(details_json["DeliveryOptions"][0], dict)
+        assert details_json["DeliveryOptions"][0]["Id"] == "fake-id1"
 
     @mock.patch("cloudpub.aws.AWSProductService.wait_for_publish_task")
     def test_publish_keepdraft(

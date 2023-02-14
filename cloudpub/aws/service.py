@@ -2,6 +2,7 @@
 import json
 import logging
 import time
+from copy import deepcopy
 from typing import Any, Dict, List
 
 from boto3.session import Session
@@ -16,23 +17,18 @@ log = logging.getLogger(__name__)
 class AWSVersionMetadata(PublishingMetadata):
     """A collection of metadata necessary for publishing a AMI into a product."""
 
-    def __init__(
-        self, version_mapping: VersionMapping, product_type: str, entity_id: str, **kwargs
-    ):
+    def __init__(self, version_mapping: VersionMapping, marketplace_entity_type: str, **kwargs):
         """
         Create a new AWS Version Metadata object.
 
         Args:
             version_mapping (VersionMapping)
                 A mapping of all the information to add a new version
-            product_type (str)
+            marketplace_entity_type (str)
                 Product type of the AWS product
                 Example: AmiProduct
-            entity_id (str)
-                The Id of the entity to edit
         """
-        self.product_type = product_type
-        self.entity_id = entity_id
+        self.marketplace_entity_type = marketplace_entity_type
         self.version_mapping = version_mapping
 
         super(AWSVersionMetadata, self).__init__(**kwargs)
@@ -95,12 +91,14 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         return details
 
-    def get_product_by_name(self, product_type: str, product_name: str) -> Dict[str, Any]:
+    def get_product_by_name(
+        self, marketplace_entity_type: str, product_name: str
+    ) -> Dict[str, Any]:
         """
         Get a product detail by it's name.
 
         Args:
-            product_type (str)
+            marketplace_entity_type (str)
                 Product type of the AWS product
                 Example: AmiProduct
             product_name (str)
@@ -114,7 +112,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         entity_rsp = self.marketplace.list_entities(
             Catalog="AWSMarketplace",
-            EntityType=product_type,
+            EntityType=marketplace_entity_type,
             FilterList=filter_list,
         )
 
@@ -128,6 +126,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             log.debug(f"The response was: {entity_rsp}")
             self._raise_error(InvalidStateError, f"Multiple responses found for \"{product_name}\"")
 
+        # We should only get one response based on filtering
         if "EntityId" in entity_rsp["EntitySummaryList"][0]:
             return self.get_product_by_id(entity_rsp["EntitySummaryList"][0]["EntityId"])
 
@@ -189,9 +188,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         return version_ids
 
-    def get_product_version_by_name(
-        self, entity_id: str, version_name: str
-    ) -> List[Dict[str, Any]]:
+    def get_product_version_by_name(self, entity_id: str, version_name: str) -> Dict[str, Any]:
         """
         Get a version detail by it's name.
 
@@ -201,7 +198,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             version_name (str)
                 A version title to get details of
         Returns:
-            List[Dict[str, Any]]: The delivery options of a version
+            Dict[str, Any]: The delivery options of a version
         Raises:
             NotFoundError when the product is not found.
         """
@@ -213,12 +210,14 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         for version in details["Versions"]:
             if version["VersionTitle"] == version_name:
-                return version["DeliveryOptions"]
+                # ATM we're not batching Delivery options so
+                # the first one should be the one we want.
+                return version["DeliveryOptions"][0]
 
         self._raise_error(NotFoundError, f"No such version with name \"{version_name}\"")
 
     def set_restrict_versions(
-        self, entity_id: str, product_type: str, delivery_option_ids: List[str]
+        self, entity_id: str, marketplace_entity_type: str, delivery_option_ids: List[str]
     ) -> str:
         """
         Restrict version(s) of a product by their id.
@@ -226,7 +225,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         Args:
             entity_id (str)
                 The Id of the entity to edit
-            product_type (str)
+            marketplace_entity_type (str)
                 Product type of the AWS product
                 Example: AmiProduct
             delivery_option_ids (List)
@@ -242,7 +241,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 {
                     "ChangeType": "RestrictDeliveryOptions",
                     "Entity": {
-                        "Type": product_type + "@1.0",
+                        "Type": marketplace_entity_type + "@1.0",
                         "Identifier": entity_id,
                     },
                     "Details": json.dumps(change_details),
@@ -289,12 +288,14 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         )
 
         status = rsp["Status"]
-        failure_code = rsp["FailureCode"]
-        failure_list = rsp["ErrorDetailList"]
 
         log.info("Publishing status is %s.", status)
 
         if status.lower() == "failed":
+            failure_code = rsp["FailureCode"]
+            # ATM we're not batching changesets so
+            # the first one should be the one we want.
+            failure_list = rsp["ChangeSet"][0]["ErrorDetailList"]
             log.debug(f"The response from the status was: {rsp}")
             error_message = (
                 f"Changeset {change_set_id} failed with code {failure_code}: \n {failure_list}"
@@ -370,22 +371,43 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             return None
 
         if metadata.overwrite:
-            change_type = "UpdateDeliveryOptions"
+            # Make a copy of the original Version Mapping to avoid overwriting settings
+            json_mapping = deepcopy(metadata.version_mapping)
+            org_version_details = self.get_product_version_by_name(
+                metadata.destination, metadata.version_mapping.version.version_title
+            )
+            # ATM we're not batching Delivery options so
+            # the first one should be the one we want.
+            json_mapping.delivery_options[0].id = org_version_details["Id"]
+            change_set = [
+                {
+                    "ChangeType": "UpdateDeliveryOptions",
+                    "Entity": {
+                        "Type": f"{metadata.marketplace_entity_type}@1.0",
+                        "Identifier": metadata.destination,
+                    },
+                    # AWS accepts 'Details' as a JSON string.
+                    # So we convert it here.
+                    "Details": json.dumps(json_mapping.to_json()),
+                },
+            ]
         else:
-            change_type = "AddDeliveryOptions"
+            change_set = [
+                {
+                    "ChangeType": "AddDeliveryOptions",
+                    "Entity": {
+                        "Type": f"{metadata.marketplace_entity_type}@1.0",
+                        "Identifier": metadata.destination,
+                    },
+                    # AWS accepts 'Details' as a JSON string.
+                    # So we convert it here.
+                    "Details": json.dumps(metadata.version_mapping.to_json()),
+                },
+            ]
 
         rsp = self.marketplace.start_change_set(
             Catalog="AWSMarketplace",
-            ChangeSet=[
-                {
-                    "ChangeType": change_type,
-                    "Entity": {
-                        "Type": f"{metadata.product_type}@1.0",
-                        "Identifier": metadata.entity_id,
-                    },
-                    "Details": metadata.version_mapping.to_json(),
-                },
-            ],
+            ChangeSet=change_set,
         )
 
         log.debug(f"The response from publishing was: {rsp}")
