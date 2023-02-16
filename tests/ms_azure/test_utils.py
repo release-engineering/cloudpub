@@ -160,6 +160,7 @@ class TestAzureUtils:
                 False,
             ),
             ("https://foo.com/bar?foo=bar&st=aaaaa", "https://bar.com/foo?foo=bar&st=bbb", False),
+            ("https://foo.com/bar?bar=foo&st=aaaaa", "https://foo.com/bar?foo=bar&st=bbb", False),
         ],
     )
     def test_is_sas_present(

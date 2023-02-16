@@ -248,7 +248,7 @@ class TestAzureService:
         product_summary_obj: ProductSummary,
     ) -> None:
         res_data = {
-            "values": [
+            "value": [
                 product_summary,
                 product_summary,
                 product_summary,
