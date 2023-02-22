@@ -79,8 +79,8 @@ class SecurityGroup(AttrsJSONDecodeMixin):
 
 
 @define
-class DeliveryOptions(AttrsJSONDecodeMixin):
-    """Represent the delivery options information."""
+class AmiDeliveryOptionsDetails(AttrsJSONDecodeMixin):
+    """Represent the delivery options details information."""
 
     ami_source: AMISource = field(
         converter=AMISource.from_json,  # type: ignore
@@ -105,6 +105,32 @@ class DeliveryOptions(AttrsJSONDecodeMixin):
 
 
 @define
+class DeliveryOptionsDetails(AttrsJSONDecodeMixin):
+    """Represent the ami delivery options information."""
+
+    ami_delivery_options_details: AmiDeliveryOptionsDetails = field(
+        converter=AmiDeliveryOptionsDetails.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "AmiDeliveryOptionDetails"},
+    )
+    """Ami Delivery Options details"""
+
+
+@define
+class DeliveryOptions(AttrsJSONDecodeMixin):
+    """Represent the delivery options information."""
+
+    id: str = field(metadata={"hide_unset": True, "alias": "Id"})
+    """AMI Id used for overwriting a current Version in AWS"""
+    details: DeliveryOptionsDetails = field(
+        converter=DeliveryOptionsDetails.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "Details"},
+    )
+    """Details object for Delivery Options"""
+
+
+@define
 class VersionMapping(AttrsJSONDecodeMixin):
     """Represent the version mapping information."""
 
@@ -112,8 +138,8 @@ class VersionMapping(AttrsJSONDecodeMixin):
         converter=Version.from_json, on_setattr=NO_OP, metadata={"alias": "Version"}  # type: ignore
     )
     """Version object."""
-    delivery_options: DeliveryOptions = field(
-        converter=DeliveryOptions.from_json,  # type: ignore
+    delivery_options: List[DeliveryOptions] = field(
+        converter=lambda x: [DeliveryOptions.from_json(a) for a in x],
         on_setattr=NO_OP,
         metadata={"alias": "DeliveryOptions"},
     )

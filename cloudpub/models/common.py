@@ -109,6 +109,12 @@ class AttrsJSONDecodeMixin:
                 elif isinstance(value, object) and hasattr(value, "to_json"):
                     log.debug("Recursively building the value from %s" % at.name)
                     value = value.to_json()
+                elif value.__class__.__module__ == 'builtins':
+                    log.debug(
+                        "Not converting the object \"%s\" with value \"%s\" to JSON.",
+                        type(value),
+                        value,
+                    )
                 else:
                     log.warning(
                         "Not converting the object \"%s\" with value \"%s\" to JSON.",

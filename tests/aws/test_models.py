@@ -1,4 +1,12 @@
-from cloudpub.models.aws import AMISource, DeliveryOptions, SecurityGroup, Version, VersionMapping
+from cloudpub.models.aws import (
+    AmiDeliveryOptionsDetails,
+    AMISource,
+    DeliveryOptions,
+    DeliveryOptionsDetails,
+    SecurityGroup,
+    Version,
+    VersionMapping,
+)
 
 
 def test_aws_resource_props(
@@ -6,6 +14,8 @@ def test_aws_resource_props(
     ami_obj: AMISource,
     security_group_obj: SecurityGroup,
     delivery_options_obj: DeliveryOptions,
+    delivery_options_details_obj: DeliveryOptionsDetails,
+    ami_delivery_options_details_obj: AmiDeliveryOptionsDetails,
     version_mapping_obj: VersionMapping,
 ) -> None:
     # Version testing
@@ -26,12 +36,16 @@ def test_aws_resource_props(
     assert security_group_obj.ip_ranges == ["22.22.22.22", "00.00.00.00"]
     assert security_group_obj.to_port == 22
 
-    # Security Group testing
-    assert delivery_options_obj.ami_source == ami_obj
-    assert delivery_options_obj.usage_instructions == "Test notes"
-    assert delivery_options_obj.recommended_instance_type == "x1.medium"
-    assert delivery_options_obj.security_groups == [security_group_obj]
+    # Delivery Options
+    assert delivery_options_obj.id is None
+    assert delivery_options_obj.details == delivery_options_details_obj
+
+    # Delivery Options Details testing
+    assert ami_delivery_options_details_obj.ami_source == ami_obj
+    assert ami_delivery_options_details_obj.usage_instructions == "Test notes"
+    assert ami_delivery_options_details_obj.recommended_instance_type == "x1.medium"
+    assert ami_delivery_options_details_obj.security_groups == [security_group_obj]
 
     # Delivery Version testing
     assert version_mapping_obj.version == version_obj
-    assert version_mapping_obj.delivery_options == delivery_options_obj
+    assert version_mapping_obj.delivery_options[0] == delivery_options_obj
