@@ -24,7 +24,7 @@ class AzurePublishingMetadata(PublishingMetadata):
 
     def __init__(
         self,
-        disk_version: Optional[str] = None,
+        disk_version: str,
         sku_id: Optional[str] = None,
         generation: str = "V2",
         support_legacy: bool = False,
@@ -35,7 +35,7 @@ class AzurePublishingMetadata(PublishingMetadata):
         Create a new AzurePublishingMetadata object.
 
         Args:
-            disk_version (str, optional)
+            disk_version (str)
                 The disk version in the format ``{int}.{int}.{int}``
             sku_id (str, optional):
                 The SKU ID to associate this image with. Defaults to the plan name.
@@ -70,6 +70,7 @@ class AzurePublishingMetadata(PublishingMetadata):
 
     def __validate(self):
         mandatory = [
+            "disk_version",
             "generation",
         ]
         for param in mandatory:
@@ -321,7 +322,7 @@ def create_disk_version_from_scratch(
             }
         )
     json = {
-        "versionNumber": metadata.disk_version or "1.0.0",  # FIXME: we may need a better default
+        "versionNumber": metadata.disk_version,
         "vmImages": vm_images,
         "lifecycleState": "generallyAvailable",
     }
