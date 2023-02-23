@@ -439,6 +439,54 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.debug("VMImageDefinitions created for \"%s\": %s", metadata.destination, vm_images)
         return vm_images
 
+    def _set_new_sas_disk_version(
+        self, disk_version: DiskVersion, metadata: AzurePublishingMetadata, source: VMImageSource
+    ) -> DiskVersion:
+        """
+        Change the SAS URI of an existing Disk Version.
+
+        Args:
+            disk_version:
+                The disk version to change the image with the new SAS URI.
+            metadata:
+                The publishing metadata to retrieve additional information
+            source:
+                The VMImageSource with the new SAS URI
+        Returns:
+            The changed disk version with the given source.
+        """
+        # If we already have a VMImageDefinition let's use it
+        if disk_version.vm_images:
+            log.debug("The DiskVersion \"%s\" contains inner images." % disk_version.version_number)
+            img, img_legacy = self._vm_images_by_generation(disk_version, metadata.architecture)
+
+            # Now we replace the SAS URI for the vm_images
+            log.debug(
+                "Adjusting the VMImages from existing DiskVersion \"%s\""
+                "to fit the new image with SAS \"%s\"."
+                % (disk_version.version_number, metadata.image_path)
+            )
+            disk_version.vm_images = prepare_vm_images(
+                metadata=metadata,
+                gen1=img_legacy,
+                gen2=img,
+                source=source,
+            )
+
+        # If no VMImages, we need to create them from scratch
+        else:
+            log.debug(
+                "The DiskVersion \"%s\" does not contain inner images."
+                % disk_version.version_number
+            )
+            log.debug(
+                "Setting the new image \"%s\" on DiskVersion \"%s\"."
+                % (metadata.image_path, disk_version.version_number)
+            )
+            disk_version.vm_images = self._create_vm_images(metadata, source)
+
+        return disk_version
+
     def _publish_live(self, product: Product, product_name: str) -> None:
         """
         Submit the product to 'live' after going through Azure Marketplace Validation.
@@ -522,40 +570,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                     "DiskVersion \"%s\" exists in \"%s\"."
                     % (disk_version.version_number, metadata.destination)
                 )
-
-                # If we already have a VMImageDefinition let's use it
-                if disk_version.vm_images:
-                    log.debug(
-                        "The DiskVersion \"%s\" contains inner images."
-                        % disk_version.version_number
-                    )
-                    img, img_legacy = self._vm_images_by_generation(
-                        disk_version, metadata.architecture
-                    )
-
-                    # Now we replace the SAS URI for the vm_images
-                    log.debug(
-                        "Adjusting the VMImages from existing DiskVersion \"%s\""
-                        "to fit the new image with SAS \"%s\"."
-                        % (disk_version.version_number, metadata.image_path)
-                    )
-                    disk_version.vm_images = prepare_vm_images(
-                        metadata=metadata,
-                        gen1=img_legacy,
-                        gen2=img,
-                        source=source,
-                    )
-
-                else:  # If no VMImages, we need to create them from scratch
-                    log.debug(
-                        "The DiskVersion \"%s\" does not contain inner images."
-                        % disk_version.version_number
-                    )
-                    log.debug(
-                        "Setting the new image \"%s\" on DiskVersion \"%s\"."
-                        % (metadata.image_path, disk_version.version_number)
-                    )
-                    disk_version.vm_images = self._create_vm_images(metadata, source)
+                disk_version = self._set_new_sas_disk_version(disk_version, metadata, source)
 
             else:  # The disk version doesn't exist, we need to create one from scratch
                 log.debug("The DiskVersion doesn't exist, creating one from scratch.")
