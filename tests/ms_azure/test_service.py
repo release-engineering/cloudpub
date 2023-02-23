@@ -538,7 +538,7 @@ class TestAzureService:
     ) -> None:
         metadata_azure_obj.overwrite = False
         metadata_azure_obj.keepdraft = True
-        metadata_azure_obj.disk_version = None
+        metadata_azure_obj.disk_version = "1.0.0"
         metadata_azure_obj.destination = "example-product/plan-1"
         mock_getpr_name.return_value = product_obj
         mock_getpl_name.return_value = plan_summary_obj
