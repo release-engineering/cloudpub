@@ -9,6 +9,7 @@ from cloudpub.models.ms_azure import (
     DiskVersion,
     VMImageDefinition,
     VMImageSource,
+    VMIPlanTechConfig,
     VMISku,
 )
 from cloudpub.utils import get_url_params
@@ -85,31 +86,6 @@ class AzurePublishingMetadata(PublishingMetadata):
             raise ValueError(f"Invalid SAS URI \"{self.image_path}\". Expected: http/https URL.")
 
 
-def is_disk_version_gt(dv1: str, dv2: str) -> bool:
-    """
-    Return True when a `DiskVersion.version_number` is greater than other value.
-
-    Raises error if the version numbers are not in the same format.
-
-    Args:
-        dv1 (str):
-            Value to be checked if greater than ``dv2``.
-        dv2 (str):
-            Value to be checked if less than ``dv1``.
-    Returns:
-        True if the value of ``dv1`` > ``dv2``.
-    """
-    ldv1 = dv1.split(".")
-    ldv2 = dv2.split(".")
-
-    if not (ldv1 and ldv2) or not len(ldv1) == len(ldv2):
-        raise ValueError(
-            "Invalid format. Expecting to receive \"(int).(int).(int)\""
-            " Got \"%s\" - \"%s" % (dv1, dv2)
-        )
-    return int("".join(ldv1)) > int("".join(ldv2))
-
-
 def get_image_type_mapping(architecture: str, generation: str) -> str:
     """Return the image type required by VMImageDefinition."""
     gen_map = {
@@ -169,21 +145,22 @@ def is_sas_eq(sas1: str, sas2: str) -> bool:
     return True
 
 
-def is_sas_present(disk_version: DiskVersion, sas_uri: str) -> bool:
+def is_sas_present(tech_config: VMIPlanTechConfig, sas_uri: str) -> bool:
     """
     Check whether the given SAS URI is already present in the disk_version.
 
     Args:
-        disk_version (DiskVersion)
-            The disk version to check for the SAS_URI.
+        tech_config (VMIPlanTechConfig)
+            The plan's technical configuraion to seek the SAS_URI.
         sas_uri (str)
             The SAS URI to check whether it's present or not in disk version.
     Returns:
-        bool: True when the SAS is present in disk version, False otherwise.
+        bool: True when the SAS is present in the plan, False otherwise.
     """
-    for img in disk_version.vm_images:
-        if is_sas_eq(img.source.os_disk.uri, sas_uri):
-            return True
+    for disk_version in tech_config.disk_versions:
+        for img in disk_version.vm_images:
+            if is_sas_eq(img.source.os_disk.uri, sas_uri):
+                return True
     return False
 
 

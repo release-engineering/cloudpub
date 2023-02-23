@@ -39,7 +39,6 @@ from cloudpub.ms_azure.utils import (
     create_disk_version_from_scratch,
     get_image_type_mapping,
     is_azure_job_not_complete,
-    is_disk_version_gt,
     is_sas_present,
     prepare_vm_images,
     update_skus,
@@ -344,9 +343,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """
         Return the requested DiskVersion when it exists.
 
-        If the `version_number` is absent it will return the max(version_number) from existing
-        disk versions.
-
         Args:
             tech_config
                 The technical configuration to seek the disk versions.
@@ -361,23 +357,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             version_number,
             tech_config.plan_id,
         )
-        pre_disk_version = None
-        max_dv = None
+
         for dv in tech_config.disk_versions:
             if version_number and dv.version_number == version_number:  # Metadata set
                 log.debug("Found the DiskVersion \"%s\" for plan \"%s\"", dv, tech_config.plan_id)
                 return dv
-            else:  # Metadata not set: Get the max dv.version_number
-                current_version = getattr(pre_disk_version, "version_number", "0.0.0")
-                pre_disk_version = current_version
-                if is_disk_version_gt(dv.version_number, current_version):
-                    max_dv = dv
-        log.debug(
-            "Returning the following DiskVersion for plan ID \"%s\": %s",
-            tech_config.plan_id,
-            max_dv,
-        )
-        return max_dv
+
+        log.debug("Disk Version %s was not found.", version_number)
+        return None
 
     def _vm_images_by_generation(
         self, disk_version: DiskVersion, architecture: str
@@ -521,10 +508,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.warning("Overwriting the plan %s with the given image.", plan_name)
             disk_version = create_disk_version_from_scratch(metadata, source)
             tech_config.disk_versions = [disk_version]
-        else:
+
+        # We just want to append a new image if the SAS is not already present.
+        elif not is_sas_present(tech_config, metadata.image_path):
             # Here we can have the metadata.disk_version set or empty.
             # When set we want to get the existing disk_version which matches its value.
-            # When not set we want to get the max value
             log.debug("Scanning the disk versions from %s" % metadata.destination)
             disk_version = self._seek_disk_version(tech_config, metadata.disk_version)
 
@@ -535,57 +523,49 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                     % (disk_version.version_number, metadata.destination)
                 )
 
-                # We just want to add the SAS URI whenever it is not set.
-                if not is_sas_present(disk_version=disk_version, sas_uri=metadata.image_path):
+                # If we already have a VMImageDefinition let's use it
+                if disk_version.vm_images:
                     log.debug(
-                        "The DiskVersion \"%s\" does not contain the SAS \"%s\""
-                        % (disk_version.version_number, metadata.image_path)
+                        "The DiskVersion \"%s\" contains inner images."
+                        % disk_version.version_number
+                    )
+                    img, img_legacy = self._vm_images_by_generation(
+                        disk_version, metadata.architecture
                     )
 
-                    # If we already have a VMImageDefinition let's use it
-                    if disk_version.vm_images:
-                        log.debug(
-                            "The DiskVersion \"%s\" contains inner images."
-                            % disk_version.version_number
-                        )
-                        img, img_legacy = self._vm_images_by_generation(
-                            disk_version, metadata.architecture
-                        )
-
-                        # Now we replace the SAS URI for the vm_images
-                        log.debug(
-                            "Adjusting the VMImages from existing DiskVersion \"%s\""
-                            "to fit the new image with SAS \"%s\"."
-                            % (disk_version.version_number, metadata.image_path)
-                        )
-                        disk_version.vm_images = prepare_vm_images(
-                            metadata=metadata,
-                            gen1=img_legacy,
-                            gen2=img,
-                            source=source,
-                        )
-
-                    else:  # If no VMImages, we need to create them from scratch
-                        log.debug(
-                            "The DiskVersion \"%s\" does not contain inner images."
-                            % disk_version.version_number
-                        )
-                        log.debug(
-                            "Setting the new image \"%s\" on DiskVersion \"%s\"."
-                            % (metadata.image_path, disk_version.version_number)
-                        )
-                        disk_version.vm_images = self._create_vm_images(metadata, source)
-
-                else:  # The SAS URI is already set thus we don't want to modify it.
+                    # Now we replace the SAS URI for the vm_images
                     log.debug(
-                        "The DiskVersion \"%s\" already contains the SAS URI: \"%s\""
+                        "Adjusting the VMImages from existing DiskVersion \"%s\""
+                        "to fit the new image with SAS \"%s\"."
                         % (disk_version.version_number, metadata.image_path)
                     )
-                    disk_version = None
+                    disk_version.vm_images = prepare_vm_images(
+                        metadata=metadata,
+                        gen1=img_legacy,
+                        gen2=img,
+                        source=source,
+                    )
+
+                else:  # If no VMImages, we need to create them from scratch
+                    log.debug(
+                        "The DiskVersion \"%s\" does not contain inner images."
+                        % disk_version.version_number
+                    )
+                    log.debug(
+                        "Setting the new image \"%s\" on DiskVersion \"%s\"."
+                        % (metadata.image_path, disk_version.version_number)
+                    )
+                    disk_version.vm_images = self._create_vm_images(metadata, source)
+
             else:  # The disk version doesn't exist, we need to create one from scratch
                 log.debug("The DiskVersion doesn't exist, creating one from scratch.")
                 disk_version = create_disk_version_from_scratch(metadata, source)
                 tech_config.disk_versions.append(disk_version)
+        else:
+            log.debug(
+                "The destination \"%s\" already contains the SAS URI: \"%s\""
+                % (metadata.destination, metadata.image_path)
+            )
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
