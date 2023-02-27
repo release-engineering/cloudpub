@@ -513,7 +513,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
-    @mock.patch("cloudpub.ms_azure.service.is_disk_version_gt")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
     @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
     @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
@@ -522,7 +521,6 @@ class TestAzureService:
         mock_getpr_name: mock.MagicMock,
         mock_getpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
-        mock_dvgt: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
         mock_prep_img: mock.MagicMock,
@@ -566,8 +564,7 @@ class TestAzureService:
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
-        mock_dvgt.assert_not_called()
-        mock_is_sas.assert_not_called()
+        mock_is_sas.assert_called_once_with(technical_config_obj, metadata_azure_obj.image_path)
         mock_prep_img.assert_not_called()
         mock_upd_sku.assert_called_once_with(
             disk_versions=expected_tech_config.disk_versions,
@@ -624,8 +621,8 @@ class TestAzureService:
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
         mock_is_sas.assert_called_once_with(
-            disk_version=technical_config_obj.disk_versions[0],
-            sas_uri=metadata_azure_obj.image_path,
+            technical_config_obj,
+            metadata_azure_obj.image_path,
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
@@ -638,7 +635,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
-    @mock.patch("cloudpub.ms_azure.service.is_disk_version_gt")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
     @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
     @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
@@ -647,7 +643,6 @@ class TestAzureService:
         mock_getpr_name: mock.MagicMock,
         mock_getpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
-        mock_dvgt: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
         mock_prep_img: mock.MagicMock,
@@ -664,7 +659,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_dvgt.return_value = True
+        metadata_azure_obj.disk_version = "2.0.0"
         technical_config_obj.disk_versions[0].vm_images = []
         mock_getpr_name.return_value = product_obj
         mock_getpl_name.return_value = plan_summary_obj
@@ -697,12 +692,9 @@ class TestAzureService:
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
-        mock_dvgt.assert_called_once_with(
-            technical_config_obj.disk_versions[0].version_number, "0.0.0"
-        )
         mock_is_sas.assert_called_once_with(
-            disk_version=technical_config_obj.disk_versions[0],
-            sas_uri=metadata_azure_obj.image_path,
+            technical_config_obj,
+            metadata_azure_obj.image_path,
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
@@ -770,8 +762,8 @@ class TestAzureService:
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
         mock_is_sas.assert_called_once_with(
-            disk_version=technical_config_obj.disk_versions[0],
-            sas_uri=metadata_azure_obj.image_path,
+            technical_config_obj,
+            metadata_azure_obj.image_path,
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
@@ -845,8 +837,8 @@ class TestAzureService:
         ]
         mock_filter.assert_has_calls(filter_calls)
         mock_is_sas.assert_called_once_with(
-            disk_version=technical_config_obj.disk_versions[0],
-            sas_uri=metadata_azure_obj.image_path,
+            technical_config_obj,
+            metadata_azure_obj.image_path,
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,

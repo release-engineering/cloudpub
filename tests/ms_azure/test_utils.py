@@ -17,7 +17,6 @@ from cloudpub.ms_azure.utils import (
     create_disk_version_from_scratch,
     get_image_type_mapping,
     is_azure_job_not_complete,
-    is_disk_version_gt,
     is_sas_present,
     prepare_vm_images,
     update_skus,
@@ -92,49 +91,6 @@ class TestAzurePublishingMetadata:
 
 
 class TestAzureUtils:
-    @pytest.mark.parametrize(
-        "val1,val2,expected",
-        [
-            ("1.0.0", "0.5.0", True),
-            ("1.1.0", "1.0.0", True),
-            ("1.0.0", "2.0.0", False),
-            ("1.1.0", "1.9.1", False),
-        ],
-    )
-    def test_is_disk_version_gt(self, val1: str, val2: str, expected: bool) -> None:
-        assert is_disk_version_gt(val1, val2) == expected
-
-    @pytest.mark.parametrize(
-        "val1,val2",
-        [
-            ("1.", "0"),
-            ("1.0", "1"),
-            ("1.0.0", "1.0"),
-            ("1.0.0.0", "1.0.0"),
-        ],
-    )
-    def test_is_disk_version_gt_raises_format(self, val1: str, val2: str) -> None:
-        expected_err = (
-            "Invalid format. "
-            "Expecting to receive \"\\(int\\)\\.\\(int\\)\\.\\(int\\)\""
-            " Got \"%s\" - \"%s" % (val1, val2)
-        )
-        with pytest.raises(ValueError, match=expected_err):
-            is_disk_version_gt(val1, val2)
-
-    @pytest.mark.parametrize(
-        "val1,val2",
-        [
-            ("1", ""),
-            ("a", "1"),
-            ("1.0.0", "1.0.b"),
-        ],
-    )
-    def test_is_disk_version_gt_raises_noint(self, val1: str, val2: str) -> None:
-        expected_err = "invalid literal for int\\(\\) with base 10:"
-        with pytest.raises(ValueError, match=expected_err):
-            is_disk_version_gt(val1, val2)
-
     def test_get_image_type_mapping(self, metadata_azure_obj: AzurePublishingMetadata) -> None:
         # Test Gen1
         res = get_image_type_mapping(metadata_azure_obj.architecture, "V1")
@@ -164,12 +120,12 @@ class TestAzureUtils:
         ],
     )
     def test_is_sas_present(
-        self, sas1: str, sas2: str, expected: bool, disk_version_obj: DiskVersion
+        self, sas1: str, sas2: str, expected: bool, technical_config_obj: VMIPlanTechConfig
     ) -> None:
         # Test positive
-        disk_version_obj.vm_images[0].source.os_disk.uri = sas1
+        technical_config_obj.disk_versions[0].vm_images[0].source.os_disk.uri = sas1
 
-        res = is_sas_present(disk_version=disk_version_obj, sas_uri=sas2)
+        res = is_sas_present(tech_config=technical_config_obj, sas_uri=sas2)
         assert res is expected
 
     def test_prepare_vm_images_gen1(
