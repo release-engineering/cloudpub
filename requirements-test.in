@@ -7,3 +7,4 @@ mypy
 sphinx
 sphinx-autodoc-typehints
 types-requests
+types-python-dateutil

@@ -5,6 +5,7 @@ import time
 from copy import deepcopy
 from typing import Any, Dict, List
 
+import dateutil.parser
 from boto3.session import Session
 
 from cloudpub.common import BaseService, PublishingMetadata
@@ -162,29 +163,34 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         self._raise_error(NotFoundError, f"No such version with id \"{version_id}\"")
 
-    def get_product_version_ids(self, entity_id: str) -> List[Dict[str, Any]]:
+    def get_product_versions(self, entity_id: str) -> Dict[str, Any]:
         """
-        Get the ids of all the versions of a product. Product is searched by it's id.
+        Get the titles, ids, and date created of all the versions of a product.
 
         Args:
             entity_id (str)
                 The Id of the entity to edit
         Returns:
-            List[Dict[str, Any]]: A list of version ids
+            Dict[str, Any]: A dictionary of versions
         Raises:
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
         self._check_product_versions(details)
 
-        version_ids: List[Dict[str, Any]] = []
+        version_ids: Dict[str, Any] = {}
 
         for v in details["Versions"]:
-            delivery_ids = []
+            delivery_options_list = []
             for delivery_option in v["DeliveryOptions"]:
-                delivery_ids.append(delivery_option["Id"])
-            version = {v["VersionTitle"]: delivery_ids}
-            version_ids.append(version)
+                delivery_options_list.append(
+                    {"id": delivery_option["Id"], "visibility": delivery_option["Visibility"]}
+                )
+            delivery_options = {
+                "delivery_options": delivery_options_list,
+                "created_date": v['CreationDate'],
+            }
+            version_ids[v['VersionTitle']] = delivery_options
 
         return version_ids
 
@@ -301,7 +307,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         return rsp["Status"]
 
-    def wait_for_publish_task(
+    def wait_for_changeset(
         self, change_set_id: str, attempts: int = 144, interval: int = 600
     ) -> None:
         """
@@ -357,6 +363,55 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         """
         self._raise_error(NotImplementedError, "To be added at a future date")
 
+    def restrict_minor_versions(
+        self,
+        entity_id: str,
+        marketplace_entity_type: str,
+        restrict_version: str,
+    ) -> None:
+        """
+        Restrict the old minor versions of a release.
+
+        Args:
+            entity_id (str)
+                The entity id to modifiy.
+            marketplace_entity_type (str)
+                Product type of the AWS product
+                Example: AmiProduct
+            restrict_version (str)
+                The restrict version to look for.
+                example: 9.0
+        """
+        versions = self.get_product_versions(entity_id)
+
+        # TODO: Version matching using regex
+
+        matching_version_list = [v for t, v in versions.items() if restrict_version in t]
+
+        if not matching_version_list:
+            return
+
+        newest_matching_version_created_date = max(
+            (x["created_date"] for x in matching_version_list),
+            key=lambda x: dateutil.parser.isoparse(x),
+        )
+
+        restrict_delivery_ids = []
+        for version in matching_version_list:
+            if newest_matching_version_created_date != version["created_date"]:
+                for del_opt in version["delivery_options"]:
+                    # Usually there is only one delivery option
+                    # but we'll iterate through to make sure nothing is missing
+                    if del_opt["visibility"] == "Public":
+                        restrict_delivery_ids.append(del_opt["id"])
+
+        if restrict_delivery_ids:
+            log.debug(f"Restricting these minor version(s) with id(s): {restrict_delivery_ids}")
+            change_id = self.set_restrict_versions(
+                entity_id, marketplace_entity_type, restrict_delivery_ids
+            )
+            self.wait_for_changeset(change_id)
+
     def publish(self, metadata: AWSVersionMetadata) -> None:
         """
         Add new version to an existing product.
@@ -409,4 +464,4 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         log.debug(f"The response from publishing was: {rsp}")
 
-        self.wait_for_publish_task(rsp["ChangeSetId"])
+        self.wait_for_changeset(rsp["ChangeSetId"])
