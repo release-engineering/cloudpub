@@ -4,6 +4,7 @@ A library for publishing product listings on various clouds
 
 [![pipeline](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/pipeline.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/pipelines)
 [![coverage](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/coverage.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/jobs)
+[![Quality Gate Status](https://sonarqube.corp.redhat.com/api/project_badges/measure?project=stratosphere_cloudpub&metric=alert_status&token=561f41bcabdbf2ce035a40e35e387c0eaaba0a37)](https://sonarqube.corp.redhat.com/dashboard?id=stratosphere_cloudpub)
 [![releases](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/badges/release.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/releases/)
 
 ## Overview
