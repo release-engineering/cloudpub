@@ -651,7 +651,7 @@ class PlanSummary(AzureProductLinkedResource):
 
     gov_certifications: Optional[List[GovernmentCertification]] = field(
         metadata={"alias": "azureGovernmentCertifications", "hide_unset": True},
-        converter=GovernmentCertification.from_json,  # type: ignore
+        converter=lambda x: [GovernmentCertification.from_json(a) for a in x] if x else None,  # type: ignore  # noqa: E501
         on_setattr=NO_OP,
     )
     """Certifications for government plans."""
