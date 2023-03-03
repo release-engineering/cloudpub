@@ -7,6 +7,7 @@ from cloudpub.models.ms_azure import (
     DeprecationAlternative,
     DiskVersion,
     ListingAsset,
+    ListingTrailer,
     PlanListing,
     PlanSummary,
     Product,
@@ -34,6 +35,7 @@ def test_azure_resource_props(
     customer_leads_obj: CustomerLeads,
     plan_listing_obj: PlanListing,
     listing_asset_obj: ListingAsset,
+    listing_trailer_obj: ListingTrailer,
 ) -> None:
     # Test the properties of AzureResource
     assert product_obj.id == "ffffffff-ffff-ffff-ffff-ffffffffffff"
@@ -53,6 +55,10 @@ def test_azure_resource_props(
     # Test the properties of ListingAsset
     assert listing_asset_obj.listing_id == product_obj.id
     assert listing_asset_obj.resource == "listing-asset"
+
+    # Test the properties of ListingTrailer
+    assert listing_trailer_obj.listing_id == product_obj.id
+    assert listing_trailer_obj.resource == "listing-trailer"
 
 
 def test_publish_target_invalid(publish_target: Dict[str, str]) -> None:

@@ -30,6 +30,7 @@ SCHEMAS_RESOURCES = [
     "plan-listing",
     "listing",
     "listing-asset",
+    "listing-trailer",
     "price-and-availability-offer",
     "price-and-availability-plan",
     "virtual-machine-plan-technical-configuration",

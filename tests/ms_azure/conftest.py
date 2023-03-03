@@ -9,6 +9,7 @@ from cloudpub.models.ms_azure import (
     DiskVersion,
     Listing,
     ListingAsset,
+    ListingTrailer,
     PlanListing,
     PlanSummary,
     PriceAndAvailabilityOffer,
@@ -252,6 +253,28 @@ def listing_asset() -> Dict[str, Any]:
 
 
 @pytest.fixture
+def listing_trailer() -> Dict[str, Any]:
+    return {
+        "$schema": "https://product-ingestion.azureedge.net/schema/listing-trailer/2022-03-01-preview3",  # noqa: E501
+        "id": "listing-trailer/ffffffff-ffff-ffff-ffff-ffffffffffff/public/main/default/1",
+        "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "kind": "azure",
+        "listing": "listing/ffffffff-ffff-ffff-ffff-ffffffffffff/public/main/default/en-us",
+        "streamingUrl": "https://www.youtube.com/watch?v=ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "assets": {
+            "en-us": {
+                "title": "Thumbnail title",
+                "imageList": [
+                    {
+                        "url": "https://ingestionpackagesprod1.blob.core.windows.net/file/test.png",
+                    },
+                ],
+            },
+        },
+    }
+
+
+@pytest.fixture
 def prav_offer() -> Dict[str, Any]:
     return {
         "$schema": "https://product-ingestion.azureedge.net/schema/price-and-availability-offer/2022-03-01-preview3",  # noqa: E501
@@ -468,6 +491,11 @@ def plan_listing_obj(plan_listing: Dict[str, Any]) -> PlanListing:
 @pytest.fixture
 def listing_asset_obj(listing_asset: Dict[str, Any]) -> ListingAsset:
     return ListingAsset.from_json(listing_asset)
+
+
+@pytest.fixture
+def listing_trailer_obj(listing_trailer: Dict[str, Any]) -> ListingTrailer:
+    return ListingTrailer.from_json(listing_trailer)
 
 
 @pytest.fixture

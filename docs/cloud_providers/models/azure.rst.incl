@@ -51,6 +51,9 @@ The following models are elements of :class:`~cloudpub.models.ms_azure.Product`'
 .. autoclass:: cloudpub.models.ms_azure.ListingAsset()
    :members:
 
+.. autoclass:: cloudpub.models.ms_azure.ListingTrailer()
+   :members:
+
 .. autoclass:: cloudpub.models.ms_azure.PlanSummary()
    :members:
 
@@ -151,6 +154,12 @@ The following models are inner elements of some subclasses of :class:`~cloudpub.
    :members:
 
 .. autoclass:: cloudpub.models.ms_azure.TableLeadConfiguration()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.ThumbnailURL()
+   :members:
+
+.. autoclass:: cloudpub.models.ms_azure.VideoThumbnails()
    :members:
 
 .. autoclass:: cloudpub.models.ms_azure.VMImageDefinition()
