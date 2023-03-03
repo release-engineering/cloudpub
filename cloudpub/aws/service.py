@@ -82,12 +82,13 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             NotFoundError when the product is not found.
         """
         rsp = self.marketplace.describe_entity(Catalog="AWSMarketplace", EntityId=entity_id)
+        details_dict = rsp.get("Details")
 
-        if "Details" not in rsp:
+        if not details_dict:
             log.debug(f"The response was: {rsp}")
             self._raise_error(NotFoundError, f"No such product with EntityId: \"{entity_id}\"")
 
-        details = json.loads(rsp["Details"])
+        details = json.loads(details_dict)
 
         return details
 

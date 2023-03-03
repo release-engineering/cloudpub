@@ -82,7 +82,7 @@ class AzurePublishingMetadata(PublishingMetadata):
             raise ValueError(
                 f"Invalid generation \"{self.generation}\". Expected: \"V1\" or \"V2\"."
             )
-        if not self.image_path.startswith(("http://", "https://")):
+        if not self.image_path.startswith("https://"):
             raise ValueError(f"Invalid SAS URI \"{self.image_path}\". Expected: http/https URL.")
 
 
