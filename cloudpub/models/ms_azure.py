@@ -1369,7 +1369,7 @@ class OSDetails(AttrsJSONDecodeMixin):
     It expects either ``linux`` or ``windows``.
     """
 
-    friendly_name: str = field(metadata={"alias": "friendlyName"})
+    friendly_name: Optional[str] = field(metadata={"alias": "friendlyName", "hide_unset": True})
     """The friendly name for the operating system."""
 
     os_type: str = field(metadata={"alias": "type"})
