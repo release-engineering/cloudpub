@@ -738,6 +738,36 @@ class Contact(AttrsJSONDecodeMixin):
 
 
 @define
+class ThumbnailURL(AttrsJSONDecodeMixin):
+    """
+    Define a video thumbnail URL.
+
+    It's part of :class:`~cloudpub.models.ms_azure.VideoThumbnails`.
+    """
+
+    url: str
+    """URL of the thumbnail."""
+
+
+@define
+class VideoThumbnails(AttrsJSONDecodeMixin):
+    """
+    Define a group of thumbnails.
+
+    It's part of :class:`~cloudpub.models.ms_azure.ListingTrailer`.
+    """
+
+    title: str
+    """The thumbnail title."""
+
+    image_list: List[ThumbnailURL] = field(
+        metadata={"alias": "imageList"},
+        converter=lambda x: [ThumbnailURL.from_json(a) for a in x] if x else [],  # type: ignore
+        on_setattr=NO_OP,
+    )
+
+
+@define
 class Listing(AzureProductLinkedResource):
     """
     Represent a product listing.
@@ -897,10 +927,53 @@ class ListingAsset(AzureProductLinkedResource):
         .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
         """  # noqa E501
         # durable ID format example:
-        #   product/62c171e9-a2e1-45ab-9af0-d17e769da954
+        #   listing/62c171e9-a2e1-45ab-9af0-d17e769da954/.../...
         # what do we want:
         #   62c171e9-a2e1-45ab-9af0-d17e769da954
-        return self.product_durable_id.split("/")[-1]
+        return self.listing_durable_id.split("/")[1]
+
+
+@define
+class ListingTrailer(AzureProductLinkedResource):
+    """Represent a video "trailer" asset for the given product.
+
+    `Schema definition for ListingTrailer <https://product-ingestion.azureedge.net/schema/listing-trailer/2022-03-01-preview3>`_
+    """  # noqa E501
+
+    kind: str
+    """Expected to be ``azure``."""
+
+    listing_durable_id: str = field(metadata={"alias": "listing"})
+    """
+    The listing-trailer `durable ID`_.
+    """
+
+    streaming_url: str = field(metadata={"alias": "streamingUrl"})
+    """
+    The URL for the video streaming.
+
+    E.g: https://www.youtube.com/watch?v=XXXXX
+    """
+
+    assets: Dict[Literal["en-us"], VideoThumbnails]
+    """
+    Assets for the related video trailer.
+
+    At the moment only content in English is supported.
+    """
+
+    @property
+    def listing_id(self):
+        """
+        Resolve the listing-trailer ID from its `durable ID`_.
+
+        .. _durable ID: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#method-2-durable-id
+        """  # noqa E501
+        # durable ID format example:
+        #   listing-trailer/62c171e9-a2e1-45ab-9af0-d17e769da954/.../...
+        # what do we want:
+        #   62c171e9-a2e1-45ab-9af0-d17e769da954
+        return self.listing_durable_id.split("/")[1]
 
 
 @define
@@ -1587,6 +1660,7 @@ RESOURCE_MAPING = {
     "plan-listing": PlanListing,
     "listing": Listing,
     "listing-asset": ListingAsset,
+    "listing-trailer": ListingTrailer,
     "price-and-availability-offer": PriceAndAvailabilityOffer,
     "price-and-availability-plan": PriceAndAvailabilityPlan,
     "virtual-machine-plan-technical-configuration": VMIPlanTechConfig,
