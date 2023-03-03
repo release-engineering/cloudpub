@@ -105,6 +105,10 @@ coverage:
     paths: 
       - .coverage-reports
 
+sonarqube-scan-sast:
+  variables: 
+    CODE_SCANNING_EXCLUSIONS: "tests/**,schemas/**,docs/**"
+    PROJECT_NAME: $SONAR_PROJECT_KEY
 
 
 # The stage below will deploy the documentation into GitLab pages whenever the main branch is updated
