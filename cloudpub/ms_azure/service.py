@@ -511,7 +511,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             List[ProductSubmission],
             self.filter_product_resources(product=product, resource="submission"),
         )[0]
-        if not submission.target.targetType == 'preview':
+        if submission.target.targetType != 'preview':
             log.info(
                 "Submitting the product \"%s (%s)\" to \"preview\"." % (product_name, product.id)
             )
