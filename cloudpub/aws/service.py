@@ -68,6 +68,11 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         super(AWSProductService, self).__init__()
 
+    def _check_product_versions(self, details: Dict[str, Any]) -> None:
+        if "Versions" not in details or not isinstance(details["Versions"], list):
+            log.debug(f"The details from the response are: {details}")
+            self._raise_error(NotFoundError, "This product has no versions")
+
     def get_product_by_id(self, entity_id: str) -> Dict[str, Any]:
         """
         Get a product detail by it's id.
@@ -148,10 +153,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
-
-        if "Versions" not in details.keys() or not isinstance(details["Versions"], list):
-            log.debug(f"The details from the response are: {details}")
-            self._raise_error(NotFoundError, "This product has no versions")
+        self._check_product_versions(details)
 
         for version in details["Versions"]:
             for delivery_option in version["DeliveryOptions"]:
@@ -173,10 +175,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
-
-        if "Versions" not in details.keys() or not isinstance(details["Versions"], list):
-            log.debug(f"The details from the response are: {details}")
-            self._raise_error(NotFoundError, "This product has no versions")
+        self._check_product_versions(details)
 
         version_ids: List[Dict[str, Any]] = []
 
@@ -204,10 +203,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
-
-        if "Versions" not in details.keys() or not isinstance(details["Versions"], list):
-            log.debug(f"The details from the response are: {details}")
-            self._raise_error(NotFoundError, "This product has no versions")
+        self._check_product_versions(details)
 
         for version in details["Versions"]:
             if version["VersionTitle"] == version_name:

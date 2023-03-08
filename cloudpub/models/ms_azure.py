@@ -14,15 +14,16 @@ from attrs.validators import deep_iterable, instance_of, optional
 
 from cloudpub.models.common import AttrsJSONDecodeMixin
 
-MASKED_SECRET = Literal["*********"]
+MASKED_SECRET: str = "*********"
+MS_SCHEMA = "$schema"
 
 log = logging.getLogger(__name__)
 
 
 def _mask_secret(value: str) -> str:
     """Replace a possible secret string with ``*********``."""
-    if value and value != "*********":
-        value = "*********"
+    if value and value != MASKED_SECRET:
+        value = MASKED_SECRET
     return value
 
 
@@ -73,7 +74,7 @@ class ConfigureStatus(AttrsJSONDecodeMixin):
 class AzureResource(AttrsJSONDecodeMixin):
     """The base class for all Azure Resources."""
 
-    schema: str = field(validator=instance_of(str), metadata={"alias": "$schema"})
+    schema: str = field(validator=instance_of(str), metadata={"alias": MS_SCHEMA})
     """
     The `resource schema`_ for Graph API.
 
@@ -241,7 +242,7 @@ class DeprecationSchedule(AttrsJSONDecodeMixin):
     `Schema definition for DeprecationSchedule <https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2>`_
     """  # noqa E501
 
-    schema: str = field(validator=instance_of(str), metadata={"alias": "$schema"})
+    schema: str = field(validator=instance_of(str), metadata={"alias": MS_SCHEMA})
     """
     The `resource schema`_ for Graph API.
 
@@ -358,7 +359,7 @@ class BlobLeadConfiguration(LeadConfiguration):
     It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
     """
 
-    storage_connection_string: MASKED_SECRET = field(
+    storage_connection_string: str = field(
         metadata={"alias": "storageAccountConnectionString"}, converter=_mask_secret
     )
     """
@@ -397,7 +398,7 @@ class DynamicsLeadConfiguration(LeadConfiguration):
     )
     """The username for dynamics."""
 
-    password: Optional[MASKED_SECRET] = field(
+    password: Optional[str] = field(
         validator=optional(instance_of(str)), metadata={"hide_unset": True}, converter=_mask_secret
     )
     """
@@ -412,7 +413,7 @@ class DynamicsLeadConfiguration(LeadConfiguration):
     )
     """The dynamics application UUID."""
 
-    application_key: Optional[MASKED_SECRET] = field(
+    application_key: Optional[str] = field(
         validator=optional(instance_of(str)),
         metadata={"alias": "applicationKey", "hide_unset": True},
         converter=_mask_secret,
@@ -487,7 +488,7 @@ class TableLeadConfiguration(LeadConfiguration):
     It's part of :class:`~cloudpub.models.ms_azure.CustomerLeads`.
     """
 
-    storage_connection_string: MASKED_SECRET = field(
+    storage_connection_string: str = field(
         metadata={"alias": "storageAccountConnectionString"}, converter=_mask_secret
     )
     """
@@ -1045,7 +1046,7 @@ class PublishTarget(AttrsJSONDecodeMixin):
     """
 
     @targetType.validator
-    def _validate_target_type(instance, attribute: Attribute, value: Any):
+    def _validate_target_type(self, attribute: Attribute, value: Any):
         expected = ["draft", "preview", "live"]
         if value not in expected:
             raise ValueError(
@@ -1515,8 +1516,8 @@ class VMImageSource(AttrsJSONDecodeMixin):
     """The list of data disks to mount within the OS."""
 
     @source_type.validator
-    def _validate_source_type(instance, attribute: Attribute, value: Any):
-        if not value == "sasUri":
+    def _validate_source_type(self, attribute: Attribute, value: Any):
+        if value != "sasUri":
             raise ValueError(
                 f"Got an unexpected value for \"{attribute.name}\": \"{value}\"\n"
                 "Expected: \"sasUri\"."
@@ -1677,7 +1678,7 @@ class Product(AttrsJSONDecodeMixin):
     `Schema definition <https://product-ingestion.azureedge.net/schema/resource-tree/2022-03-01-preview2>`_
     """  # noqa E501
 
-    schema: str = field(validator=instance_of(str), metadata={"alias": "$schema"})
+    schema: str = field(validator=instance_of(str), metadata={"alias": MS_SCHEMA})
     """The top level product schema (root)."""
 
     root_id: str = field(validator=instance_of(str), metadata={"alias": "root"})
@@ -1735,7 +1736,7 @@ class Product(AttrsJSONDecodeMixin):
             dict: The JSON from Product instance.
         """
         return {
-            "$schema": self.schema,
+            MS_SCHEMA: self.schema,
             "root": self.root_id,
             "target": self.target.to_json(),
             "resources": [x.to_json() for x in self.resources],
