@@ -302,7 +302,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         return rsp["Status"]
 
     def wait_for_publish_task(
-        self, change_set_id: str, attempts: int = 480, interval: int = 4
+        self, change_set_id: str, attempts: int = 144, interval: int = 600
     ) -> None:
         """
         Wait until ChangeSet is complete.
@@ -312,10 +312,10 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 Id for the change set
             attempts (int, optional)
                 Max number of times to poll
-                Defaults to 480
+                Defaults to 24
             interval (int, optional)
                 Seconds between polling
-                Defaults to 4
+                Defaults to 600
         Raises:
             Timeout when the status doesn't change to either
             'Succeeded' or 'Failed' within the set retry time.
