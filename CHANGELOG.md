@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## 0.1.0 - 2023-03-22
+## 0.1.1 - 2023-03-21
+
+Azure:
+
+- Change disk version to be mandatory
+- Refactor the `publish` method
+- Fix bad converter for Government Certification
+- Fix the friendly_name on OSDetails for Azure
+- Fix code smells
+
+AWS:
+
+- Fix timeout security issue
+- Update timeout attempts/ intervals
+
+## 0.1.0 - 2023-02-22
 
 This is the first version of `cloudpub`, capable of:
 
