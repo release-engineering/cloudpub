@@ -74,7 +74,9 @@ class TestPartnerPortalSession:
         session.get("/foo")
 
         req_mock.assert_called_once()
-        post_mock.assert_called_once_with(login_url, headers=login_header, data=login_data)
+        post_mock.assert_called_once_with(
+            login_url, headers=login_header, data=login_data, timeout=30
+        )
 
     @pytest.mark.parametrize(
         'method,path,json',

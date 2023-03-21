@@ -122,7 +122,7 @@ class PartnerPortalSession:
             "grant_type": "client_credentials",
         }
 
-        resp = requests.post(url, headers=headers, data=data)
+        resp = requests.post(url, headers=headers, data=data, timeout=30)
         resp.raise_for_status()
         return AccessToken(resp.json())
 
