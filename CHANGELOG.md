@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.2 - 2023-03-23
+
+AWS:
+- Adds restricting versions
+
 ## 0.1.1 - 2023-03-21
 
 Azure:
