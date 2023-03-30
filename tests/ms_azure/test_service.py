@@ -224,6 +224,7 @@ class TestAzureService:
         azure_service: AzureService,
         job_details_completed_successfully_obj: ConfigureStatus,
         submission_obj: ProductSubmission,
+        caplog: LogCaptureFixture,
     ) -> None:
         mock_configure.return_value = job_details_completed_successfully_obj
         job_id = job_details_completed_successfully_obj.job_id
@@ -232,10 +233,12 @@ class TestAzureService:
             "resources": [submission_obj.to_json()],
         }
 
-        azure_service.configure(submission_obj)
+        with caplog.at_level(logging.DEBUG):
+            azure_service.configure(submission_obj)
 
         mock_configure.assert_called_once_with(data=expected_data)
         mock_wait_completion.assert_called_once_with(job_id=job_id)
+        assert f"Data to configure: {expected_data}" in caplog.text
 
     @mock.patch("cloudpub.ms_azure.AzureService._raise_error")
     @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
@@ -853,3 +856,60 @@ class TestAzureService:
             mock.call(product_id=product_obj.id, status="live"),
         ]
         mock_submit.assert_has_calls(submit_calls)
+
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.service.update_skus")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
+    @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
+    @mock.patch("cloudpub.ms_azure.AzureService._get_plan_tech_config")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    def test_publish_filter_out_deprecated(
+        self,
+        mock_getpr_name: mock.MagicMock,
+        mock_getpl_name: mock.MagicMock,
+        mock_get_tech: mock.MagicMock,
+        mock_filter: mock.MagicMock,
+        mock_disk_scratch: mock.MagicMock,
+        mock_submit: mock.MagicMock,
+        mock_upd8_skus: mock.MagicMock,
+        mock_configure: mock.MagicMock,
+        product_obj: Product,
+        plan_summary_obj: PlanSummary,
+        metadata_azure_obj: AzurePublishingMetadata,
+        technical_config_obj: VMIPlanTechConfig,
+        disk_version_obj: DiskVersion,
+        submission_obj: ProductSubmission,
+        gen1_image: Dict[str, Any],
+        azure_service: AzureService,
+    ) -> None:
+        metadata_azure_obj.overwrite = True
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.support_legacy = True
+        metadata_azure_obj.destination = "example-product/plan-1"
+        metadata_azure_obj.disk_version = "2.0.0"
+
+        # Create a deprecated disk_version which should be filtered out on result
+        deprecated_dv = DiskVersion.from_json(
+            {
+                "versionNumber": "1.2.3",
+                "vmImages": [gen1_image],
+                "lifecycleState": "deprecated",
+            }
+        )
+        # Set the deprecated disk_version alongside a valid one
+        technical_config_obj.disk_versions = [disk_version_obj, deprecated_dv]
+        mock_get_tech.return_value = technical_config_obj
+
+        # Assign the return value to create_disk_version_from_scratch and update_skus
+        mock_disk_scratch.return_value = technical_config_obj.disk_versions[0]
+        mock_upd8_skus.return_value = technical_config_obj.skus
+
+        # Before publishing we should have the deprecated_dv
+        assert deprecated_dv in technical_config_obj.disk_versions
+
+        azure_service.publish(metadata_azure_obj)
+
+        # After publishing we shouldn't have the deprecated_dv
+        assert deprecated_dv not in technical_config_obj.disk_versions
