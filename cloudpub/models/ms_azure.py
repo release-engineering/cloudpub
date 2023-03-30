@@ -242,7 +242,9 @@ class DeprecationSchedule(AttrsJSONDecodeMixin):
     `Schema definition for DeprecationSchedule <https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2>`_
     """  # noqa E501
 
-    schema: str = field(validator=instance_of(str), metadata={"alias": MS_SCHEMA})
+    schema: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": MS_SCHEMA, "hide_unset": True}
+    )
     """
     The `resource schema`_ for Graph API.
 
@@ -266,8 +268,10 @@ class DeprecationSchedule(AttrsJSONDecodeMixin):
     * ``other``
     """
 
-    alternative: DeprecationAlternative = field(
-        converter=DeprecationAlternative.from_json, on_setattr=NO_OP  # type: ignore
+    alternative: Optional[DeprecationAlternative] = field(
+        converter=DeprecationAlternative.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"hide_unset": True},
     )
     """The alternative product or plan for the deprecated one."""
 
