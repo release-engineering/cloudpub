@@ -1318,6 +1318,7 @@ class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
     software_reservation: List[SoftwareReservation] = field(
         metadata={"alias": "softwareReservation"},
         converter=lambda x: [SoftwareReservation.from_json(r) for r in x] if x else [],
+        on_setattr=NO_OP,
     )
     """
     When set it allows a pricing discount for customers doing a reservation for one or three years.
