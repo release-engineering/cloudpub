@@ -1165,7 +1165,7 @@ class PlanListing(AzurePlanLinkedResource):
 class CorePricing(AttrsJSONDecodeMixin):
     """Represent a price per core."""
 
-    prince_input_option: str = field(metadata={"alias": "priceInputOption"})
+    price_input_option: str = field(metadata={"alias": "priceInputOption"})
     """
     The pricing model when the customer is using the resource.
 
