@@ -70,7 +70,7 @@ class PartnerPortalSession:
 
     @classmethod
     def make_graph_api_session(
-        cls, auth_keys: Dict[str, Any], api_version: str = '2022-07-01'
+        cls, auth_keys: Dict[str, Any], api_version: str = '2022-03-01-preview3'
     ) -> 'PartnerPortalSession':
         """
         Create a PartnerPortalSession for the Microsoft Graph API.
@@ -80,7 +80,7 @@ class PartnerPortalSession:
                 Dictionary with the required secrets to login into a Microsoft API.
             api_version (str)
                 The API version to use on each request.
-                Defaults to ``2022-07-01``.
+                Defaults to ``2022-03-01-preview3``.
         Raises:
             ValueError on authentication failure.
         """

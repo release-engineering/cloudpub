@@ -47,7 +47,7 @@ def auth_dict() -> Dict[str, str]:
         "AZURE_CLIENT_ID": "bar",
         "AZURE_API_SECRET": "abcdefghijklmnopqrstuvwxyz0123456789",
         "AZURE_PUBLISHER_NAME": "publisher",
-        "AZURE_API_VERSION": "2022-07-01",
+        "AZURE_API_VERSION": "2022-03-01-preview3",
     }
 
 
