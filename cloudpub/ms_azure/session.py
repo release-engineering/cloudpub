@@ -70,7 +70,7 @@ class PartnerPortalSession:
 
     @classmethod
     def make_graph_api_session(
-        cls, auth_keys: Dict[str, Any], api_version: str = '2022-03-01-preview3'
+        cls, auth_keys: Dict[str, Any], schema_version: str = '2022-03-01-preview3'
     ) -> 'PartnerPortalSession':
         """
         Create a PartnerPortalSession for the Microsoft Graph API.
@@ -79,13 +79,13 @@ class PartnerPortalSession:
             auth_keys (dict)
                 Dictionary with the required secrets to login into a Microsoft API.
             api_version (str)
-                The API version to use on each request.
+                The schema version to use on each request.
                 Defaults to ``2022-03-01-preview3``.
         Raises:
             ValueError on authentication failure.
         """
         log.debug("Creating a session with Azure Private Offer API")
-        mparams = {'$version': api_version}
+        mparams = {'$version': schema_version}
         prefix_url = "https://graph.microsoft.com/rp/product-ingestion"
         return cls(auth_keys=auth_keys, prefix_url=prefix_url, mandatory_params=mparams)
 

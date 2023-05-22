@@ -103,7 +103,7 @@ class TestPartnerPortalSession:
             'Accept': 'application/json',
             'Authorization': f'Bearer {token["access_token"]}',
         }
-        put_param = {'$version': auth_dict['AZURE_API_VERSION']}
+        put_param = {'$version': auth_dict['AZURE_SCHEMA_VERSION']}
 
         session = PartnerPortalSession.make_graph_api_session(auth_dict)
 
