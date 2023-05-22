@@ -44,7 +44,9 @@ class TestAzureService:
 
         svc = AzureService(credentials=auth_dict)
 
-        mock_session.make_graph_api_session.assert_called_once_with(auth_keys=auth_dict)
+        mock_session.make_graph_api_session.assert_called_once_with(
+            auth_keys=auth_dict, schema_version=auth_dict["AZURE_SCHEMA_VERSION"]
+        )
 
         assert isinstance(svc, AzureService)
         assert not svc._products

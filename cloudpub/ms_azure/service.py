@@ -74,6 +74,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
     # https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api
 
     AZURE_API_VERSION = os.environ.get("AZURE_API_VERSION", "2022-07-01")
+    AZURE_SCHEMA_VERSION = os.environ.get("AZURE_SCHEMA_VERSION", "2022-03-01-preview3")
     CONFIGURE_SCHEMA = "https://schema.mp.microsoft.com/schema/configure/{AZURE_API_VERSION}"
 
     def __init__(self, credentials: Dict[str, str]):
@@ -84,7 +85,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             credentials (dict)
                 Dictionary with Azure credentials to authenticate on Product Ingestion API.
         """
-        self.session = PartnerPortalSession.make_graph_api_session(auth_keys=credentials)
+        self.session = PartnerPortalSession.make_graph_api_session(
+            auth_keys=credentials, schema_version=self.AZURE_SCHEMA_VERSION
+        )
         self._products: List[ProductSummary] = []
 
     def _configure(self, data: Dict[str, Any]) -> ConfigureStatus:
