@@ -558,9 +558,13 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # Note: If `overwrite` is True it means we can set this VM image as the only one in the
         # plan's technical config and discard all other VM images which may've been present.
         disk_version = None  # just to make mypy happy
+        if metadata.overwrite is True:
+            log.warning("Overwriting the plan %s with the given image.", plan_name)
+            disk_version = create_disk_version_from_scratch(metadata, source)
+            tech_config.disk_versions = [disk_version]
 
-        # We just want to set a new image if the SAS is not already present.
-        if not is_sas_present(tech_config, metadata.image_path):
+        # We just want to append a new image if the SAS is not already present.
+        elif not is_sas_present(tech_config, metadata.image_path):
             # Here we can have the metadata.disk_version set or empty.
             # When set we want to get the existing disk_version which matches its value.
             log.debug("Scanning the disk versions from %s" % metadata.destination)
@@ -577,10 +581,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             else:  # The disk version doesn't exist, we need to create one from scratch
                 log.debug("The DiskVersion doesn't exist, creating one from scratch.")
                 disk_version = create_disk_version_from_scratch(metadata, source)
-                # We need to perform the overwrite operation here as it's not possible to have
-                # multiple images in "draft". At the end of the publishing it will keep the other
-                # published disk versions in parallel
-                tech_config.disk_versions = [disk_version]
+                tech_config.disk_versions.append(disk_version)
         else:
             log.debug(
                 "The destination \"%s\" already contains the SAS URI: \"%s\""
