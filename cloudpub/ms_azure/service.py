@@ -131,7 +131,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             *[wait_fixed(wait=60)]  # First wait for 1 minute  # noqa: W503
             + [wait_fixed(wait=30 * 60)]  # Then wait for 30 minutes  # noqa: W503
             + [wait_fixed(wait=60 * 60)]  # And then wait for 1h  # noqa: W503
-            + [wait_fixed(wait=60 * 60 * 12)]  # Finally wait each 12h  # noqa: W503
+            + [wait_fixed(wait=60 * 60 * 2)]  # And two hours  # noqa: W503
+            + [wait_fixed(wait=60 * 60 * 6)]  # Finally wait each 6h  # noqa: W503
         ),
         stop=stop_after_delay(max_delay=60 * 60 * 24 * 7),  # Give up after retrying for 7 days
     )
