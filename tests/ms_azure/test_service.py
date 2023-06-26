@@ -808,6 +808,45 @@ class TestAzureService:
         mock_configure.assert_called_once_with(resource=technical_config_obj)
         mock_submit.assert_not_called()
 
+    def test_is_submission_in_preview(
+        self,
+        submission_obj: ProductSubmission,
+        azure_service: AzureService,
+    ) -> None:
+        # 1 - Initial state: submission is draft
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = submission_obj
+            res = azure_service._is_submission_in_preview(submission_obj)
+            assert res is False
+            mock_substt.assert_not_called()
+
+        # 2 - Current state is "live"
+        current = deepcopy(submission_obj)
+        current.target.targetType = "preview"
+        durable_id = "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/1234"
+        current.durable_id = durable_id
+        submission_obj.durable_id = durable_id
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = submission_obj
+            res = azure_service._is_submission_in_preview(current)
+            assert res is False
+            mock_substt.assert_called_once_with(current.product_id, "live")
+
+        # 3 - Current state is "preview" with an older published "live" state
+        submission_obj.durable_id = "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/4321"
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = submission_obj
+            res = azure_service._is_submission_in_preview(current)
+            assert res is True
+            mock_substt.assert_called_once_with(current.product_id, "live")
+
+        # 4 - Current state is "preview" with no published content
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = None
+            res = azure_service._is_submission_in_preview(current)
+            assert res is True
+            mock_substt.assert_called_once_with(current.product_id, "live")
+
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")

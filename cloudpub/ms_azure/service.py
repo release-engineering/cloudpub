@@ -508,6 +508,28 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         return disk_version
 
+    def _is_submission_in_preview(self, current: ProductSubmission) -> bool:
+        """Return True if the latest submission state is "preview", False otherwise.
+
+           The product is considered to be in preview if the targetType is "preview" and the
+           submission id is not the same from the "live" target.
+
+           See also: https://learn.microsoft.com/en-us/partner-center/marketplace/product-ingestion-api#querying-your-submissions
+        Args:
+            current (ProductSubmission): the submission from the get_product
+
+        Returns:
+            bool: True if the latest submission is "preview", False otherwise
+        """  # noqa: E501
+        if current.target.targetType != "preview":
+            return False
+
+        # We need to check whether there's a live state with the same ID as current
+        live = self.get_submission_state(current.product_id, "live")
+        if live:
+            return current.id != live.id  # If they're the same then state == live
+        return True  # when no live it means it's in preview
+
     def _publish_live(self, product: Product, product_name: str) -> None:
         """
         Submit the product to 'live' after going through Azure Marketplace Validation.
@@ -530,7 +552,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             List[ProductSubmission],
             self.filter_product_resources(product=product, resource="submission"),
         )[0]
-        if submission.target.targetType != 'preview':
+        if not self._is_submission_in_preview(submission):
             log.info(
                 "Submitting the product \"%s (%s)\" to \"preview\"." % (product_name, product.id)
             )
