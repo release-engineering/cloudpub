@@ -261,6 +261,38 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 return self.get_product(product.id)
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
+    def get_submissions(self, product_id: str) -> List[ProductSubmission]:
+        """
+        Return a list of submissions for the given Product id.
+
+        Args:
+            product_id (str): The Product id to retrieve the submissions.
+
+        Returns:
+            List[ProductSubmission]: List of all submissions for the given Product.
+        """
+        log.debug("Requesting the submissions for product \"%s\".", product_id)
+        resp = self.session.get(path=f"/submission/{product_id}")
+        data = self._assert_dict(resp)
+        return [ProductSubmission.from_json(x) for x in data.get("value", [])]
+
+    def get_submission_state(self, product_id, state="preview") -> Optional[ProductSubmission]:
+        """
+        Retrieve a particular submission with the given state from the given Product id.
+
+        Args:
+            product_id (_type_): The product id to request the submissions.
+            state (str, optional): The state to filter the submission. Defaults to "preview".
+
+        Returns:
+            Optional[ProductSubmission]: The requested submission when found.
+        """
+        submissions = self.get_submissions(product_id)
+        for sub in submissions:
+            if sub.target.targetType == state:
+                return sub
+        return None
+
     def filter_product_resources(
         self, product: Product, resource: str
     ) -> List[AZURE_PRODUCT_RESOURCES]:

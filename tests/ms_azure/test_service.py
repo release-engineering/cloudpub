@@ -398,6 +398,54 @@ class TestAzureService:
         mock_products.__iter__.assert_called_once()
         mock_getpr.assert_not_called()
 
+    @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
+    def test_get_submissions(
+        self,
+        mock_adict: mock.MagicMock,
+        azure_service: AzureService,
+        submission_obj: ProductSubmission,
+    ) -> None:
+        dict_obj = {"value": [submission_obj.to_json()]}
+        res_obj = response(200, dict_obj)
+        mock_adict.return_value = dict_obj
+
+        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
+            res = azure_service.get_submissions("product-id")
+
+            mock_get.assert_called_once_with(path="/submission/product-id")
+            mock_adict.assert_called_once_with(res_obj)
+            assert res == [submission_obj]
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submissions")
+    def test_get_submission_state_success(
+        self,
+        mock_get_submissions: mock.MagicMock,
+        azure_service: AzureService,
+        submission_obj: ProductSubmission,
+    ) -> None:
+        submission_obj.target.targetType = "preview"
+        mock_get_submissions.return_value = [submission_obj]
+
+        res = azure_service.get_submission_state("product-id", state="preview")
+
+        mock_get_submissions.assert_called_once_with("product-id")
+        assert res == submission_obj
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submissions")
+    def test_get_submission_state_not_found(
+        self,
+        mock_get_submissions: mock.MagicMock,
+        azure_service: AzureService,
+        submission_obj: ProductSubmission,
+    ) -> None:
+        submission_obj.target.targetType = "draft"
+        mock_get_submissions.return_value = [submission_obj]
+
+        res = azure_service.get_submission_state("product-id", state="preview")
+
+        mock_get_submissions.assert_called_once_with("product-id")
+        assert not res
+
     def test_filter_product_resources(
         self,
         azure_service: AzureService,
