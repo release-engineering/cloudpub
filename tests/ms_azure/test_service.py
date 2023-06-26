@@ -326,9 +326,37 @@ class TestAzureService:
         with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
             res = azure_service.get_product("product-id")
 
-            mock_get.assert_called_once_with(path="/resource-tree/product/product-id")
+            mock_get.assert_called_once_with(
+                path="/resource-tree/product/product-id", params={"targetType": "preview"}
+            )
             mock_adict.assert_called_once_with(res_obj)
             assert res == product_obj
+
+    def test_get_product_not_found(
+        self,
+        azure_service: AzureService,
+        product_obj: Product,
+    ) -> None:
+        res_obj = response(
+            404,
+            {
+                "error": {
+                    "code": "notFound",
+                    "message": "whatever error",
+                    "details": [],
+                }
+            },
+        )
+
+        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
+            with pytest.raises(NotFoundError, match="No such product with id \"unknown-id\""):
+                azure_service.get_product("unknown-id")
+                calls = [
+                    mock.call(path="/resource-tree/product/unknown-id?targetType=preview"),
+                    mock.call(path="/resource-tree/product/unknown-id?targetType=live"),
+                    mock.call(path="/resource-tree/product/unknown-id?targetType=draft"),
+                ]
+                mock_get.assert_has_calls(calls)
 
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")

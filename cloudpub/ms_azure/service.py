@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
+from requests import HTTPError
 from tenacity import retry
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
@@ -218,16 +219,29 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """
         Return the requested Product by its ID.
 
+        It will return the product with the latest publishing status, trying to
+        fetch it in the following order: "preview" -> "live" -> "draft". The first
+        status to fech must be "preview" in order to indepotently detect an existing
+        publishing which could be missing to go live.
+
         Args:
             product_durable_id (str)
                 The product UUID
         Returns:
             Product: the requested product
         """
-        log.debug("Requesting the product ID \"%s\".", product_id)
-        resp = self.session.get(path=f"/resource-tree/product/{product_id}")
-        data = self._assert_dict(resp)
-        return Product.from_json(data)
+        targets = ["preview", "live", "draft"]
+        for t in targets:
+            log.debug("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
+            try:
+                resp = self.session.get(
+                    path=f"/resource-tree/product/{product_id}", params={"targetType": t}
+                )
+                data = self._assert_dict(resp)
+                return Product.from_json(data)
+            except (ValueError, NotFoundError, HTTPError):
+                log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, t)
+        self._raise_error(NotFoundError, f"No such product with id \"{product_id}\"")
 
     def get_product_by_name(self, product_name: str) -> Product:
         """
@@ -315,6 +329,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # status is expected to be 'preview' or 'live'
         submission.target.targetType = status
+        log.debug("Set the status \"%s\" to submission.", status)
 
         return self.configure(resource=submission)
 
