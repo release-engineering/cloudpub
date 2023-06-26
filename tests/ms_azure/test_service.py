@@ -509,23 +509,50 @@ class TestAzureService:
         with pytest.raises(NotFoundError, match="No such plan with name \"foo\""):
             azure_service.get_plan_by_name(product_obj, "foo")
 
+    @pytest.mark.parametrize(
+        "prev_status,final_status",
+        [
+            ('draft', 'draft'),
+            ('draft', 'preview'),
+            ('preview', 'live'),
+        ],
+    )
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
     def test_submit_to_status(
         self,
-        mock_getpr: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
         mock_configure: mock.MagicMock,
+        prev_status: str,
+        final_status: str,
         submission_obj: ProductSubmission,
         product_obj: Product,
         azure_service: AzureService,
     ) -> None:
-        mock_getpr.return_value = product_obj
-        submission_obj.target.targetType = 'live'
+        mock_getsubst.return_value = submission_obj
+        submission_obj.target.targetType = final_status
 
-        azure_service.submit_to_status(product_obj.id, 'live')
+        azure_service.submit_to_status(product_obj.id, final_status)
 
-        mock_getpr.assert_called_once_with(product_id=product_obj.id)
+        mock_getsubst.assert_called_once_with(product_id=product_obj.id, state=prev_status)
         mock_configure.assert_called_once_with(resource=submission_obj)
+
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    def test_submit_to_status_not_found(
+        self,
+        mock_getsubst: mock.MagicMock,
+        mock_configure: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+    ) -> None:
+        mock_getsubst.return_value = None
+        err = f"Could not find the submission state \"preview\" for product \"{product_obj.id}\""
+
+        with pytest.raises(RuntimeError, match=err):
+            azure_service.submit_to_status(product_obj.id, "live")
+
+        mock_configure.assert_not_called()
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")

@@ -353,13 +353,21 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The response from configure request.
         """
-        p = self.get_product(product_id=product_id)
+        # We need to get the previous state of the given one to request the submission
+        prev_state_mapping = {
+            "preview": "draft",
+            "live": "preview",
+        }
+        prev_state = prev_state_mapping.get(status, "draft")
 
-        submission: ProductSubmission = cast(
-            List[ProductSubmission], self.filter_product_resources(product=p, resource="submission")
-        )[0]
+        # Now we call the submission with the previous state to get its ID when available
+        submission = self.get_submission_state(product_id=product_id, state=prev_state)
+        if not submission:
+            raise RuntimeError(
+                f"Could not find the submission state \"{prev_state}\" for product \"{product_id}\""
+            )
 
-        # status is expected to be 'preview' or 'live'
+        # Update the status with the expected one
         submission.target.targetType = status
         log.debug("Set the status \"%s\" to submission.", status)
 
