@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.1.6 - 2023-06-28
+
+- Bump `requests` to 2.31.0
+- Azure: Fix publish to live
+- Azure: reduce the wait interval for configure
+
+## 0.1.5 - 2023-05-23
+
+- Revert Azure: always overwrite images on draft
+- Update the default schema version on Azure Session
+- Fix typo in models.ms_azure.CorePricing
+
+## 0.1.4 - 2023-05-10
+
+- Azure: always overwrite images on draft
+
+## 0.1.3 - 2023-03-30
+
+- Fix Azure bug with deprecated Disk Versions
+
 ## 0.1.2 - 2023-03-23
 
 AWS:
