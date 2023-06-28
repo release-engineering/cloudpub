@@ -326,9 +326,37 @@ class TestAzureService:
         with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
             res = azure_service.get_product("product-id")
 
-            mock_get.assert_called_once_with(path="/resource-tree/product/product-id")
+            mock_get.assert_called_once_with(
+                path="/resource-tree/product/product-id", params={"targetType": "preview"}
+            )
             mock_adict.assert_called_once_with(res_obj)
             assert res == product_obj
+
+    def test_get_product_not_found(
+        self,
+        azure_service: AzureService,
+        product_obj: Product,
+    ) -> None:
+        res_obj = response(
+            404,
+            {
+                "error": {
+                    "code": "notFound",
+                    "message": "whatever error",
+                    "details": [],
+                }
+            },
+        )
+
+        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
+            with pytest.raises(NotFoundError, match="No such product with id \"unknown-id\""):
+                azure_service.get_product("unknown-id")
+                calls = [
+                    mock.call(path="/resource-tree/product/unknown-id?targetType=preview"),
+                    mock.call(path="/resource-tree/product/unknown-id?targetType=live"),
+                    mock.call(path="/resource-tree/product/unknown-id?targetType=draft"),
+                ]
+                mock_get.assert_has_calls(calls)
 
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")
@@ -369,6 +397,54 @@ class TestAzureService:
 
         mock_products.__iter__.assert_called_once()
         mock_getpr.assert_not_called()
+
+    @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
+    def test_get_submissions(
+        self,
+        mock_adict: mock.MagicMock,
+        azure_service: AzureService,
+        submission_obj: ProductSubmission,
+    ) -> None:
+        dict_obj = {"value": [submission_obj.to_json()]}
+        res_obj = response(200, dict_obj)
+        mock_adict.return_value = dict_obj
+
+        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
+            res = azure_service.get_submissions("product-id")
+
+            mock_get.assert_called_once_with(path="/submission/product-id")
+            mock_adict.assert_called_once_with(res_obj)
+            assert res == [submission_obj]
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submissions")
+    def test_get_submission_state_success(
+        self,
+        mock_get_submissions: mock.MagicMock,
+        azure_service: AzureService,
+        submission_obj: ProductSubmission,
+    ) -> None:
+        submission_obj.target.targetType = "preview"
+        mock_get_submissions.return_value = [submission_obj]
+
+        res = azure_service.get_submission_state("product-id", state="preview")
+
+        mock_get_submissions.assert_called_once_with("product-id")
+        assert res == submission_obj
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submissions")
+    def test_get_submission_state_not_found(
+        self,
+        mock_get_submissions: mock.MagicMock,
+        azure_service: AzureService,
+        submission_obj: ProductSubmission,
+    ) -> None:
+        submission_obj.target.targetType = "draft"
+        mock_get_submissions.return_value = [submission_obj]
+
+        res = azure_service.get_submission_state("product-id", state="preview")
+
+        mock_get_submissions.assert_called_once_with("product-id")
+        assert not res
 
     def test_filter_product_resources(
         self,
@@ -433,23 +509,50 @@ class TestAzureService:
         with pytest.raises(NotFoundError, match="No such plan with name \"foo\""):
             azure_service.get_plan_by_name(product_obj, "foo")
 
+    @pytest.mark.parametrize(
+        "prev_status,final_status",
+        [
+            ('draft', 'draft'),
+            ('draft', 'preview'),
+            ('preview', 'live'),
+        ],
+    )
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
     def test_submit_to_status(
         self,
-        mock_getpr: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
         mock_configure: mock.MagicMock,
+        prev_status: str,
+        final_status: str,
         submission_obj: ProductSubmission,
         product_obj: Product,
         azure_service: AzureService,
     ) -> None:
-        mock_getpr.return_value = product_obj
-        submission_obj.target.targetType = 'live'
+        mock_getsubst.return_value = submission_obj
+        submission_obj.target.targetType = final_status
 
-        azure_service.submit_to_status(product_obj.id, 'live')
+        azure_service.submit_to_status(product_obj.id, final_status)
 
-        mock_getpr.assert_called_once_with(product_id=product_obj.id)
+        mock_getsubst.assert_called_once_with(product_id=product_obj.id, state=prev_status)
         mock_configure.assert_called_once_with(resource=submission_obj)
+
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    def test_submit_to_status_not_found(
+        self,
+        mock_getsubst: mock.MagicMock,
+        mock_configure: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+    ) -> None:
+        mock_getsubst.return_value = None
+        err = f"Could not find the submission state \"preview\" for product \"{product_obj.id}\""
+
+        with pytest.raises(RuntimeError, match=err):
+            azure_service.submit_to_status(product_obj.id, "live")
+
+        mock_configure.assert_not_called()
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
@@ -779,6 +882,45 @@ class TestAzureService:
         mock_disk_scratch.assert_not_called()
         mock_configure.assert_called_once_with(resource=technical_config_obj)
         mock_submit.assert_not_called()
+
+    def test_is_submission_in_preview(
+        self,
+        submission_obj: ProductSubmission,
+        azure_service: AzureService,
+    ) -> None:
+        # 1 - Initial state: submission is draft
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = submission_obj
+            res = azure_service._is_submission_in_preview(submission_obj)
+            assert res is False
+            mock_substt.assert_not_called()
+
+        # 2 - Current state is "live"
+        current = deepcopy(submission_obj)
+        current.target.targetType = "preview"
+        durable_id = "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/1234"
+        current.durable_id = durable_id
+        submission_obj.durable_id = durable_id
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = submission_obj
+            res = azure_service._is_submission_in_preview(current)
+            assert res is False
+            mock_substt.assert_called_once_with(current.product_id, "live")
+
+        # 3 - Current state is "preview" with an older published "live" state
+        submission_obj.durable_id = "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/4321"
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = submission_obj
+            res = azure_service._is_submission_in_preview(current)
+            assert res is True
+            mock_substt.assert_called_once_with(current.product_id, "live")
+
+        # 4 - Current state is "preview" with no published content
+        with mock.patch("cloudpub.ms_azure.AzureService.get_submission_state") as mock_substt:
+            mock_substt.return_value = None
+            res = azure_service._is_submission_in_preview(current)
+            assert res is True
+            mock_substt.assert_called_once_with(current.product_id, "live")
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")

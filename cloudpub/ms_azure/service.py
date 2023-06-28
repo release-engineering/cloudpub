@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
+from requests import HTTPError
 from tenacity import retry
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
@@ -130,7 +131,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             *[wait_fixed(wait=60)]  # First wait for 1 minute  # noqa: W503
             + [wait_fixed(wait=30 * 60)]  # Then wait for 30 minutes  # noqa: W503
             + [wait_fixed(wait=60 * 60)]  # And then wait for 1h  # noqa: W503
-            + [wait_fixed(wait=60 * 60 * 12)]  # Finally wait each 12h  # noqa: W503
+            + [wait_fixed(wait=60 * 60 * 2)]  # And two hours  # noqa: W503
+            + [wait_fixed(wait=60 * 60 * 6)]  # Finally wait each 6h  # noqa: W503
         ),
         stop=stop_after_delay(max_delay=60 * 60 * 24 * 7),  # Give up after retrying for 7 days
     )
@@ -218,16 +220,29 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """
         Return the requested Product by its ID.
 
+        It will return the product with the latest publishing status, trying to
+        fetch it in the following order: "preview" -> "live" -> "draft". The first
+        status to fech must be "preview" in order to indepotently detect an existing
+        publishing which could be missing to go live.
+
         Args:
             product_durable_id (str)
                 The product UUID
         Returns:
             Product: the requested product
         """
-        log.debug("Requesting the product ID \"%s\".", product_id)
-        resp = self.session.get(path=f"/resource-tree/product/{product_id}")
-        data = self._assert_dict(resp)
-        return Product.from_json(data)
+        targets = ["preview", "live", "draft"]
+        for t in targets:
+            log.debug("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
+            try:
+                resp = self.session.get(
+                    path=f"/resource-tree/product/{product_id}", params={"targetType": t}
+                )
+                data = self._assert_dict(resp)
+                return Product.from_json(data)
+            except (ValueError, NotFoundError, HTTPError):
+                log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, t)
+        self._raise_error(NotFoundError, f"No such product with id \"{product_id}\"")
 
     def get_product_by_name(self, product_name: str) -> Product:
         """
@@ -246,6 +261,38 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 log.debug("Product alias \"%s\" has the ID \"%s\"", product_name, product.id)
                 return self.get_product(product.id)
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
+
+    def get_submissions(self, product_id: str) -> List[ProductSubmission]:
+        """
+        Return a list of submissions for the given Product id.
+
+        Args:
+            product_id (str): The Product id to retrieve the submissions.
+
+        Returns:
+            List[ProductSubmission]: List of all submissions for the given Product.
+        """
+        log.debug("Requesting the submissions for product \"%s\".", product_id)
+        resp = self.session.get(path=f"/submission/{product_id}")
+        data = self._assert_dict(resp)
+        return [ProductSubmission.from_json(x) for x in data.get("value", [])]
+
+    def get_submission_state(self, product_id, state="preview") -> Optional[ProductSubmission]:
+        """
+        Retrieve a particular submission with the given state from the given Product id.
+
+        Args:
+            product_id (_type_): The product id to request the submissions.
+            state (str, optional): The state to filter the submission. Defaults to "preview".
+
+        Returns:
+            Optional[ProductSubmission]: The requested submission when found.
+        """
+        submissions = self.get_submissions(product_id)
+        for sub in submissions:
+            if sub.target.targetType == state:
+                return sub
+        return None
 
     def filter_product_resources(
         self, product: Product, resource: str
@@ -307,14 +354,23 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The response from configure request.
         """
-        p = self.get_product(product_id=product_id)
+        # We need to get the previous state of the given one to request the submission
+        prev_state_mapping = {
+            "preview": "draft",
+            "live": "preview",
+        }
+        prev_state = prev_state_mapping.get(status, "draft")
 
-        submission: ProductSubmission = cast(
-            List[ProductSubmission], self.filter_product_resources(product=p, resource="submission")
-        )[0]
+        # Now we call the submission with the previous state to get its ID when available
+        submission = self.get_submission_state(product_id=product_id, state=prev_state)
+        if not submission:
+            raise RuntimeError(
+                f"Could not find the submission state \"{prev_state}\" for product \"{product_id}\""
+            )
 
-        # status is expected to be 'preview' or 'live'
+        # Update the status with the expected one
         submission.target.targetType = status
+        log.debug("Set the status \"%s\" to submission.", status)
 
         return self.configure(resource=submission)
 
@@ -493,6 +549,28 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         return disk_version
 
+    def _is_submission_in_preview(self, current: ProductSubmission) -> bool:
+        """Return True if the latest submission state is "preview", False otherwise.
+
+           The product is considered to be in preview if the targetType is "preview" and the
+           submission id is not the same from the "live" target.
+
+           See also: https://learn.microsoft.com/en-us/partner-center/marketplace/product-ingestion-api#querying-your-submissions
+        Args:
+            current (ProductSubmission): the submission from the get_product
+
+        Returns:
+            bool: True if the latest submission is "preview", False otherwise
+        """  # noqa: E501
+        if current.target.targetType != "preview":
+            return False
+
+        # We need to check whether there's a live state with the same ID as current
+        live = self.get_submission_state(current.product_id, "live")
+        if live:
+            return current.id != live.id  # If they're the same then state == live
+        return True  # when no live it means it's in preview
+
     def _publish_live(self, product: Product, product_name: str) -> None:
         """
         Submit the product to 'live' after going through Azure Marketplace Validation.
@@ -515,7 +593,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             List[ProductSubmission],
             self.filter_product_resources(product=product, resource="submission"),
         )[0]
-        if submission.target.targetType != 'preview':
+        if not self._is_submission_in_preview(submission):
             log.info(
                 "Submitting the product \"%s (%s)\" to \"preview\"." % (product_name, product.id)
             )
