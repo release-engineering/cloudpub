@@ -81,6 +81,40 @@ class AttrsJSONDecodeMixin:
             args[a] = json_copy.pop(a, None)
         return cls(**args)
 
+    @staticmethod
+    def _serialize_value(attribute: Attribute, value: Any) -> Any:
+        """Iteractively parse and serialize the received value to a Python builtin.
+
+        Args:
+            attribute (Attribute): The attrs attribute to receive the value
+            value (Any): The value to be parsed/serialized
+
+        Returns:
+            Any: The parsed/serialized value
+        """
+        if isinstance(value, list):
+            log.debug("Parsing the list from %s" % attribute.name)
+            value = [x.to_json() if hasattr(x, "to_json") else x for x in value]
+        elif isinstance(value, dict):
+            log.debug("Parsing the dict from %s" % attribute.name)
+            value = {k: v.to_json() if hasattr(v, "to_json") else v for k, v in value.items()}
+        elif isinstance(value, object) and hasattr(value, "to_json"):
+            log.debug("Recursively building the value from %s" % attribute.name)
+            value = value.to_json()
+        elif value.__class__.__module__ == 'builtins':
+            log.debug(
+                "Not converting the object \"%s\" with value \"%s\" to JSON.",
+                type(value),
+                value,
+            )
+        else:
+            log.warning(
+                "Not converting the object \"%s\" with value \"%s\" to JSON.",
+                type(value),
+                value,
+            )
+        return value
+
     def to_json(self):
         """
         Convert a class object mapped by attrs into a dictionary.
@@ -98,29 +132,7 @@ class AttrsJSONDecodeMixin:
             value = getattr(self_copy, at.name, None)
             if value is not None:
                 log.debug("Parsing the attribute \"%s\" from \"%s\"" % (at.name, klass_name))
-                if isinstance(value, list):
-                    log.debug("Parsing the list from %s" % at.name)
-                    value = [x.to_json() if hasattr(x, "to_json") else x for x in value]
-                elif isinstance(value, dict):
-                    log.debug("Parsing the dict from %s" % at.name)
-                    value = {
-                        k: v.to_json() if hasattr(v, "to_json") else v for k, v in value.items()
-                    }
-                elif isinstance(value, object) and hasattr(value, "to_json"):
-                    log.debug("Recursively building the value from %s" % at.name)
-                    value = value.to_json()
-                elif value.__class__.__module__ == 'builtins':
-                    log.debug(
-                        "Not converting the object \"%s\" with value \"%s\" to JSON.",
-                        type(value),
-                        value,
-                    )
-                else:
-                    log.warning(
-                        "Not converting the object \"%s\" with value \"%s\" to JSON.",
-                        type(value),
-                        value,
-                    )
+                value = self._serialize_value(at, value)
                 setattr(self_copy, at.name, value)
 
         # Convert the instance to dictionary

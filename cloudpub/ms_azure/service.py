@@ -240,7 +240,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 )
                 data = self._assert_dict(resp)
                 return Product.from_json(data)
-            except (ValueError, NotFoundError, HTTPError):
+            except (ValueError, HTTPError):
                 log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, t)
         self._raise_error(NotFoundError, f"No such product with id \"{product_id}\"")
 
