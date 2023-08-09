@@ -254,7 +254,9 @@ class DeprecationSchedule(AttrsJSONDecodeMixin):
     date: str
     """The date for deprecation."""
 
-    date_offset: str
+    date_offset: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"hide_unset": True}
+    )
     """The date offset for deprecation."""
 
     reason: str

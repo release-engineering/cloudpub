@@ -674,12 +674,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 generation=metadata.generation,
                 plan_name=plan_name,
             )
-            # Filter out disk versions marked as deprecated since Microsoft get unhappy when
-            # sending them back on configure request.
-            log.debug("Filtering out possible deprecated disk versions")
-            tech_config.disk_versions = [
-                dv for dv in tech_config.disk_versions if dv.lifecycle_state != "deprecated"
-            ]
             log.debug("Updating the technical configuration for \"%s\"." % metadata.destination)
             self.configure(resource=tech_config)
 
