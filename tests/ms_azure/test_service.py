@@ -1009,7 +1009,7 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService._get_plan_tech_config")
     @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
     @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
-    def test_publish_filter_out_deprecated(
+    def test_publish_deprecated(
         self,
         mock_getpr_name: mock.MagicMock,
         mock_getpl_name: mock.MagicMock,
@@ -1028,7 +1028,7 @@ class TestAzureService:
         gen1_image: Dict[str, Any],
         azure_service: AzureService,
     ) -> None:
-        metadata_azure_obj.overwrite = True
+        metadata_azure_obj.overwrite = False
         metadata_azure_obj.keepdraft = False
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
@@ -1040,6 +1040,11 @@ class TestAzureService:
                 "versionNumber": "1.2.3",
                 "vmImages": [gen1_image],
                 "lifecycleState": "deprecated",
+                "deprecationSchedule": {
+                    "dateOffset": "P90D",
+                    "date": "2023-10-12",
+                    "reason": "other",
+                },
             }
         )
         # Set the deprecated disk_version alongside a valid one
@@ -1055,5 +1060,5 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        # After publishing we shouldn't have the deprecated_dv
-        assert deprecated_dv not in technical_config_obj.disk_versions
+        # After publishing we should still have the deprecated_dv
+        assert deprecated_dv in technical_config_obj.disk_versions
