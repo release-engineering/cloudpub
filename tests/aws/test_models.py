@@ -1,19 +1,41 @@
+import json
+import re
+from typing import Any, Dict
+
+import pytest
+
 from cloudpub.models.aws import (
     AmiDeliveryOptionsDetails,
     AMISource,
-    DeliveryOptions,
+    DeliveryOption,
     DeliveryOptionsDetails,
+    DescribeEntityResponse,
+    ProductDetailResponse,
+    ProductVersionsBase,
+    ProductVersionsCloudFormationSource,
+    ProductVersionsVirtualizationSource,
     SecurityGroup,
     Version,
     VersionMapping,
+    convert_source,
 )
+
+
+@pytest.fixture
+def describe_entity_response_base() -> Dict[str, str]:
+    return {
+        'EntityType': 'SaaSProduct@1.0',
+        'EntityIdentifier': '3edd5534-75d7-49a5-bd3b-8e106e35f13f@12',
+        'EntityArn': 'arn:aws:aws-marketplace:us-east-1:000000000000:AWSMarketplace/SaaSProduct/0',
+        'LastModifiedDate': '2022-07-28T14:41:06Z',
+    }
 
 
 def test_aws_resource_props(
     version_obj: Version,
     ami_obj: AMISource,
     security_group_obj: SecurityGroup,
-    delivery_options_obj: DeliveryOptions,
+    delivery_options_obj: DeliveryOption,
     delivery_options_details_obj: DeliveryOptionsDetails,
     ami_delivery_options_details_obj: AmiDeliveryOptionsDetails,
     version_mapping_obj: VersionMapping,
@@ -49,3 +71,41 @@ def test_aws_resource_props(
     # Delivery Version testing
     assert version_mapping_obj.version == version_obj
     assert version_mapping_obj.delivery_options[0] == delivery_options_obj
+
+
+def test_product_versions_base_invalid_type() -> None:
+    err = "Invalid value for type. Expected: ['AmazonMachineImage', 'CloudFormationTemplate']"
+    with pytest.raises(ValueError, match=re.escape(err)):
+        ProductVersionsBase.from_json(
+            {
+                "type": "invalid",
+                "source_id": "source",
+            }
+        )
+
+
+def test_convert_source(
+    product_versions_cloud_formation_source: Dict[str, Any],
+    product_versions_virtualization_source: Dict[str, Any],
+) -> None:
+    assert isinstance(
+        convert_source(product_versions_cloud_formation_source), ProductVersionsCloudFormationSource
+    )
+    assert isinstance(
+        convert_source(product_versions_virtualization_source), ProductVersionsVirtualizationSource
+    )
+
+
+def test_describe_entity_response_parsed_details(
+    describe_entity_response_base: Dict[str, str], details_entity_json: Dict[str, Any]
+) -> None:
+    describe_entity_response_base["Details"] = json.dumps(details_entity_json)
+    resp = DescribeEntityResponse.from_json(describe_entity_response_base)
+    assert isinstance(resp.parsed_details, ProductDetailResponse)
+
+
+def test_describe_entity_response_no_details(describe_entity_response_base: Dict[str, str]) -> None:
+    obj = DescribeEntityResponse.from_json(describe_entity_response_base)
+
+    with pytest.raises(ValueError, match="No valid JSON for details: None"):
+        obj.parsed_details
