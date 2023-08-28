@@ -182,18 +182,21 @@ def dimension_3() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def product_version_response() -> Dict[str, Any]:
+def delivery_option() -> Dict[str, str]:
+    return {
+        "Id": "do-qx3pi2xndxsqg",
+        "Type": "SoftwareRegistration",
+        "FulfillmentUrl": "https://foo.com/bar",
+        "Visibility": "Public",
+    }
+
+
+@pytest.fixture
+def product_version_response(delivery_option: Dict[str, str]) -> Dict[str, Any]:
     return {
         "Id": "version-6viuxnnz24h5e",
         "VersionTitle": "12.34.56",
-        "DeliveryOptions": [
-            {
-                "Id": "do-qx3pi2xndxsqg",
-                "Type": "SoftwareRegistration",
-                "FulfillmentUrl": "https://foo.com/bar",
-                "Visibility": "Public",
-            }
-        ],
+        "DeliveryOptions": [delivery_option],
         "CreationDate": "2018-02-27T13:45:22Z",
     }
 
@@ -241,6 +244,17 @@ def details_entity_json(
             product_version_response,
         ],
         "Targeting": targeting_detail,
+    }
+
+
+@pytest.fixture
+def describe_entity_response() -> Dict[str, Any]:
+    return {
+        "EntityType": "AmiProduct",
+        "EntityIdentifier": "fake-entity-identififer",
+        "EntityArn": "fake-arn",
+        "LastModifiedDate": "2018-02-27T13:45:22Z",
+        "ResponseMetadata": {"RequestId": "fake-req-id", "HTTPStatusCode": 200, "HTTPHeaders": {}},
     }
 
 
