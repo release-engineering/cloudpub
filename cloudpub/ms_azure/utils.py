@@ -125,13 +125,14 @@ def is_sas_eq(sas1: str, sas2: str) -> bool:
 
     # Base URL differs
     if base_sas1 != base_sas2:
-        log.debug("Got different base SAS: %s != %s" % (base_sas1, base_sas2))
+        log.debug("Got different base SAS: %s - Expected: %s" % (base_sas1, base_sas2))
         return False
 
     # Parameters lengh differs
     if len(params_sas1) != len(params_sas2):
         log.debug(
-            "Got different lengh of SAS parameters: len(%s) != len(%s)" % (params_sas1, params_sas2)
+            "Got different lengh of SAS parameters: len(%s) - Expected len(%s)"
+            % (params_sas1, params_sas2)
         )
         return False
 
