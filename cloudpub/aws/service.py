@@ -3,14 +3,24 @@ import json
 import logging
 import time
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import dateutil.parser
 from boto3.session import Session
 
 from cloudpub.common import BaseService, PublishingMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
-from cloudpub.models.aws import VersionMapping
+from cloudpub.models.aws import (
+    ChangeSetResponse,
+    DeliveryOption,
+    DescribeChangeSetReponse,
+    DescribeEntityResponse,
+    GroupedVersions,
+    ListEntitiesResponse,
+    ProductDetailResponse,
+    ProductVersionsResponse,
+    VersionMapping,
+)
 
 log = logging.getLogger(__name__)
 
@@ -69,12 +79,12 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         super(AWSProductService, self).__init__()
 
-    def _check_product_versions(self, details: Dict[str, Any]) -> None:
-        if "Versions" not in details or not isinstance(details["Versions"], list):
+    def _check_product_versions(self, details: ProductDetailResponse) -> None:
+        if not details or not details.versions:
             log.debug(f"The details from the response are: {details}")
             self._raise_error(NotFoundError, "This product has no versions")
 
-    def get_product_by_id(self, entity_id: str) -> Dict[str, Any]:
+    def get_product_by_id(self, entity_id: str) -> ProductDetailResponse:
         """
         Get a product detail by it's id.
 
@@ -83,24 +93,23 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 Entity id to get details from. If not set will default to
                 class setting for EntityId.
         Returns:
-            List[Dict[str, Any]]: A dict of details for a product
+            ProductDetailResponse: The details for a product
         Raises:
             NotFoundError when the product is not found.
         """
-        rsp = self.marketplace.describe_entity(Catalog="AWSMarketplace", EntityId=entity_id)
-        details_dict = rsp.get("Details")
+        rsp = DescribeEntityResponse.from_json(
+            self.marketplace.describe_entity(Catalog="AWSMarketplace", EntityId=entity_id)
+        )
 
-        if not details_dict:
+        if not rsp.details:
             log.debug(f"The response was: {rsp}")
             self._raise_error(NotFoundError, f"No such product with EntityId: \"{entity_id}\"")
 
-        details = json.loads(details_dict)
-
-        return details
+        return rsp.parsed_details
 
     def get_product_by_name(
         self, marketplace_entity_type: str, product_name: str
-    ) -> Dict[str, Any]:
+    ) -> ProductDetailResponse:
         """
         Get a product detail by it's name.
 
@@ -117,29 +126,31 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         """
         filter_list = [{"Name": "Name", "ValueList": [product_name]}]
 
-        entity_rsp = self.marketplace.list_entities(
-            Catalog="AWSMarketplace",
-            EntityType=marketplace_entity_type,
-            FilterList=filter_list,
+        entity_rsp = ListEntitiesResponse.from_json(
+            self.marketplace.list_entities(
+                Catalog="AWSMarketplace",
+                EntityType=marketplace_entity_type,
+                FilterList=filter_list,
+            )
         )
 
-        if len(entity_rsp["EntitySummaryList"]) == 0 and isinstance(
-            entity_rsp["EntitySummaryList"], list
-        ):
+        if len(entity_rsp.entity_summary_list) == 0:
             log.debug(f"The response was: {entity_rsp}")
             self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
-        if len(entity_rsp["EntitySummaryList"]) > 1:
+        if len(entity_rsp.entity_summary_list) > 1:
             log.debug(f"The response was: {entity_rsp}")
             self._raise_error(InvalidStateError, f"Multiple responses found for \"{product_name}\"")
 
         # We should only get one response based on filtering
-        if "EntityId" in entity_rsp["EntitySummaryList"][0]:
-            return self.get_product_by_id(entity_rsp["EntitySummaryList"][0]["EntityId"])
+        if hasattr(entity_rsp.entity_summary_list[0], "entity_id"):
+            return self.get_product_by_id(entity_rsp.entity_summary_list[0].entity_id)
 
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
-    def get_product_version_details(self, entity_id: str, version_id: str) -> List[Dict[str, Any]]:
+    def get_product_version_details(
+        self, entity_id: str, version_id: str
+    ) -> ProductVersionsResponse:
         """
         Get a product detail by it's name.
 
@@ -149,21 +160,21 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             version_id (str)
                 The version id of a product to get the details of
         Returns:
-            List[Dict[str, Any]]: A dict of details for the first response of a product
+            ProductVersionsResponse: The details for the first response of a product
         Raises:
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
         self._check_product_versions(details)
 
-        for version in details["Versions"]:
-            for delivery_option in version["DeliveryOptions"]:
-                if delivery_option["Id"] == version_id:
+        for version in details.versions:
+            for delivery_option in version.delivery_options:
+                if delivery_option.id == version_id:
                     return version
 
         self._raise_error(NotFoundError, f"No such version with id \"{version_id}\"")
 
-    def get_product_versions(self, entity_id: str) -> Dict[str, Any]:
+    def get_product_versions(self, entity_id: str) -> Dict[str, GroupedVersions]:
         """
         Get the titles, ids, and date created of all the versions of a product.
 
@@ -171,30 +182,28 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             entity_id (str)
                 The Id of the entity to edit
         Returns:
-            Dict[str, Any]: A dictionary of versions
+            Dict[str, GroupedVersions]: A dictionary of versions
         Raises:
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
         self._check_product_versions(details)
 
-        version_ids: Dict[str, Any] = {}
+        version_ids: Dict[str, GroupedVersions] = {}
 
-        for v in details["Versions"]:
+        for v in details.versions:
             delivery_options_list = []
-            for delivery_option in v["DeliveryOptions"]:
-                delivery_options_list.append(
-                    {"id": delivery_option["Id"], "visibility": delivery_option["Visibility"]}
-                )
-            delivery_options = {
+            for delivery_option in v.delivery_options:
+                delivery_options_list.append(delivery_option)
+            delivery_options: GroupedVersions = {
                 "delivery_options": delivery_options_list,
-                "created_date": v['CreationDate'],
+                "created_date": v.creation_date,  # type: ignore
             }
-            version_ids[v['VersionTitle']] = delivery_options
+            version_ids[v.version_title] = delivery_options  # type: ignore
 
         return version_ids
 
-    def get_product_version_by_name(self, entity_id: str, version_name: str) -> Dict[str, Any]:
+    def get_product_version_by_name(self, entity_id: str, version_name: str) -> DeliveryOption:
         """
         Get a version detail by it's name.
 
@@ -204,18 +213,18 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             version_name (str)
                 A version title to get details of
         Returns:
-            Dict[str, Any]: The delivery options of a version
+            DeliveryOption: The delivery options of a version
         Raises:
             NotFoundError when the product is not found.
         """
         details = self.get_product_by_id(entity_id)
         self._check_product_versions(details)
 
-        for version in details["Versions"]:
-            if version["VersionTitle"] == version_name:
+        for version in details.versions:
+            if version.version_title == version_name:
                 # ATM we're not batching Delivery options so
                 # the first one should be the one we want.
-                return version["DeliveryOptions"][0]
+                return version.delivery_options[0]
 
         self._raise_error(NotFoundError, f"No such version with name \"{version_name}\"")
 
@@ -238,7 +247,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         """
         change_details = {"DeliveryOptionIds": delivery_option_ids}
 
-        rsp = self.marketplace.start_change_set(
+        rsp: ChangeSetResponse = self.marketplace.start_change_set(
             Catalog="AWSMarketplace",
             ChangeSet=[
                 {
@@ -266,7 +275,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         Returns:
             str: A change set id
         """
-        rsp = self.marketplace.cancel_change_set(
+        rsp: ChangeSetResponse = self.marketplace.cancel_change_set(
             Catalog="AWSMarketplace", ChangeSetId=change_set_id
         )
 
@@ -286,26 +295,28 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         Raises:
             InvalidStateError if the job failed
         """
-        rsp = self.marketplace.describe_change_set(
-            Catalog="AWSMarketplace", ChangeSetId=change_set_id
+        rsp = DescribeChangeSetReponse.from_json(
+            self.marketplace.describe_change_set(
+                Catalog="AWSMarketplace", ChangeSetId=change_set_id
+            )
         )
 
-        status = rsp["Status"]
+        status = rsp.status
 
         log.info("Publishing status is %s.", status)
 
         if status.lower() == "failed":
-            failure_code = rsp["FailureCode"]
+            failure_code = rsp.failure_code
             # ATM we're not batching changesets so
             # the first one should be the one we want.
-            failure_list = rsp["ChangeSet"][0]["ErrorDetailList"]
+            failure_list = rsp.change_set[0].error_details
             log.debug(f"The response from the status was: {rsp}")
             error_message = (
                 f"Changeset {change_set_id} failed with code {failure_code}: \n {failure_list}"
             )
             self._raise_error(InvalidStateError, error_message)
 
-        return rsp["Status"]
+        return rsp.status
 
     def wait_for_changeset(
         self, change_set_id: str, attempts: int = 144, interval: int = 600
@@ -402,8 +413,8 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 for del_opt in version["delivery_options"]:
                     # Usually there is only one delivery option
                     # but we'll iterate through to make sure nothing is missing
-                    if del_opt["visibility"] == "Public":
-                        restrict_delivery_ids.append(del_opt["id"])
+                    if del_opt.visibility == "Public":
+                        restrict_delivery_ids.append(del_opt.id)
 
         if restrict_delivery_ids:
             log.debug(f"Restricting these minor version(s) with id(s): {restrict_delivery_ids}")
@@ -430,7 +441,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             )
             # ATM we're not batching Delivery options so
             # the first one should be the one we want.
-            json_mapping.delivery_options[0].id = org_version_details["Id"]
+            json_mapping.delivery_options[0].id = org_version_details.id
             change_set = [
                 {
                     "ChangeType": "UpdateDeliveryOptions",
@@ -457,7 +468,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 },
             ]
 
-        rsp = self.marketplace.start_change_set(
+        rsp: ChangeSetResponse = self.marketplace.start_change_set(
             Catalog="AWSMarketplace",
             ChangeSet=change_set,
         )

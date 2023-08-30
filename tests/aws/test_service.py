@@ -1,11 +1,25 @@
 import json
+from copy import deepcopy
+from typing import Any, Dict
 from unittest import mock
 
 import pytest
 
 from cloudpub.aws import AWSProductService, AWSVersionMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
-from cloudpub.models.aws import VersionMapping
+from cloudpub.models.aws import DeliveryOption, ProductVersionsResponse, VersionMapping
+
+
+@pytest.fixture
+def fake_entity_summary() -> Dict[str, str]:
+    return {
+        "Name": "fake-name",
+        "EntityType": "fake-type",
+        "EntityIdentifier": "fake-identifier",
+        "EntityArn": "fake-arn",
+        "LastModifiedDate": "fake-date",
+        "Visibility": "Public",
+    }
 
 
 class TestAWSVersionMetadata:
@@ -27,22 +41,28 @@ class TestAWSVersionMetadata:
 
 class TestAWSProductService:
     def test_get_product_by_id(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        describe_entity_response: Dict[str, Any],
     ) -> None:
-        details_json = json.dumps({"Versions": []})
-        mock_describe_entity.return_value = {"Details": details_json}
+        describe_entity_response["Details"] = json.dumps({"Versions": []})
+        mock_describe_entity.return_value = describe_entity_response
         product_details = aws_service.get_product_by_id("fake-entity-id")
 
         mock_describe_entity.assert_called_once_with(
             Catalog="AWSMarketplace", EntityId='fake-entity-id'
         )
         assert product_details is not None
-        assert product_details["Versions"] == []
+        assert product_details.versions == []
 
     def test_get_product_by_id_missing_details(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        describe_entity_response: Dict[str, Any],
     ) -> None:
-        mock_describe_entity.return_value = {}
+        mock_describe_entity.return_value = describe_entity_response
         with pytest.raises(
             NotFoundError, match="No such product with EntityId: \"fake-entity-id\""
         ):
@@ -53,10 +73,13 @@ class TestAWSProductService:
         mock_list_entities: mock.MagicMock,
         mock_describe_entity: mock.MagicMock,
         aws_service: AWSProductService,
+        describe_entity_response: Dict[str, Any],
+        fake_entity_summary: Dict[str, str],
     ) -> None:
-        mock_list_entities.return_value = {"EntitySummaryList": [{"EntityId": "35235325234234"}]}
-        details_json = json.dumps({"Versions": []})
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["EntityId"] = "35235325234234"
+        mock_list_entities.return_value = {"EntitySummaryList": [fake_entity_summary]}
+        describe_entity_response["Details"] = json.dumps({"Versions": []})
+        mock_describe_entity.return_value = describe_entity_response
         product_details = aws_service.get_product_by_name("fake-product-type", "fake-product")
 
         filter_list = [{"Name": "Name", "ValueList": ["fake-product"]}]
@@ -67,8 +90,8 @@ class TestAWSProductService:
             Catalog="AWSMarketplace", EntityId='35235325234234'
         )
         assert product_details is not None
-        assert isinstance(product_details["Versions"], list)
-        assert product_details["Versions"] == []
+        assert isinstance(product_details.versions, list)
+        assert product_details.versions == []
 
     def test_get_product_by_product_name_no_product(
         self,
@@ -99,10 +122,13 @@ class TestAWSProductService:
         mock_list_entities: mock.MagicMock,
         mock_describe_entity: mock.MagicMock,
         aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
-        mock_list_entities.return_value = {
-            "EntitySummaryList": [{"EntityId": "35235325234234"}, {"EntityId": "1234213412341234"}]
-        }
+        entity1 = fake_entity_summary
+        entity2 = deepcopy(fake_entity_summary)
+        entity1["EntityId"] = "35235325234234"
+        entity2["EntityId"] = "1234213412341234"
+        mock_list_entities.return_value = {"EntitySummaryList": [entity1, entity2]}
         details_json = json.dumps({"Versions": []})
         mock_describe_entity.return_value = {"Details": details_json}
         with pytest.raises(
@@ -111,22 +137,33 @@ class TestAWSProductService:
             _ = aws_service.get_product_by_name("fake-product-type", "fake-product")
 
     def test_get_product_version_details(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
+        delivery_option: Dict[str, str],
     ) -> None:
+        do1 = delivery_option
+        do2 = deepcopy(delivery_option)
+        do1["Id"] = "some-version-id"
+        do2["Id"] = "fake-id2"
         details_json = json.dumps(
             {
                 "Versions": [
                     {
+                        "Id": "fake-version-id",
+                        "CreationDate": "fake-creation-date",
                         "VersionTitle": "Fake-Version",
                         "DeliveryOptions": [
-                            {"Id": "some-version-id"},
-                            {"Id": "fake-id2"},
+                            do1,
+                            do2,
                         ],
                     },
                 ]
             }
         )
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         version_details = aws_service.get_product_version_details(
             "fake-entity-id", "some-version-id"
         )
@@ -134,44 +171,58 @@ class TestAWSProductService:
         mock_describe_entity.assert_called_once_with(
             Catalog="AWSMarketplace", EntityId='fake-entity-id'
         )
-        assert isinstance(version_details, dict)
-        assert version_details["VersionTitle"] == "Fake-Version"
+        assert isinstance(version_details, ProductVersionsResponse)
+        assert version_details.version_title == "Fake-Version"
 
     def test_get_product_version_details_no_version(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps({})
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         with pytest.raises(NotFoundError, match="This product has no versions"):
             _ = aws_service.get_product_version_details("fake-entity-id", "some-version-id")
 
     def test_get_product_version_details_no_match(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps(
             {
                 "Versions": [
                     {
+                        "Id": "Fake-Id",
                         "VersionTitle": "Fake-Version",
+                        "CreationDate": "Fake-date",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                 ]
             }
         )
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         with pytest.raises(NotFoundError, match="No such version with id \"some-version-id\""):
             _ = aws_service.get_product_version_details("fake-entity-id", "some-version-id")
 
     def test_get_product_versions(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps(
             {
                 "Versions": [
                     {
+                        "Id": "1",
                         "VersionTitle": "Fake-Version",
                         "CreationDate": "2023-02-24T12:41:25.503Z",
                         "DeliveryOptions": [
@@ -186,6 +237,7 @@ class TestAWSProductService:
                         ],
                     },
                     {
+                        "Id": "2",
                         "VersionTitle": "Fake-Version2",
                         "CreationDate": "2023-01-24T12:41:25.503Z",
                         "DeliveryOptions": [
@@ -202,87 +254,112 @@ class TestAWSProductService:
                 ]
             }
         )
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         version_details = aws_service.get_product_versions("fake-entity-id")
 
         mock_describe_entity.assert_called_once_with(
             Catalog="AWSMarketplace", EntityId='fake-entity-id'
         )
         for _, v in version_details.items():
-            v["delivery_options"][0]["id"] = "fake-id1"
-            v["delivery_options"][0]["id"] = "fake-id2"
+            v["delivery_options"][0].id = "fake-id1"
+            v["delivery_options"][0].id = "fake-id2"
 
     def test_get_product_versions_no_version(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps({})
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         with pytest.raises(NotFoundError, match="This product has no versions"):
             _ = aws_service.get_product_versions("fake-entity-id")
 
     def test_get_product_version_by_name(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps(
             {
                 "Versions": [
                     {
+                        "Id": "1",
                         "VersionTitle": "Fake-Version",
+                        "CreationDate": "Fake-date",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                     {
+                        "Id": "2",
                         "VersionTitle": "Fake-Version2",
+                        "CreationDate": "Fake-date2",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                 ]
             }
         )
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         version_details = aws_service.get_product_version_by_name("fake-entity-id", "Fake-Version")
 
         mock_describe_entity.assert_called_once_with(
             Catalog="AWSMarketplace", EntityId='fake-entity-id'
         )
-        assert version_details["Id"] == "fake-id1"
+        assert version_details.id == "fake-id1"
 
     def test_get_product_version_by_name_no_version(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps({})
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         with pytest.raises(NotFoundError, match="This product has no versions"):
             _ = aws_service.get_product_version_by_name("fake-product-type", "Fake-Version")
 
     def test_get_product_version_by_name_no_match(
-        self, mock_describe_entity: mock.MagicMock, aws_service: AWSProductService
+        self,
+        mock_describe_entity: mock.MagicMock,
+        aws_service: AWSProductService,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps(
             {
                 "Versions": [
                     {
+                        "Id": "1",
                         "VersionTitle": "Fake-Version1",
+                        "CreationDate": "Fake-date",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                     {
+                        "Id": "2",
                         "VersionTitle": "Fake-Version2",
+                        "CreationDate": "Fake-date2",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                 ]
             }
         )
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         with pytest.raises(NotFoundError, match="No such version with name \"Fake-Version\""):
             _ = aws_service.get_product_version_by_name("fake-entity-id", "Fake-Version")
 
@@ -325,7 +402,14 @@ class TestAWSProductService:
     def test_check_publish_status(
         self, mock_describe_change_set: mock.MagicMock, aws_service: AWSProductService
     ) -> None:
-        ret = {"Status": "Succeeded", "FailureCode": "", "ErrorDetailList": []}
+        ret = {
+            "ChangeSetId": "fake-id",
+            "ChangeSetArn": "fake-arn",
+            "StartTime": "fake-start-time",
+            "Status": "Succeeded",
+            "FailureCode": "",
+            "ErrorDetailList": [],
+        }
         mock_describe_change_set.return_value = ret
         status = aws_service.check_publish_status("fake-change-set-id")
         assert status == "Succeeded"
@@ -335,12 +419,26 @@ class TestAWSProductService:
     ) -> None:
         failure_list = [
             {
-                "Multiple": "fake",
-                "failures": "happened",
+                "ErrorCode": "500",
+                "ErrorMessage": "Multiple fake  failures happened",
             }
         ]
-        change_set = [{"ErrorDetailList": failure_list}]
-        ret = {"Status": "Failed", "FailureCode": "fake-code", "ChangeSet": change_set}
+        change_set = [
+            {
+                "ChangeType": "RestrictDeliveryOptions",
+                "Details": r"{}",
+                "ErrorDetailList": failure_list,
+            }
+        ]
+        ret = {
+            "ChangeSetId": "change",
+            "ChangeSetArn": "fake-arn",
+            "Status": "Failed",
+            "FailureCode": "fake-code",
+            "ChangeSet": change_set,
+            "StartTime": "fake-start-time",
+            "EndTime": "fake-end-time",
+        }
         mock_describe_change_set.return_value = ret
         with pytest.raises(InvalidStateError):
             _ = aws_service.check_publish_status("fake-change-set-id")
@@ -348,14 +446,30 @@ class TestAWSProductService:
     def test_wait_for_changeset(
         self, mock_describe_change_set: mock.MagicMock, aws_service: AWSProductService
     ) -> None:
-        ret = {"Status": "Succeeded", "FailureCode": "", "ErrorDetailList": []}
+        ret = {
+            "ChangeSetId": "change",
+            "ChangeSetArn": "fake-arn",
+            "Status": "Succeeded",
+            "FailureCode": "",
+            "ErrorDetailList": [],
+            "StartTime": "fake-start-time",
+            "EndTime": "fake-end-time",
+        }
         mock_describe_change_set.return_value = ret
         aws_service.wait_for_changeset("fake-change-set-id", 1, 0)
 
     def test_wait_for_changeset_timeout(
         self, mock_describe_change_set: mock.MagicMock, aws_service: AWSProductService
     ) -> None:
-        ret = {"Status": "Blah", "FailureCode": "", "ErrorDetailList": []}
+        ret = {
+            "ChangeSetId": "change",
+            "ChangeSetArn": "fake-arn",
+            "Status": "Blah",
+            "FailureCode": "",
+            "ErrorDetailList": [],
+            "StartTime": "fake-start-time",
+            "EndTime": "fake-end-time",
+        }
         mock_describe_change_set.return_value = ret
         with pytest.raises(Timeout, match="Timed out waiting for fake-change-set-id to finish"):
             aws_service.wait_for_changeset("fake-change-set-id", 1, 0)
@@ -412,28 +526,34 @@ class TestAWSProductService:
         aws_service: AWSProductService,
         version_metadata_obj: AWSVersionMetadata,
         mock_start_change_set: mock.MagicMock,
+        fake_entity_summary: Dict[str, str],
     ) -> None:
         details_json = json.dumps(
             {
                 "Versions": [
                     {
+                        "Id": "1",
                         "VersionTitle": "Test-Version-Title",
+                        "CreationDate": "fake-date",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                     {
+                        "Id": "2",
                         "VersionTitle": "Fake-Version2",
+                        "CreationDate": "fake-date2",
                         "DeliveryOptions": [
-                            {"Id": "fake-id1"},
-                            {"Id": "fake-id2"},
+                            {"Id": "fake-id1", "Visibility": "Public"},
+                            {"Id": "fake-id2", "Visibility": "Public"},
                         ],
                     },
                 ]
             }
         )
-        mock_describe_entity.return_value = {"Details": details_json}
+        fake_entity_summary["Details"] = details_json
+        mock_describe_entity.return_value = fake_entity_summary
         mock_start_change_set.return_value = {"ChangeSetId": "fake-change-set-id"}
 
         version_metadata_obj.overwrite = True
@@ -492,39 +612,57 @@ class TestAWSProductService:
     ) -> None:
         mock_version_ids = {
             '9.0 20220513-0': {
-                "delivery_options": [{"id": 'fake-id1', "visibility": "Restricted"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id1', "visibility": "Restricted"})
+                ],
                 "created_date": "2022-01-24T12:41:25.503Z",
             },
             '9.0 20220613': {
-                "delivery_options": [{"id": 'fake-id2', "visibility": "Public"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id2', "visibility": "Public"})
+                ],
                 "created_date": "2022-02-24T12:41:25.503Z",
             },
             '9.0 20220713': {
-                "delivery_options": [{"id": 'fake-id3', "visibility": "Limited"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id3', "visibility": "Limited"})
+                ],
                 "created_date": "2022-03-24T12:41:25.503Z",
             },
             '9.0 20220813': {
-                "delivery_options": [{"id": 'fake-id4', "visibility": "Restricted"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id4', "visibility": "Restricted"})
+                ],
                 "created_date": "2022-04-24T12:41:25.503Z",
             },
             '9.0 20220913': {
-                "delivery_options": [{"id": 'fake-id5', "visibility": "Public"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id5', "visibility": "Public"})
+                ],
                 "created_date": "2022-05-24T12:41:25.503Z",
             },
             'OpenShift Container Platform 9.0': {
-                "delivery_options": [{"id": 'fake-id6', "visibility": "Public"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id6', "visibility": "Public"})
+                ],
                 "created_date": "2022-01-24T12:41:25.503Z",
             },
             '9.1 20220913': {
-                "delivery_options": [{"id": 'fake-id1-2', "visibility": "Public"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id1-2', "visibility": "Public"})
+                ],
                 "created_date": "2022-03-24T12:41:25.503Z",
             },
             '9.1 20220513': {
-                "delivery_options": [{"id": 'fake-id1-3', "visibility": "Public"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id1-3', "visibility": "Public"})
+                ],
                 "created_date": "2022-03-24T12:41:25.503Z",
             },
             'BadVersion': {
-                "delivery_options": [{"id": 'fake-id1-6', "visibility": "Public"}],
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-id1-6', "visibility": "Public"})
+                ],
                 "created_date": "2022-01-24T12:41:25.503Z",
             },
         }

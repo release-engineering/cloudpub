@@ -14,10 +14,12 @@ serialize/deserialize the JSON values for each request.
 **Contents:**
 
 - `AWS Version Mapping`_
+- `Product Resources`_
+- `Resources internal elements`_
 
 
 AWS Version Mapping
-.............
+...................
 
 .. autoclass:: cloudpub.models.aws.VersionMapping()
    :members:
@@ -38,6 +40,95 @@ AWS Version Mapping
    :members:
 
 .. autoclass:: cloudpub.models.aws.AMISource()
+   :members:
+
+Product Resources
+.................
+
+.. autoclass:: cloudpub.models.aws.ProductDetailDescription()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ProductVersionsResponse()
+   :members:
+
+
+.. autoclass:: cloudpub.models.aws.PromotionalResources()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.Dimensions()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.SupportInformation()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.RegionAvailability()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.TargetingDetail()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ProductDetailResponse()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.DescribeEntityResponse()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.EntitySummary()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ListEntitiesResponse()
+   :members:
+
+
+Resources internal elements
+...........................
+
+.. autoclass:: cloudpub.models.aws.BaseEntity()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.OperatingSystem()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ProductVersionsBase()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ProductVersionsCloudFormationSource()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ProductVersionsVirtualizationSource()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.SourcesCompatibility()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.BaseResources()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.AdditionalResources()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.PromoResourcesVideo()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.PositiveTargeting()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ResponseMetadata()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ChangeSummary()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.DescribeChangeSetReponse()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ErrorDetail()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.ChangeSetResponse()
+   :members:
+
+.. autoclass:: cloudpub.models.aws.GroupedVersions()
    :members:
 
 .. _`attrs`: https://www.attrs.org/en/stable/
