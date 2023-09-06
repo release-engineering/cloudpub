@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.3.0 - 2023-09-06
+
+- Use AWS models to validate and manipulate the boto3 requests/responses
+- Enhance the `is_sas_eq` logs for Azure to better distinct the expected and received SAS URI
+
 ## 0.2.0 - 2023-08-09
 
 - Do not filter out deprecated images on Azure
