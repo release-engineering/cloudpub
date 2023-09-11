@@ -1057,8 +1057,12 @@ class TestAzureService:
 
         # Before publishing we should have the deprecated_dv
         assert deprecated_dv in technical_config_obj.disk_versions
+        assert deprecated_dv.lifecycle_state is not None
+        assert deprecated_dv.deprecation_schedule is not None
 
         azure_service.publish(metadata_azure_obj)
 
         # After publishing we should still have the deprecated_dv
         assert deprecated_dv in technical_config_obj.disk_versions
+        assert deprecated_dv.lifecycle_state is None
+        assert deprecated_dv.deprecation_schedule is None
