@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.3.1 - 2023-09-12
+
+- Fix bug when dealing with scheduled deprecation images on Azure.
+
 ## 0.3.0 - 2023-09-06
 
 - Use AWS models to validate and manipulate the boto3 requests/responses
