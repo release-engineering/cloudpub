@@ -120,6 +120,23 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """
         log.debug(f"Query job details for \"{job_id}\"")
         resp = self.session.get(path=f"configure/{job_id}/status")
+
+        # We don't want to fail if there's a server error thus we make a fake
+        # response for it so the query job details will be retried.
+        if resp.status_code >= 500:
+            log.warning(
+                (
+                    f"Got HTTP {resp.status_code} from server when querying job {job_id} status."
+                    " Considering the job_status as \"pending\"."
+                )
+            )
+            return ConfigureStatus.from_json(
+                {
+                    "job_id": job_id,
+                    "job_status": "pending",
+                }
+            )
+
         self._raise_for_status(response=resp)
         parsed_resp = ConfigureStatus.from_json(resp.json())
         log.debug("Query Job details response: %s", parsed_resp)

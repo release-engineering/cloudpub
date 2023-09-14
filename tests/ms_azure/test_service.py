@@ -159,6 +159,27 @@ class TestAzureService:
                 assert res == ConfigureStatus.from_json(res_json)
                 assert "Query job details for \"job-id\"" in caplog.text
 
+    @mock.patch("cloudpub.ms_azure.AzureService._raise_for_status")
+    def test_query_job_details_server_error(
+        self,
+        mock_raise_status: mock.MagicMock,
+        azure_service: AzureService,
+        caplog: LogCaptureFixture,
+    ) -> None:
+        res_obj = response(502, {"status": "Bad Gateway"})
+        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
+            with caplog.at_level(logging.DEBUG):
+                res = azure_service._query_job_details("job-id")
+
+                mock_get.assert_called_once_with(path="configure/job-id/status")
+                mock_raise_status.assert_not_called()
+                assert res == ConfigureStatus.from_json(
+                    {"job_id": "job-id", "job_status": "pending"}
+                )
+                assert "Query job details for \"job-id\"" in caplog.text
+                assert "Got HTTP 502 from server when querying job job-id status." in caplog.text
+                assert "Considering the job_status as \"pending\"." in caplog.text
+
     @mock.patch("cloudpub.ms_azure.utils.is_azure_job_not_complete")
     @mock.patch("cloudpub.ms_azure.AzureService._query_job_details")
     def test_wait_for_job_completion_successful_completion(

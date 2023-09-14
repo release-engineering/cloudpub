@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from cloudpub.utils import base_url, join_url
 
@@ -67,6 +68,16 @@ class PartnerPortalSession:
         self._token: Optional[AccessToken] = None
         self.publisher = auth_keys["AZURE_PUBLISHER_NAME"]
         self._additional_args = kwargs
+        self.session = requests.Session()
+        total_retries = kwargs.pop("total_retries", 5)
+        backoff_factor = kwargs.pop("backoff_factor", 1)
+        status_forcelist = kwargs.pop("status_forcelist", tuple(range(500, 512)))
+        retries = Retry(
+            total=total_retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+        )
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
     @classmethod
     def make_graph_api_session(
@@ -122,7 +133,7 @@ class PartnerPortalSession:
             "grant_type": "client_credentials",
         }
 
-        resp = requests.post(url, headers=headers, data=data, timeout=30)
+        resp = self.session.post(url, headers=headers, data=data, timeout=30)
         resp.raise_for_status()
         return AccessToken(resp.json())
 
@@ -150,7 +161,7 @@ class PartnerPortalSession:
         log.info(f"Sending a {method} request to {path}")
         formatted_url = self._prefix_url.format(**self.auth_keys)
         url = join_url(formatted_url, path)
-        return requests.request(method, url=url, params=params, headers=headers, **kwargs)
+        return self.session.request(method, url=url, params=params, headers=headers, **kwargs)
 
     def get(self, path: str, **kwargs: Any) -> requests.Response:
         """Execute an API GET request."""
