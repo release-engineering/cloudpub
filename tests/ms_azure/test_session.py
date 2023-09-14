@@ -48,17 +48,15 @@ class TestPartnerPortalSession:
             with pytest.raises(ValueError, match=expected_msg):
                 PartnerPortalSession.make_graph_api_session(copyauth_dict)
 
-    @mock.patch("cloudpub.ms_azure.session.requests.post")
-    @mock.patch("cloudpub.ms_azure.session.requests.request")
+    @mock.patch("cloudpub.ms_azure.session.requests.Session")
     def test_login(
         self,
-        req_mock: mock.MagicMock,
-        post_mock: mock.MagicMock,
+        session_mock: mock.MagicMock,
         auth_dict: Dict[str, str],
         token: Dict[str, str],
     ) -> None:
-        req_mock.return_value = response(200)
-        post_mock.return_value = response(200, token)
+        session_mock.return_value.request.return_value = response(200)
+        session_mock.return_value.post.return_value = response(200, token)
 
         tenant = auth_dict['AZURE_TENANT_ID']
         login_url = f"https://login.microsoftonline.com/{tenant}/oauth2/token"
@@ -73,8 +71,8 @@ class TestPartnerPortalSession:
         session = PartnerPortalSession.make_graph_api_session(auth_dict)
         session.get("/foo")
 
-        req_mock.assert_called_once()
-        post_mock.assert_called_once_with(
+        session_mock.return_value.request.assert_called_once()
+        session_mock.return_value.post.assert_called_once_with(
             login_url, headers=login_header, data=login_data, timeout=30
         )
 
@@ -86,17 +84,18 @@ class TestPartnerPortalSession:
             ('put', "foo", {"foo": "bar"}),
         ],
     )
-    @mock.patch("cloudpub.ms_azure.session.requests")
+    @mock.patch("cloudpub.ms_azure.session.requests.Session")
     def test_request(
         self,
-        mock_req: mock.MagicMock,
+        mock_session: mock.MagicMock,
         method: str,
         path: str,
         json: Dict[str, Any],
         auth_dict: Dict[str, str],
         token: Dict[str, str],
     ) -> None:
-        mock_req.post.return_value = response(200, token)  # for PartnerPortalSession._login
+        # for PartnerPortalSession._login
+        mock_session.return_value.post.return_value = response(200, token)
 
         url = join_url("https://graph.microsoft.com/rp/product-ingestion", path)
         put_headers = {
@@ -109,11 +108,11 @@ class TestPartnerPortalSession:
 
         if json:
             getattr(session, method)(path, json)
-            mock_req.request.assert_called_once_with(
+            mock_session.return_value.request.assert_called_once_with(
                 method, url=url, params=put_param, headers=put_headers, json={"foo": "bar"}
             )
         else:
             getattr(session, method)(path)
-            mock_req.request.assert_called_once_with(
+            mock_session.return_value.request.assert_called_once_with(
                 method, url=url, params=put_param, headers=put_headers
             )
