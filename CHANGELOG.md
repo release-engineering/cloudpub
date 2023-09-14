@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.3.2 - 2023-09-14
+
+- Azure: Do not fail on 50X errors from job status
+
 ## 0.3.1 - 2023-09-12
 
 - Fix bug when dealing with scheduled deprecation images on Azure.
