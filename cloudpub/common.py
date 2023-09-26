@@ -20,6 +20,7 @@ class PublishingMetadata:
         destination: str,
         overwrite: bool = False,
         keepdraft: bool = False,
+        preview_only: bool = False,
     ) -> None:
         """
         Create an instanece of PublishingMetadata.
@@ -38,12 +39,16 @@ class PublishingMetadata:
             Whether to just associate the VM Image with the destination but avoid publishing or not.
             When set to `False` it will publish the content as GA.
             This defaults to `True`.
+        preview_only (boolean, optional)
+            Whether the final publish status should be ``preview`` (``True``)
+            or ``live`` (``False``). Defaults to ``False``.
         """
         self.image_path = image_path
         self.architecture = architecture
         self.destination = destination
         self.overwrite = overwrite
         self.keepdraft = keepdraft
+        self.preview_only = preview_only
         self.__validate()
 
     def __validate(self):
