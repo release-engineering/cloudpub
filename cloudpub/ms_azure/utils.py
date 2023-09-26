@@ -49,6 +49,9 @@ class AzurePublishingMetadata(PublishingMetadata):
             legacy_sku_id (str, optional):
                 Only required when ``support_legacy == True``. The SKU ID for Gen1.
                 Defaults to ``{sku_id}-gen1``
+            preview_only (boolean, optional)
+                Whether the final publish status should be ``preview`` (``True``)
+                or ``live`` (``False``). Defaults to ``False``.
             **kwargs
                 Arguments for :class:`~cloudpub.common.PublishingMetadata`.
         """
@@ -58,6 +61,7 @@ class AzurePublishingMetadata(PublishingMetadata):
         self.support_legacy = support_legacy
         self.recommended_sizes = recommended_sizes or []
         self.legacy_sku_id = kwargs.pop("legacy_sku_id", None)
+        self.preview_only = kwargs.pop("preview_only", False)
 
         if generation == "V1" or not support_legacy:
             self.legacy_sku_id = None
