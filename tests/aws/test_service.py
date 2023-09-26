@@ -225,6 +225,25 @@ class TestAWSProductService:
                         "Id": "1",
                         "VersionTitle": "Fake-Version",
                         "CreationDate": "2023-02-24T12:41:25.503Z",
+                        "Sources": [
+                            {
+                                "Id": "1234-1234-1234-1234",
+                                "Type": "AmazonMachineImage",
+                                "Image": "ami-id-fake",
+                                "Architecture": "x86_64",
+                                "VirtualizationType": "hvm",
+                                "OperatingSystem": {
+                                    "Name": "RHEL",
+                                    "Version": "RHEL CoreOS",
+                                    "Username": "core",
+                                    "ScanningPort": 22,
+                                },
+                                "Compatibility": {
+                                    "AvailableInstanceTypes": [],
+                                    "RestrictedInstanceTypes": [],
+                                },
+                            }
+                        ],
                         "DeliveryOptions": [
                             {
                                 "Id": "fake-id1",
@@ -240,6 +259,25 @@ class TestAWSProductService:
                         "Id": "2",
                         "VersionTitle": "Fake-Version2",
                         "CreationDate": "2023-01-24T12:41:25.503Z",
+                        "Sources": [
+                            {
+                                "Id": "1234-1234-1234-1234",
+                                "Type": "AmazonMachineImage",
+                                "Image": "ami-id-fake",
+                                "Architecture": "x86_64",
+                                "VirtualizationType": "hvm",
+                                "OperatingSystem": {
+                                    "Name": "RHEL",
+                                    "Version": "RHEL CoreOS",
+                                    "Username": "core",
+                                    "ScanningPort": 22,
+                                },
+                                "Compatibility": {
+                                    "AvailableInstanceTypes": ["g5.48xlarge"],
+                                    "RestrictedInstanceTypes": [],
+                                },
+                            }
+                        ],
                         "DeliveryOptions": [
                             {
                                 "Id": "fake-id1",
@@ -264,6 +302,7 @@ class TestAWSProductService:
         for _, v in version_details.items():
             v["delivery_options"][0].id = "fake-id1"
             v["delivery_options"][0].id = "fake-id2"
+            assert v["ami_ids"] == ["ami-id-fake"]
 
     def test_get_product_versions_no_version(
         self,
@@ -477,12 +516,12 @@ class TestAWSProductService:
     def test_start_image_scan(self, aws_service: AWSProductService) -> None:
         # future test for image scan
         with pytest.raises(NotImplementedError, match="To be added at a future date"):
-            aws_service.start_image_scan("ami_id")
+            aws_service.start_image_scan("ami_ids")
 
     def test_check_image_scan(self, aws_service: AWSProductService) -> None:
         # future test for image scan
         with pytest.raises(NotImplementedError, match="To be added at a future date"):
-            aws_service.check_image_scan("ami_id")
+            aws_service.check_image_scan("ami_ids")
 
     @mock.patch("cloudpub.aws.AWSProductService.wait_for_changeset")
     def test_publish(
@@ -616,66 +655,79 @@ class TestAWSProductService:
                     DeliveryOption.from_json({"id": 'fake-id1', "visibility": "Restricted"})
                 ],
                 "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-1"],
             },
             '9.0 20220613': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id2', "visibility": "Public"})
                 ],
                 "created_date": "2022-02-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-2"],
             },
             '9.0 20220713': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id3', "visibility": "Limited"})
                 ],
                 "created_date": "2022-03-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-3"],
             },
             '9.0 20220813': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id4', "visibility": "Restricted"})
                 ],
                 "created_date": "2022-04-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-4"],
             },
             '9.0 20220913': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id5', "visibility": "Public"})
                 ],
                 "created_date": "2022-05-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-5"],
             },
             'OpenShift Container Platform 9.0': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id6', "visibility": "Public"})
                 ],
                 "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-6"],
             },
             '9.1 20220913': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id1-2', "visibility": "Public"})
                 ],
                 "created_date": "2022-03-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-7"],
             },
             '9.1 20220513': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id1-3', "visibility": "Public"})
                 ],
                 "created_date": "2022-03-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-8"],
             },
             'BadVersion': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id1-6', "visibility": "Public"})
                 ],
                 "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-9"],
             },
         }
         get_product_versions.return_value = mock_version_ids
         mock_set_restrict_versions.return_value = "fake-change-set-id1"
 
-        aws_service.restrict_minor_versions("fake-entity", "fake-entity-type", "9.0")
+        restricted_vers = aws_service.restrict_minor_versions(
+            "fake-entity", "fake-entity-type", "9.0"
+        )
 
         get_product_versions.assert_called_once_with("fake-entity")
         mock_set_restrict_versions.assert_called_once_with(
             'fake-entity', 'fake-entity-type', ['fake-id2', 'fake-id6']
         )
         mock_wait_for_changeset.assert_called_once_with("fake-change-set-id1")
+
+        assert restricted_vers == ['ami-fake-id-2', 'ami-fake-id-6']
 
     @mock.patch("cloudpub.aws.AWSProductService.get_product_versions")
     @mock.patch("cloudpub.aws.AWSProductService.set_restrict_versions")
@@ -696,8 +748,12 @@ class TestAWSProductService:
         get_product_versions.return_value = mock_version_ids
         mock_set_restrict_versions.return_value = "fake-change-set-id1"
 
-        aws_service.restrict_minor_versions("fake-entity", "fake-entity-type", "9.0")
+        restrcited_vers = aws_service.restrict_minor_versions(
+            "fake-entity", "fake-entity-type", "9.0"
+        )
 
         get_product_versions.assert_called_once_with("fake-entity")
         mock_set_restrict_versions.assert_not_called()
         mock_wait_for_changeset.assert_not_called()
+
+        assert restrcited_vers == []
