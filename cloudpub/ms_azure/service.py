@@ -588,12 +588,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             return current.id != live.id  # If they're the same then state == live
         return True  # when no live it means it's in preview
 
-    def _publish_live(self, product: Product, product_name: str) -> None:
+    def _publish_preview(self, product: Product, product_name: str) -> None:
         """
-        Submit the product to 'live' after going through Azure Marketplace Validation.
+        Submit the product to 'preview'  if it's not already in this state.
 
-        This method will first send the product to `preview` if it's not already in this state to
-        execute the validation pipeline (on Azure side) and then submit it to `live`.
+        This is required to execute the validation pipeline on Azure side.
 
         Args:
             product
@@ -616,6 +615,16 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             )
             self.submit_to_status(product_id=product.id, status='preview')
 
+    def _publish_live(self, product: Product, product_name: str) -> None:
+        """
+        Submit the product to 'live' after going through Azure Marketplace Validation.
+
+        Args:
+            product
+                The product with changes to publish live
+            product_name
+                The product name to display in logs.
+        """
         # Note: the offer can only go `live` after successfully being changed to `preview`
         # which takes up to 4 days.
         log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
@@ -736,4 +745,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 5. Proceed to publishing if it was requested.
         if not metadata.keepdraft:
-            self._publish_live(product, product_name)
+            self._publish_preview(product, product_name)
+
+            if not metadata.preview_only:
+                self._publish_live(product, product_name)

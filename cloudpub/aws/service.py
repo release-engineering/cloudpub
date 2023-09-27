@@ -430,7 +430,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         Args:
             new_version_details (VersionMapping): A model of the version mapping
         """
-        if metadata.keepdraft:
+        if metadata.keepdraft or metadata.preview_only:
             return None
 
         if metadata.overwrite:

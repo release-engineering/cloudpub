@@ -951,6 +951,82 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
     @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
     @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    def test_publish_preview(
+        self,
+        mock_getpr_name: mock.MagicMock,
+        mock_getpl_name: mock.MagicMock,
+        mock_filter: mock.MagicMock,
+        mock_disk_scratch: mock.MagicMock,
+        mock_is_sas: mock.MagicMock,
+        mock_prep_img: mock.MagicMock,
+        mock_submit: mock.MagicMock,
+        mock_configure: mock.MagicMock,
+        product_obj: Product,
+        plan_summary_obj: PlanSummary,
+        metadata_azure_obj: AzurePublishingMetadata,
+        technical_config_obj: VMIPlanTechConfig,
+        disk_version_obj: DiskVersion,
+        submission_obj: ProductSubmission,
+        azure_service: AzureService,
+    ) -> None:
+        metadata_azure_obj.overwrite = False
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.support_legacy = True
+        metadata_azure_obj.preview_only = True
+        metadata_azure_obj.destination = "example-product/plan-1"
+        metadata_azure_obj.disk_version = "2.0.0"
+        mock_getpr_name.return_value = product_obj
+        mock_getpl_name.return_value = plan_summary_obj
+        mock_filter.side_effect = [
+            [technical_config_obj],
+            [submission_obj],
+        ]
+        mock_is_sas.return_value = False
+        expected_source = VMImageSource(
+            source_type="sasUri",
+            os_disk=OSDiskURI(uri=metadata_azure_obj.image_path).to_json(),
+            data_disks=[],
+        )
+        disk_version_obj.vm_images[0] = VMImageDefinition(
+            image_type=get_image_type_mapping(metadata_azure_obj.architecture, "V1"),
+            source=expected_source.to_json(),
+        )
+        mock_prep_img.return_value = deepcopy(
+            disk_version_obj.vm_images
+        )  # During submit it will pop the disk_versions
+        technical_config_obj.disk_versions = [disk_version_obj]
+        technical_config_obj.disk_versions = [disk_version_obj]
+
+        azure_service.publish(metadata_azure_obj)
+        mock_getpr_name.assert_called_once_with(product_name="example-product")
+        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        filter_calls = [
+            mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
+            mock.call(product=product_obj, resource="submission"),
+        ]
+        mock_filter.assert_has_calls(filter_calls)
+        mock_is_sas.assert_called_once_with(
+            technical_config_obj,
+            metadata_azure_obj.image_path,
+        )
+        mock_prep_img.assert_called_once_with(
+            metadata=metadata_azure_obj,
+            gen1=disk_version_obj.vm_images[0],
+            gen2=disk_version_obj.vm_images[1],
+            source=expected_source,
+        )
+        mock_disk_scratch.assert_not_called()
+        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_submit.assert_called_once_with(product_id=product_obj.id, status="preview")
+
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")
+    @mock.patch("cloudpub.ms_azure.service.is_sas_present")
+    @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
+    @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
     def test_publish_live(
         self,
         mock_getpr_name: mock.MagicMock,
