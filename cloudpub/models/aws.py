@@ -957,6 +957,9 @@ class GroupedVersions(TypedDict):
     created_date: str
     """The creation date of a specific version."""
 
+    ami_ids: List[str]
+    """A list of AMI ids."""
+
 
 class ChangeSetResponse(TypedDict):
     """Represent the response of ``MarketplaceCatalog.Client.start_change_set`` or ``MarketplaceCatalog.Client.cancel_change_set``."""  # noqa: E501

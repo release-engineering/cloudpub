@@ -19,6 +19,7 @@ from cloudpub.models.aws import (
     ListEntitiesResponse,
     ProductDetailResponse,
     ProductVersionsResponse,
+    ProductVersionsVirtualizationSource,
     VersionMapping,
 )
 
@@ -193,11 +194,16 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         for v in details.versions:
             delivery_options_list = []
+            ami_id_list = []
             for delivery_option in v.delivery_options:
                 delivery_options_list.append(delivery_option)
+            for source in v.sources:
+                if isinstance(source, ProductVersionsVirtualizationSource):
+                    ami_id_list.append(source.image)
             delivery_options: GroupedVersions = {
                 "delivery_options": delivery_options_list,
                 "created_date": v.creation_date,  # type: ignore
+                "ami_ids": ami_id_list,
             }
             version_ids[v.version_title] = delivery_options  # type: ignore
 
@@ -379,7 +385,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         entity_id: str,
         marketplace_entity_type: str,
         restrict_version: str,
-    ) -> None:
+    ) -> List[str]:
         """
         Restrict the old minor versions of a release.
 
@@ -392,6 +398,8 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             restrict_version (str)
                 The restrict version to look for.
                 example: 9.0
+        Returns:
+            List[str]: List of AMI ids of restricted versions
         """
         versions = self.get_product_versions(entity_id)
 
@@ -400,7 +408,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         matching_version_list = [v for t, v in versions.items() if restrict_version in t]
 
         if not matching_version_list:
-            return
+            return []
 
         newest_matching_version_created_date = max(
             (x["created_date"] for x in matching_version_list),
@@ -408,6 +416,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         )
 
         restrict_delivery_ids = []
+        restrict_ami_ids = []
         for version in matching_version_list:
             if newest_matching_version_created_date != version["created_date"]:
                 for del_opt in version["delivery_options"]:
@@ -415,6 +424,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                     # but we'll iterate through to make sure nothing is missing
                     if del_opt.visibility == "Public":
                         restrict_delivery_ids.append(del_opt.id)
+                        restrict_ami_ids.extend(version["ami_ids"])
 
         if restrict_delivery_ids:
             log.debug(f"Restricting these minor version(s) with id(s): {restrict_delivery_ids}")
@@ -422,6 +432,8 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 entity_id, marketplace_entity_type, restrict_delivery_ids
             )
             self.wait_for_changeset(change_id)
+
+        return restrict_ami_ids
 
     def publish(self, metadata: AWSVersionMetadata) -> None:
         """
