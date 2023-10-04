@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.4.0 - 2023-10-04
+
+- Azure: allow publishing to `preview`
+- AWS: Add AMI Ids to RestrictVersion return to allow deleting images/snapshots
+
 ## 0.3.2 - 2023-09-14
 
 - Azure: Do not fail on 50X errors from job status
