@@ -630,33 +630,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
         self.submit_to_status(product_id=product.id, status='live')
 
-    @staticmethod
-    def filter_deprecated_schedules(disk_versions: List[DiskVersion]) -> List[DiskVersion]:
-        """Remove ``lifecycleState`` and ``deprecationSchedule`` for scheduled deprecation images.
-
-        This is a hack to allow the ``configure`` request to pass when sending back a version which
-        is scheduled to be deprecated thanks to a misbehavior of Microsoft API.
-
-        Args:
-            disk_versions: The original list of disk versions to process
-        Returns:
-            The processed disk versions with sanitized images in case of deprecation schedule
-        """
-        res = []
-
-        for dv in disk_versions:
-            if dv.deprecation_schedule is not None:
-                log.debug(
-                    (
-                        f"Filtering out a deprecated schedule for {dv.version_number}.\n"
-                        f"Deprecation data removed: {dv.deprecation_schedule}"
-                    )
-                )
-                dv.deprecation_schedule = None
-                dv.lifecycle_state = None
-            res.append(dv)
-        return res
-
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it if required.
@@ -727,19 +700,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 generation=metadata.generation,
                 plan_name=plan_name,
             )
-
-            # Microsoft API doesn't handle well images which are scheduled to be deprecated.
-            #
-            # If we filter out these disk versions the API gives us error saying we can't delete an
-            # already published image.
-            #
-            # If we include it as is the API gives us another error saying we cannot schedule the
-            # deprecation because it's already done.
-            #
-            # Solution: Get rid of "lifecycleState" and "deprecationSchedule" for these specific
-            # cases
-            tech_config.disk_versions = self.filter_deprecated_schedules(tech_config.disk_versions)
-
             log.debug("Updating the technical configuration for \"%s\"." % metadata.destination)
             self.configure(resource=tech_config)
 
