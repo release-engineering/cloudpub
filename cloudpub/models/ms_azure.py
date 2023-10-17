@@ -259,7 +259,7 @@ class DeprecationSchedule(AttrsJSONDecodeMixin):
     )
     """The date offset for deprecation."""
 
-    reason: str
+    reason: str = field(metadata={"default": "other"})
     """
     The deprecation reason.
 
