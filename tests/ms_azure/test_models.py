@@ -5,6 +5,7 @@ import pytest
 from cloudpub.models.ms_azure import (
     CustomerLeads,
     DeprecationAlternative,
+    DeprecationSchedule,
     DiskVersion,
     ListingAsset,
     ListingTrailer,
@@ -121,3 +122,13 @@ def test_vmi_plan_tech_config_property(technical_config: Dict[str, Any]) -> None
     obj = VMIPlanTechConfig.from_json(technical_config)
 
     assert obj.base_plan_id == plan_id
+
+
+def test_deprecation_schedule_defaults() -> None:
+    """Test the default values for DeprecationSchedule."""
+    data = {
+        "date": "12/12/2023",
+    }
+    res = DeprecationSchedule.from_json(data)
+
+    assert res.reason == "other"

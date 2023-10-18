@@ -70,6 +70,11 @@ class AttrsJSONDecodeMixin:
             if alias and json.get(alias, None) is not None:
                 log.debug("Resolving the alias: \"%s\" into \"%s\"." % (alias, at.name))
                 json_copy[at.name] = json_copy.pop(alias)
+            # Add defaults to unset attributes when required
+            default = at.metadata.get("default")
+            if default and not json_copy.get(at.name):
+                log.debug(f"Setting up the default value \"{default}\" for attribute {at.name}")
+                json_copy[at.name] = default
 
         # Run the preprocessing if any
         json_copy = cls._preprocess_json(json_copy)
