@@ -1524,10 +1524,10 @@ class VMImageSource(AttrsJSONDecodeMixin):
 
     @source_type.validator
     def _validate_source_type(self, attribute: Attribute, value: Any):
-        if value != "sasUri":
+        if value != "sasUri" and value != "sharedImageGallery":
             raise ValueError(
                 f"Got an unexpected value for \"{attribute.name}\": \"{value}\"\n"
-                "Expected: \"sasUri\"."
+                "Expected: \"sasUri\" or \"sharedImageGallery\"."
             )
 
 
