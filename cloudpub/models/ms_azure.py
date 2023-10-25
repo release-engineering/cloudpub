@@ -1031,7 +1031,7 @@ class ProductReseller(AzureProductLinkedResource):
     """
 
     audiences: List[Audience] = field(
-        converter=lambda x: [Audience(a) for a in x] if x else [], on_setattr=NO_OP  # type: ignore
+        converter=lambda x: [Audience.from_json(a) for a in x] if x else [], on_setattr=NO_OP  # type: ignore  # noqa: E501
     )
     """List of :class:`~cloudpub.models.ms_azure.Audience` for the reseller offer."""
 
