@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.4.2 - 2023-11-08
+
+- Azure: Fix the `Audience` constructor for `ProductReseller``
+- Bump urllib3 to `1.26.18` to fix a CVE
+
 ## 0.4.1 - 2023-10-20
 
 - Azure: Fix validator for VMImageSource
