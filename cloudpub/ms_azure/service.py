@@ -238,7 +238,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Return the requested Product by its ID.
 
         It will return the product with the latest publishing status, trying to
-        fetch it in the following order: "preview" -> "live" -> "draft". The first
+        fetch it in the following order: "preview" -> "draft" -> "live". The first
         status to fech must be "preview" in order to indepotently detect an existing
         publishing which could be missing to go live.
 
@@ -248,7 +248,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             Product: the requested product
         """
-        targets = ["preview", "live", "draft"]
+        targets = ["preview", "draft", "live"]
         for t in targets:
             log.debug("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
             try:
