@@ -1022,7 +1022,9 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
 
         azure_service.publish(metadata_azure_obj)
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
+        mock_getpr_name.assert_called_once_with(
+            product_name="example-product", first_target="draft"
+        )
         mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),

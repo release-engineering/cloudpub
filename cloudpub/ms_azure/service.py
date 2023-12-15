@@ -651,7 +651,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
-        product = self.get_product_by_name(product_name=product_name)
+        get_prd_params = {}
+        if metadata.preview_only:
+            get_prd_params.update({"first_target": "draft"})
+        product = self.get_product_by_name(product_name=product_name, **get_prd_params)
         plan = self.get_plan_by_name(product=product, plan_name=plan_name)
         log.info(
             "Preparing to associate the image with the plan \"%s\" from product \"%s\""
