@@ -233,7 +233,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             self._products = [p for p in self.products]
         return self._products
 
-    def get_product(self, product_id: str) -> Product:
+    def get_product(self, product_id: str, first_target: str = "preview") -> Product:
         """
         Return the requested Product by its ID.
 
@@ -245,10 +245,16 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Args:
             product_durable_id (str)
                 The product UUID
+            first_target (str, optional)
+                The first target to lookup into. Defaults to ``preview``.
         Returns:
             Product: the requested product
         """
-        targets = ["preview", "draft", "live"]
+        targets = [first_target]
+        for tgt in ["preview", "draft", "live"]:
+            if tgt not in targets:
+                targets.append(tgt)
+
         for t in targets:
             log.debug("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
             try:
@@ -261,13 +267,15 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, t)
         self._raise_error(NotFoundError, f"No such product with id \"{product_id}\"")
 
-    def get_product_by_name(self, product_name: str) -> Product:
+    def get_product_by_name(self, product_name: str, first_target: str = "preview") -> Product:
         """
         Return the requested Product by its name from Legacy CPP API.
 
         Args:
             product_name (str)
                 The product name according to Legacy CPP API.
+            first_target (str, optional)
+                The first target to lookup into. Defaults to ``preview``.
         Returns:
             Product: the requested product when found
         Raises:
@@ -276,7 +284,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         for product in self.products:
             if product.identity.name == product_name:
                 log.debug("Product alias \"%s\" has the ID \"%s\"", product_name, product.id)
-                return self.get_product(product.id)
+                return self.get_product(product.id, first_target=first_target)
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
     def get_submissions(self, product_id: str) -> List[ProductSubmission]:
