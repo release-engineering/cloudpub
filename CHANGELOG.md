@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.5.0 - 2024-01-XX
+
+- Azure: Check first for draft instead live
+- Azure: Force submitting offer to "preview" when it's on "stage to preview" mode
+- Azure: Reduce pooling interval
+
 ## 0.4.2 - 2023-11-08
 
 - Azure: Fix the `Audience` constructor for `ProductReseller``
