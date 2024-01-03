@@ -353,6 +353,28 @@ class TestAzureService:
             mock_adict.assert_called_once_with(res_obj)
             assert res == product_obj
 
+    @pytest.mark.parametrize("first_target", ["live", "draft"])
+    @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
+    def test_get_product_custom_first_target(
+        self,
+        mock_adict: mock.MagicMock,
+        first_target: str,
+        azure_service: AzureService,
+        product: Dict[str, Any],
+        product_obj: Product,
+    ) -> None:
+        res_obj = response(200, product)
+        mock_adict.return_value = product
+
+        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
+            res = azure_service.get_product("product-id", first_target=first_target)
+
+            mock_get.assert_called_once_with(
+                path="/resource-tree/product/product-id", params={"targetType": first_target}
+            )
+            mock_adict.assert_called_once_with(res_obj)
+            assert res == product_obj
+
     def test_get_product_not_found(
         self,
         azure_service: AzureService,
@@ -396,7 +418,9 @@ class TestAzureService:
         res = azure_service.get_product_by_name(product_name="example-product")
 
         mock_products.__iter__.assert_called_once()
-        mock_getpr.assert_called_once_with("ffffffff-ffff-ffff-ffff-ffffffffffff")
+        mock_getpr.assert_called_once_with(
+            "ffffffff-ffff-ffff-ffff-ffffffffffff", first_target="preview"
+        )
         assert res == product_obj
 
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
@@ -998,7 +1022,9 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
 
         azure_service.publish(metadata_azure_obj)
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
+        mock_getpr_name.assert_called_once_with(
+            product_name="example-product", first_target="draft"
+        )
         mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
