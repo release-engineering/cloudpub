@@ -57,7 +57,6 @@ class AttrsJSONDecodeMixin:
             return
 
         # Ensure it's a dictionary
-        log.debug("Converting the following json into class %s: %s" % (cls.__name__, json))
         cls._assert_json_dict(json)
 
         # Copy the JSON so we can modify the data without destroying the original dict.
@@ -68,12 +67,10 @@ class AttrsJSONDecodeMixin:
         for at in attributes:
             alias = at.metadata.get("alias")
             if alias and json.get(alias, None) is not None:
-                log.debug("Resolving the alias: \"%s\" into \"%s\"." % (alias, at.name))
                 json_copy[at.name] = json_copy.pop(alias)
             # Add defaults to unset attributes when required
             default = at.metadata.get("default")
             if default and not json_copy.get(at.name):
-                log.debug(f"Setting up the default value \"{default}\" for attribute {at.name}")
                 json_copy[at.name] = default
 
         # Run the preprocessing if any
@@ -82,7 +79,6 @@ class AttrsJSONDecodeMixin:
         args = {}
         cls_attr = [a.name for a in cls.__attrs_attrs__ if isinstance(a, Attribute)]  # type: ignore
         for a in cls_attr:
-            log.debug("Assigning the attribute %s to %s" % (a, cls.__name__))
             args[a] = json_copy.pop(a, None)
         return cls(**args)
 
@@ -98,26 +94,11 @@ class AttrsJSONDecodeMixin:
             Any: The parsed/serialized value
         """
         if isinstance(value, list):
-            log.debug("Parsing the list from %s" % attribute.name)
             value = [x.to_json() if hasattr(x, "to_json") else x for x in value]
         elif isinstance(value, dict):
-            log.debug("Parsing the dict from %s" % attribute.name)
             value = {k: v.to_json() if hasattr(v, "to_json") else v for k, v in value.items()}
         elif isinstance(value, object) and hasattr(value, "to_json"):
-            log.debug("Recursively building the value from %s" % attribute.name)
             value = value.to_json()
-        elif value.__class__.__module__ == 'builtins':
-            log.debug(
-                "Not converting the object \"%s\" with value \"%s\" to JSON.",
-                type(value),
-                value,
-            )
-        else:
-            log.warning(
-                "Not converting the object \"%s\" with value \"%s\" to JSON.",
-                type(value),
-                value,
-            )
         return value
 
     def to_json(self):
@@ -132,16 +113,13 @@ class AttrsJSONDecodeMixin:
 
         # Convert the instance sub-elements into dictionary
         attributes: Tuple[Attribute] = self_copy.__attrs_attrs__  # type: ignore
-        klass_name = self_copy.__class__.__name__
         for at in attributes:
             value = getattr(self_copy, at.name, None)
             if value is not None:
-                log.debug("Parsing the attribute \"%s\" from \"%s\"" % (at.name, klass_name))
                 value = self._serialize_value(at, value)
                 setattr(self_copy, at.name, value)
 
         # Convert the instance to dictionary
-        log.debug("Converting the \"%s\" instance to dictionary" % klass_name)
         json = asdict(
             self_copy,
             recurse=False,
@@ -153,8 +131,6 @@ class AttrsJSONDecodeMixin:
         for at in attributes:
             alias = at.metadata.get("alias")
             if alias and json.get(at.name, None) is not None:
-                log.debug("Resolving back the alias: from \"%s\" in \"%s\"" % (alias, at.name))
                 json[alias] = json.pop(at.name)
 
-        log.debug("Resulting JSON from \"%s\" instance iteration: %s" % (klass_name, json))
         return json
