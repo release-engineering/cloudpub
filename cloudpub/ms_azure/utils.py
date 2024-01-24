@@ -103,6 +103,7 @@ def is_sas_eq(sas1: str, sas2: str) -> bool:
 
     - st: start date for SAS URI
     - se: expiration date for SAS URI
+    - sv: signed version for SAS URI
     - sig: Unique signature of the SAS URI
 
     This comparison is necessary as each time a SAS URI is generated it returns a different value.
@@ -118,7 +119,7 @@ def is_sas_eq(sas1: str, sas2: str) -> bool:
     """
     base_sas1 = sas1.split("?")[0]
     base_sas2 = sas2.split("?")[0]
-    unique_keys = ['st', 'se', 'sig']
+    unique_keys = ['st', 'se', 'sv', 'sig']
 
     params_sas1 = {k: v for k, v in get_url_params(sas1).items() if k not in unique_keys}
     params_sas2 = {k: v for k, v in get_url_params(sas2).items() if k not in unique_keys}
