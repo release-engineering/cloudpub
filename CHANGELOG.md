@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.5.1 - 2024-02-13
+
+- Azure: Include SV in SAS comparison exclusion
+- Remove JSON conversion debug logs
+
 ## 0.5.0 - 2024-01-XX
 
 - Azure: Check first for draft instead live
