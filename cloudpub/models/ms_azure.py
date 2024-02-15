@@ -1470,6 +1470,15 @@ class VMISku(AttrsJSONDecodeMixin):
     image_type: str = field(validator=instance_of(str), metadata={"alias": "imageType"})
     """The image type. Expects ``{arch}Gen2`` or ``{arch}Gen1``"""
 
+    security_type: Optional[List[str]] = field(
+        default=None,
+        validator=optional(
+            deep_iterable(member_validator=instance_of(str), iterable_validator=instance_of(list))
+        ),
+        metadata={"alias": "securityType", "hide_unset": True},
+    )
+    """The security type for Gen2 images: trusted launch and/or confidential."""
+
 
 @define
 class OSDiskURI(AttrsJSONDecodeMixin):
