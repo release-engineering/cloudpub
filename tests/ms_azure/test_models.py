@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import pytest
 
@@ -15,6 +15,7 @@ from cloudpub.models.ms_azure import (
     PublishTarget,
     VMImageSource,
     VMIPlanTechConfig,
+    VMISku,
     _mask_secret,
 )
 
@@ -132,3 +133,12 @@ def test_deprecation_schedule_defaults() -> None:
     res = DeprecationSchedule.from_json(data)
 
     assert res.reason == "other"
+
+
+@pytest.mark.parametrize("sec_types", [None, ["trusted"], ["trusted", "confidential"]])
+def test_vmisku_security_type(sec_types: Optional[List[str]]) -> None:
+    sku_dict: Dict[str, Any] = {"skuId": "test-sku-id", "imageType": "x64Gen2"}
+    if sec_types:
+        sku_dict.update({"securityType": sec_types})
+
+    assert VMISku.from_json(sku_dict).to_json() == sku_dict
