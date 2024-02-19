@@ -80,6 +80,11 @@ class AttrsJSONDecodeMixin:
         cls_attr = [a.name for a in cls.__attrs_attrs__ if isinstance(a, Attribute)]  # type: ignore
         for a in cls_attr:
             args[a] = json_copy.pop(a, None)
+
+        # Log any unused attributes
+        for k in json_copy.keys():
+            log.warning(f"Ignoring unknown attribute {k} from {cls.__name__}.")
+
         return cls(**args)
 
     @staticmethod
