@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import json
 import logging
-import time
 from copy import deepcopy
 from typing import Dict, List
 
 import dateutil.parser
 from boto3.session import Session
+from tenacity import RetryError, Retrying
+from tenacity.retry import retry_if_result
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from cloudpub.common import BaseService, PublishingMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
@@ -57,6 +60,8 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         access_id: str,
         secret_key: str,
         region: str = "us-east-1",
+        attempts: int = 288,
+        interval: int = 600,
     ) -> None:
         """
         AWS cloud provider service.
@@ -69,6 +74,14 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             region (str, optional)
                 AWS region for compute operations
                 This defaults to 'us-east-1'
+            attempts (int, optional)
+                Max number of times to poll
+                while waiting for changeset
+                Defaults to 288
+            interval (int, optional)
+                Seconds between polling
+                while waiting for changeset
+                Defaults to 600
         """
         self.session = Session(
             aws_access_key_id=access_id,
@@ -77,6 +90,8 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         )
 
         self.marketplace = self.session.client("marketplace-catalog")
+        self.wait_for_changeset_attempts = attempts
+        self.wait_for_changeset_interval = interval
 
         super(AWSProductService, self).__init__()
 
@@ -324,36 +339,34 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         return rsp.status
 
-    def wait_for_changeset(
-        self, change_set_id: str, attempts: int = 144, interval: int = 600
-    ) -> None:
+    def wait_for_changeset(self, change_set_id: str) -> None:
         """
         Wait until ChangeSet is complete.
 
         Args:
             change_set_id (str)
                 Id for the change set
-            attempts (int, optional)
-                Max number of times to poll
-                Defaults to 24
-            interval (int, optional)
-                Seconds between polling
-                Defaults to 600
         Raises:
             Timeout when the status doesn't change to either
             'Succeeded' or 'Failed' within the set retry time.
         """
-        # Future addition: use get_waiter() to wait for change set to complete
-        queries = 0
-        status = ""
-        while status.lower() != "succeeded":
-            queries += 1
-            if queries > attempts:
-                self._raise_error(Timeout, f"Timed out waiting for {change_set_id} to finish")
 
-            time.sleep(interval)
+        def changeset_not_complete(status: str) -> bool:
+            if status.lower() == "succeeded":
+                return False
+            else:
+                return True
 
-            status = self.check_publish_status(change_set_id)
+        r = Retrying(
+            wait=wait_fixed(self.wait_for_changeset_interval),
+            stop=stop_after_attempt(self.wait_for_changeset_attempts),
+            retry=retry_if_result(changeset_not_complete),
+        )
+
+        try:
+            r(self.check_publish_status, change_set_id)
+        except RetryError:
+            self._raise_error(Timeout, f"Timed out waiting for {change_set_id} to finish")
 
     def start_image_scan(self, ami_id: str) -> None:
         """

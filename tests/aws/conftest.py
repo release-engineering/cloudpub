@@ -310,7 +310,7 @@ def version_metadata_obj(version_mapping: Dict[str, Any]) -> AWSVersionMetadata:
 
 @pytest.fixture
 def aws_service() -> AWSProductService:
-    return AWSProductService("fake-id", "fake-secret", "fake-region")
+    return AWSProductService("fake-id", "fake-secret", "fake-region", 1, 0)
 
 
 @pytest.fixture
