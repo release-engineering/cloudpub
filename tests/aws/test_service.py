@@ -495,7 +495,7 @@ class TestAWSProductService:
             "EndTime": "fake-end-time",
         }
         mock_describe_change_set.return_value = ret
-        aws_service.wait_for_changeset("fake-change-set-id", 1, 0)
+        aws_service.wait_for_changeset("fake-change-set-id")
 
     def test_wait_for_changeset_timeout(
         self, mock_describe_change_set: mock.MagicMock, aws_service: AWSProductService
@@ -511,7 +511,7 @@ class TestAWSProductService:
         }
         mock_describe_change_set.return_value = ret
         with pytest.raises(Timeout, match="Timed out waiting for fake-change-set-id to finish"):
-            aws_service.wait_for_changeset("fake-change-set-id", 1, 0)
+            aws_service.wait_for_changeset("fake-change-set-id")
 
     def test_start_image_scan(self, aws_service: AWSProductService) -> None:
         # future test for image scan
