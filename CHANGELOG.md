@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.6.0 - 2024-02-27
+
+- Azure: add property security_type to VMISku
+- Log unused JSON attributes during class conversion
+- AWS: Allows access to timeout attempts through AWSProductService
+
 ## 0.5.1 - 2024-02-13
 
 - Azure: Include SV in SAS comparison exclusion
