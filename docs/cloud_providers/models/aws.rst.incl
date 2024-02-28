@@ -36,6 +36,9 @@ AWS Version Mapping
 .. autoclass:: cloudpub.models.aws.SecurityGroup()
    :members:
 
+.. autoclass:: cloudpub.models.aws.AccessEndpointUrl()
+   :members:
+
 .. autoclass:: cloudpub.models.aws.Version()
    :members:
 
