@@ -96,6 +96,17 @@ class SecurityGroup(AttrsJSONDecodeMixin):
 
 
 @define
+class AccessEndpointUrl(AttrsJSONDecodeMixin):
+    """Represent the access endpoint url information."""
+
+    port: int = field(validator=instance_of(int), metadata={"alias": "Port"})
+    """Port to access the endpoint URL."""
+
+    protocol: str = field(validator=instance_of(str), metadata={"alias": "Protocol"})
+    """Protocol to access the endpoint URL (http, https)."""
+
+
+@define
 class AmiDeliveryOptionsDetails(AttrsJSONDecodeMixin):
     """Represent the delivery options details information."""
 
@@ -123,6 +134,13 @@ class AmiDeliveryOptionsDetails(AttrsJSONDecodeMixin):
         metadata={"alias": "SecurityGroups"},
     )
     """Security group object"""
+
+    access_endpoint_url: AccessEndpointUrl = field(
+        converter=AccessEndpointUrl.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "AccessEndpointUrl", "hide_unset": True},
+    )
+    """Access endpoint url object"""
 
 
 @define

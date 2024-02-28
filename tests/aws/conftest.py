@@ -5,6 +5,7 @@ import pytest
 
 from cloudpub.aws.service import AWSProductService, AWSVersionMetadata
 from cloudpub.models.aws import (
+    AccessEndpointUrl,
     AmiDeliveryOptionsDetails,
     AMISource,
     DeliveryOption,
@@ -43,14 +44,23 @@ def security_group() -> Dict[str, Any]:
 
 
 @pytest.fixture
+def access_endpoint_url() -> Dict[str, Any]:
+    return {
+        "Port": 22,
+        "Protocol": "http",
+    }
+
+
+@pytest.fixture
 def ami_delivery_options_details(
-    ami_source: Dict[str, Any], security_group: Dict[str, Any]
+    ami_source: Dict[str, Any], security_group: Dict[str, Any], access_endpoint_url: Dict[str, Any]
 ) -> Dict[str, Any]:
     return {
         "AmiSource": ami_source,
         "UsageInstructions": "Test notes",
         "RecommendedInstanceType": "x1.medium",
         "SecurityGroups": [security_group],
+        "AccessEndpointUrl": access_endpoint_url,
     }
 
 
@@ -271,6 +281,11 @@ def ami_obj(ami_source: Dict[str, Any]) -> AMISource:
 @pytest.fixture
 def security_group_obj(security_group: Dict[str, Any]) -> SecurityGroup:
     return SecurityGroup.from_json(security_group)
+
+
+@pytest.fixture
+def access_endpoint_url_obj(access_endpoint_url: Dict[str, Any]) -> AccessEndpointUrl:
+    return AccessEndpointUrl.from_json(access_endpoint_url)
 
 
 @pytest.fixture
