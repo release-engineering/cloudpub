@@ -5,6 +5,7 @@ from typing import Any, Dict
 import pytest
 
 from cloudpub.models.aws import (
+    AccessEndpointUrl,
     AmiDeliveryOptionsDetails,
     AMISource,
     DeliveryOption,
@@ -35,6 +36,7 @@ def test_aws_resource_props(
     version_obj: Version,
     ami_obj: AMISource,
     security_group_obj: SecurityGroup,
+    access_endpoint_url_obj: AccessEndpointUrl,
     delivery_options_obj: DeliveryOption,
     delivery_options_details_obj: DeliveryOptionsDetails,
     ami_delivery_options_details_obj: AmiDeliveryOptionsDetails,
@@ -67,10 +69,24 @@ def test_aws_resource_props(
     assert ami_delivery_options_details_obj.usage_instructions == "Test notes"
     assert ami_delivery_options_details_obj.recommended_instance_type == "x1.medium"
     assert ami_delivery_options_details_obj.security_groups == [security_group_obj]
+    assert ami_delivery_options_details_obj.access_endpoint_url == access_endpoint_url_obj
 
     # Delivery Version testing
     assert version_mapping_obj.version == version_obj
     assert version_mapping_obj.delivery_options[0] == delivery_options_obj
+
+
+def test_aws_resource_props_no_aeu(
+    ami_delivery_options_details: Dict[str, Any],
+) -> None:
+    ami_delivery_options_details["AccessEndpointUrl"] = None
+    ami_delivery_options_details_obj = AmiDeliveryOptionsDetails.from_json(
+        ami_delivery_options_details
+    )
+    assert ami_delivery_options_details_obj.access_endpoint_url is None
+
+    ami_json = ami_delivery_options_details_obj.to_json()
+    assert ami_json.get("AccessEndpointUrl", "doesn't exist") == "doesn't exist"
 
 
 def test_product_versions_base_invalid_type() -> None:
