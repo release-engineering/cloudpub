@@ -1607,6 +1607,19 @@ class VMIPlanTechConfig(AzurePlanLinkedResource):
     `Schema definition for VMIPlanTechConfig <https://product-ingestion.azureedge.net/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview2>`_
     """  # noqa E501
 
+    schema: str = field(
+        validator=instance_of(str),
+        metadata={
+            "alias": MS_SCHEMA,
+            "const": "https://schema.mp.microsoft.com/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview5",  # noqa E501
+        },
+    )
+    """
+    The `resource schema`_ for Graph API.
+
+    .. _resource schema: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference
+    """  # noqa E501
+
     operating_system: OSDetails = field(
         metadata={"alias": "operatingSystem"},
         converter=OSDetails.from_json,  # type: ignore
