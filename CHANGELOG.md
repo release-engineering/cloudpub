@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.7.0 - 2024-03-08
+
+- Pin the Azure schema for VMIPlanTechConfig
+
 ## 0.6.1 - 2024-02-27
 
 - AWS: Adds access endpoint url
