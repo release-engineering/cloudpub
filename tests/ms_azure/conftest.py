@@ -345,7 +345,7 @@ def disk_version(gen1_image: Dict[str, Any], gen2_image: Dict[str, Any]) -> Dict
 @pytest.fixture
 def technical_config(disk_version: Dict[str, Any]) -> Dict[str, Any]:
     return {
-        "$schema": "https://product-ingestion.azureedge.net/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview2",  # noqa: E501
+        "$schema": "https://schema.mp.microsoft.com/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview5",  # noqa: E501
         "id": "virtual-machine-plan-technical-configuration/ffffffff-ffff-ffff-ffff-ffffffffffff/00000000-0000-0000-0000-000000000000",  # noqa: E501
         "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
         "plan": "plan/00000000-0000-0000-0000-000000000000",

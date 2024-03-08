@@ -72,6 +72,10 @@ class AttrsJSONDecodeMixin:
             default = at.metadata.get("default")
             if default and not json_copy.get(at.name):
                 json_copy[at.name] = default
+            # If a constant is set we need to override the value coming from JSON
+            constant = at.metadata.get("const")
+            if constant:
+                json_copy[at.name] = constant
 
         # Run the preprocessing if any
         json_copy = cls._preprocess_json(json_copy)
