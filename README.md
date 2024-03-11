@@ -55,7 +55,7 @@ To install this library go to the project's root directory and execute:
 
 The versions listed below are the one which were tested and work. Other versions can work as well.
 
-- Install or create a `virtualenv` for `python` >= 3.7
+- Install or create a `virtualenv` for `python` >= 3.8
 - Install `tox` >= 3.25
 
 ### Dependency Management
@@ -93,4 +93,4 @@ To automatically format your code you man run `tox -e autoformat`.
 
 ### Unit tests
 
-To run unit tests use `tox -e py37,py38,py39,py310`.
+To run unit tests use `tox -e py38,py39,py310,py311`.
