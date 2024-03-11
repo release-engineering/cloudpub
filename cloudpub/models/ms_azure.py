@@ -239,7 +239,7 @@ class DeprecationSchedule(AttrsJSONDecodeMixin):
     :class:`~cloudpub.models.ms_azure.PlanSummary` and
     :class:`~cloudpub.models.ms_azure.ProductSubmission`.
 
-    `Schema definition for DeprecationSchedule <https://product-ingestion.azureedge.net/schema/deprecation-schedule/2022-03-01-preview2>`_
+    `Schema definition for DeprecationSchedule <https://schema.mp.microsoft.com/schema/deprecation-schedule/2022-03-01-preview2>`_
     """  # noqa E501
 
     schema: Optional[str] = field(
@@ -283,7 +283,7 @@ class ProductSummary(AzureResource):
     """
     Represent a product summary.
 
-    `Schema definition for ProductSummary <https://product-ingestion.azureedge.net/schema/product/2022-03-01-preview2>`_
+    `Schema definition for ProductSummary <https://schema.mp.microsoft.com/schema/product/2022-03-01-preview2>`_
     """  # noqa E501
 
     identity: Identity = field(converter=Identity.from_json, on_setattr=NO_OP)  # type: ignore
@@ -509,7 +509,7 @@ class CustomerLeads(AzureProductLinkedResource):
     """
     Represent the customer leads section.
 
-    `Schema definition for CustomerLeads <https://product-ingestion.azureedge.net/schema/customer-leads/2022-03-01-preview2>`_
+    `Schema definition for CustomerLeads <https://schema.mp.microsoft.com/schema/customer-leads/2022-03-01-preview2>`_
     """  # noqa E501
 
     destination: str = field(validator=instance_of(str), metadata={"alias": "leadDestination"})
@@ -583,7 +583,7 @@ class TestDrive(AzureProductLinkedResource):
     """
     Represent the test drive section.
 
-    `Schema definition for TestDrive <https://product-ingestion.azureedge.net/schema/test-drive/2022-03-01-preview2>`_
+    `Schema definition for TestDrive <https://schema.mp.microsoft.com/schema/test-drive/2022-03-01-preview2>`_
     """  # noqa E501
 
     enabled: bool
@@ -624,7 +624,7 @@ class PlanSummary(AzureProductLinkedResource):
     """
     Represent a plan summary.
 
-    `Schema definition for PlanSummary <https://product-ingestion.azureedge.net/schema/plan/2022-03-01-preview2>`_
+    `Schema definition for PlanSummary <https://schema.mp.microsoft.com/schema/plan/2022-03-01-preview2>`_
     """  # noqa E501
 
     identity: Identity = field(converter=Identity.from_json, on_setattr=NO_OP)  # type: ignore
@@ -704,7 +704,7 @@ class ProductProperty(AzureProductLinkedResource):
     """
     Represent a product property.
 
-    `Schema definition for ProductProperty <https://product-ingestion.azureedge.net/schema/property/2022-03-01-preview2>`_
+    `Schema definition for ProductProperty <https://schema.mp.microsoft.com/schema/property/2022-03-01-preview2>`_
     """  # noqa E501
 
     kind: str
@@ -779,7 +779,7 @@ class Listing(AzureProductLinkedResource):
     """
     Represent a product listing.
 
-    `Schema definition for Listing <https://product-ingestion.azureedge.net/schema/listing/2022-03-01-preview2>`_
+    `Schema definition for Listing <https://schema.mp.microsoft.com/schema/listing/2022-03-01-preview2>`_
     """  # noqa E501
 
     kind: str
@@ -867,7 +867,7 @@ class ListingAsset(AzureProductLinkedResource):
     """
     Represent an asset listing.
 
-    `Schema definition for ListingAsset <https://product-ingestion.azureedge.net/schema/listing-asset/2022-03-01-preview2>`_
+    `Schema definition for ListingAsset <https://schema.mp.microsoft.com/schema/listing-asset/2022-03-01-preview2>`_
     """  # noqa E501
 
     kind: str
@@ -944,7 +944,7 @@ class ListingAsset(AzureProductLinkedResource):
 class ListingTrailer(AzureProductLinkedResource):
     """Represent a video "trailer" asset for the given product.
 
-    `Schema definition for ListingTrailer <https://product-ingestion.azureedge.net/schema/listing-trailer/2022-03-01-preview3>`_
+    `Schema definition for ListingTrailer <https://schema.mp.microsoft.com/schema/listing-trailer/2022-03-01-preview3>`_
     """  # noqa E501
 
     kind: str
@@ -1012,7 +1012,7 @@ class ProductReseller(AzureProductLinkedResource):
     """
     Represent a reseller offer resource.
 
-    `Schema definition for ProductReseller <https://product-ingestion.azureedge.net/schema/reseller/2022-03-01-preview2>`_
+    `Schema definition for ProductReseller <https://schema.mp.microsoft.com/schema/reseller/2022-03-01-preview2>`_
     """  # noqa E501
 
     reseller_channel_state: str = field(
@@ -1066,7 +1066,7 @@ class ProductSubmission(AzureProductLinkedResource):
     """
     Represent the product submission state.
 
-    `Schema definition for ProductSubmission <https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2>`_
+    `Schema definition for ProductSubmission <https://schema.mp.microsoft.com/schema/submission/2022-03-01-preview2>`_
     """  # noqa E501
 
     target: PublishTarget = field(
@@ -1131,7 +1131,7 @@ class PlanListing(AzurePlanLinkedResource):
     """
     Represent a plan listing.
 
-    `Schema definition for PlanListing <https://product-ingestion.azureedge.net/schema/plan-listing/2022-03-01-preview2>`_
+    `Schema definition for PlanListing <https://schema.mp.microsoft.com/schema/plan-listing/2022-03-01-preview2>`_
     """  # noqa E501
 
     kind: str
@@ -1219,7 +1219,7 @@ class SoftwareReservation(AttrsJSONDecodeMixin):
 
     It's part of :class:`~cloudpub.models.ms_azure.PriceAndAvailabilityPlan`.
 
-    `Schema definition for SoftwareReservation <https://product-ingestion.azureedge.net/schema/price-and-availability-software-reservation/2022-03-01-preview2>`_
+    `Schema definition for SoftwareReservation <https://schema.mp.microsoft.com/schema/price-and-availability-software-reservation/2022-03-01-preview2>`_
     """  # noqa E501
 
     type: str
@@ -1246,7 +1246,7 @@ class SoftwareTrial(AttrsJSONDecodeMixin):
 
     It's part of :class:`~cloudpub.models.ms_azure.PriceAndAvailabilityPlan`.
 
-    `Schema definition for SoftwareTrial <https://product-ingestion.azureedge.net/schema/price-and-availability-trail/2022-03-01-preview2>`_
+    `Schema definition for SoftwareTrial <https://schema.mp.microsoft.com/schema/price-and-availability-trail/2022-03-01-preview2>`_
     """  # noqa E501
 
     type: str
@@ -1270,7 +1270,7 @@ class PriceAndAvailabilityPlan(AzurePlanLinkedResource):
     """
     Represent the price and availability of a plan.
 
-    `Schema definition for PriceAndAvailabilityPlan <https://product-ingestion.azureedge.net/schema/price-and-availability-plan/2022-03-01-preview2>`_
+    `Schema definition for PriceAndAvailabilityPlan <https://schema.mp.microsoft.com/schema/price-and-availability-plan/2022-03-01-preview2>`_
     """  # noqa E501
 
     visibility: str
@@ -1352,7 +1352,7 @@ class PriceAndAvailabilityOffer(AzureProductLinkedResource):
     """
     Represent the price and availability of an offer.
 
-    `Schema definition for PriceAndAvailabilityOffer <https://product-ingestion.azureedge.net/schema/price-and-availability-offer/2022-03-01-preview2>`_
+    `Schema definition for PriceAndAvailabilityOffer <https://schema.mp.microsoft.com/schema/price-and-availability-offer/2022-03-01-preview2>`_
     """  # noqa E501
 
     preview_audiences: List[Audience] = field(
@@ -1494,7 +1494,7 @@ class DataDisk(AttrsJSONDecodeMixin):
 
     It's part of :class:`~cloudpub.models.ms_azure.VMImageSource`.
 
-    `Schema definition for DataDisk <https://product-ingestion.azureedge.net/schema/virtual-machine-data-disk/2022-03-01-preview2>`_
+    `Schema definition for DataDisk <https://schema.mp.microsoft.com/schema/virtual-machine-data-disk/2022-03-01-preview2>`_
     """  # noqa: E501
 
     lun_number: int = field(metadata={"alias": "lunNumber"})
@@ -1604,7 +1604,7 @@ class VMIPlanTechConfig(AzurePlanLinkedResource):
     """
     Represent the VM technical configuration of a Plan.
 
-    `Schema definition for VMIPlanTechConfig <https://product-ingestion.azureedge.net/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview2>`_
+    `Schema definition for VMIPlanTechConfig <https://schema.mp.microsoft.com/schema/virtual-machine-plan-technical-configuration/2022-03-01-preview2>`_
     """  # noqa E501
 
     schema: str = field(
@@ -1704,7 +1704,7 @@ class Product(AttrsJSONDecodeMixin):
     """
     Represent the entire product from resource-tree.
 
-    `Schema definition <https://product-ingestion.azureedge.net/schema/resource-tree/2022-03-01-preview2>`_
+    `Schema definition <https://schema.mp.microsoft.com/schema/resource-tree/2022-03-01-preview2>`_
     """  # noqa E501
 
     schema: str = field(validator=instance_of(str), metadata={"alias": MS_SCHEMA})
