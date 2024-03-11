@@ -61,16 +61,10 @@ security:
   script:
     - tox -e security
 
-python3.7:
-  <<: *common
-  stage: unit-tests
-  coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
-  script: 
-    - tox -e py37
-
 python3.8:
   <<: *common
   stage: unit-tests
+  coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   script: 
     - tox -e py38
 
