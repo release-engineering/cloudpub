@@ -93,4 +93,4 @@ To automatically format your code you man run `tox -e autoformat`.
 
 ### Unit tests
 
-To run unit tests use `tox -e py38,py39,py310`.
+To run unit tests use `tox -e py38,py39,py310,py311`.

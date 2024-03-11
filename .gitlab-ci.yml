@@ -80,6 +80,12 @@ python3.10:
   script:
     - tox -e py310
 
+python3.11:
+  <<: *common
+  stage: unit-tests
+  script:
+    - tox -e py311
+
 azure schemas:
   <<: *common
   stage: sanity
