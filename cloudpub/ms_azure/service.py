@@ -708,6 +708,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 disk_versions=tech_config.disk_versions,
                 generation=metadata.generation,
                 plan_name=plan_name,
+                old_skus=tech_config.skus,
             )
             log.debug("Updating the technical configuration for \"%s\"." % metadata.destination)
             self.configure(resource=tech_config)

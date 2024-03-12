@@ -656,6 +656,7 @@ class TestAzureService:
             disk_versions=[disk_version_obj],
             generation=metadata_azure_obj.generation,
             plan_name="plan-1",
+            old_skus=expected_tech_config.skus,
         )
         mock_configure.assert_called_once_with(resource=technical_config_obj)
         mock_submit.assert_not_called()
@@ -723,6 +724,7 @@ class TestAzureService:
             disk_versions=expected_tech_config.disk_versions,
             generation=metadata_azure_obj.generation,
             plan_name="plan-1",
+            old_skus=expected_tech_config.skus,
         )
         mock_disk_scratch.assert_called_once_with(metadata_azure_obj, expected_source)
         mock_configure.assert_called_once_with(resource=expected_tech_config)

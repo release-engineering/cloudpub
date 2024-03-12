@@ -237,6 +237,7 @@ def update_skus(
     disk_versions: List[DiskVersion],
     generation: str,
     plan_name: str,
+    old_skus: Optional[List[VMISku]] = None,
 ) -> List[VMISku]:
     """
     Return the expected VMISku list based on given DiskVersion.
@@ -248,10 +249,15 @@ def update_skus(
             The main generation for publishing
         plan-name (str)
             The destination plan name.
+        old_skus (list, optional)
+            A list of the existing SKUs to extract the security_type value
+            when set.
     Returns:
         The updated list with VMISkus.
     """
     sku_mapping: Dict[str, str] = {}
+    # All SKUs must have the same security_type thus picking the first one is OK
+    security_type = old_skus[0].security_type if old_skus else None
 
     # Update the SKUs for each image in DiskVersions
     for disk_version in disk_versions:
@@ -271,7 +277,10 @@ def update_skus(
                 sku_mapping.setdefault(new_img_alt_type, f"{plan_name}-gen{alt_gen}")
 
     # Return the expected SKUs list
-    res = [VMISku.from_json({"image_type": k, "id": v}) for k, v in sku_mapping.items()]
+    res = [
+        VMISku.from_json({"image_type": k, "id": v, "security_type": security_type})
+        for k, v in sku_mapping.items()
+    ]
     return sorted(res, key=attrgetter("id"))
 
 
