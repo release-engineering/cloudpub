@@ -104,7 +104,9 @@ class TestPartnerPortalSession:
         }
         put_param = {'$version': auth_dict['AZURE_SCHEMA_VERSION']}
 
-        session = PartnerPortalSession.make_graph_api_session(auth_dict)
+        session = PartnerPortalSession.make_graph_api_session(
+            auth_dict, schema_version=auth_dict['AZURE_SCHEMA_VERSION']
+        )
 
         if json:
             getattr(session, method)(path, json)
