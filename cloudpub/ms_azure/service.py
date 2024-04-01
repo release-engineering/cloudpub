@@ -75,7 +75,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
     # https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api
 
     AZURE_API_VERSION = os.environ.get("AZURE_API_VERSION", "2022-07-01")
-    AZURE_SCHEMA_VERSION = os.environ.get("AZURE_SCHEMA_VERSION", "2022-03-01-preview3")
+    AZURE_SCHEMA_VERSION = os.environ.get("AZURE_SCHEMA_VERSION", "2022-07-01")
     CONFIGURE_SCHEMA = "https://schema.mp.microsoft.com/schema/configure/{AZURE_API_VERSION}"
 
     def __init__(self, credentials: Dict[str, str]):
