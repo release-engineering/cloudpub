@@ -368,31 +368,6 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         except RetryError:
             self._raise_error(Timeout, f"Timed out waiting for {change_set_id} to finish")
 
-    def start_image_scan(self, ami_id: str) -> None:
-        """
-        Start scan for an image (To be added in future release).
-
-        Args:
-            ami_id (str)
-                The ami id to start the scan on
-        Returns:
-            str: An id to check status of scan
-        """
-        # to be added in the future
-        self._raise_error(NotImplementedError, "To be added at a future date")
-
-    def check_image_scan(self, ami_id: str) -> None:
-        """
-        Check to see if an image has been scanned (To be added in future release).
-
-        Args:
-            ami_id (str)
-                The ami id to start the scan on
-        Returns:
-            Bool: True/False of if an image has been scanned
-        """
-        self._raise_error(NotImplementedError, "To be added at a future date")
-
     def restrict_minor_versions(
         self,
         entity_id: str,
@@ -455,8 +430,16 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         Args:
             new_version_details (VersionMapping): A model of the version mapping
         """
-        if metadata.keepdraft or metadata.preview_only:
-            return None
+        change_set = {
+            "ChangeType": "AddDeliveryOptions",
+            "Entity": {
+                "Type": f"{metadata.marketplace_entity_type}@1.0",
+                "Identifier": metadata.destination,
+            },
+            # AWS accepts 'Details' as a JSON string.
+            # So we convert it here.
+            "DetailsDocument": metadata.version_mapping.to_json(),
+        }
 
         if metadata.overwrite:
             # Make a copy of the original Version Mapping to avoid overwriting settings
@@ -467,36 +450,18 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             # ATM we're not batching Delivery options so
             # the first one should be the one we want.
             json_mapping.delivery_options[0].id = org_version_details.id
-            change_set = [
-                {
-                    "ChangeType": "UpdateDeliveryOptions",
-                    "Entity": {
-                        "Type": f"{metadata.marketplace_entity_type}@1.0",
-                        "Identifier": metadata.destination,
-                    },
-                    # AWS accepts 'Details' as a JSON string.
-                    # So we convert it here.
-                    "Details": json.dumps(json_mapping.to_json()),
-                },
-            ]
-        else:
-            change_set = [
-                {
-                    "ChangeType": "AddDeliveryOptions",
-                    "Entity": {
-                        "Type": f"{metadata.marketplace_entity_type}@1.0",
-                        "Identifier": metadata.destination,
-                    },
-                    # AWS accepts 'Details' as a JSON string.
-                    # So we convert it here.
-                    "Details": json.dumps(metadata.version_mapping.to_json()),
-                },
-            ]
 
-        rsp: ChangeSetResponse = self.marketplace.start_change_set(
-            Catalog="AWSMarketplace",
-            ChangeSet=change_set,
-        )
+            change_set["ChangeType"] = "UpdateDeliveryOptions"
+            change_set["DetailsDocument"] = json_mapping.to_json()
+
+        if metadata.keepdraft or metadata.preview_only:
+            rsp: ChangeSetResponse = self.marketplace.start_change_set(
+                Catalog="AWSMarketplace", ChangeSet=[change_set], Intent="VALIDATE"
+            )
+        else:
+            rsp = self.marketplace.start_change_set(
+                Catalog="AWSMarketplace", ChangeSet=[change_set], Intent="APPLY"
+            )
 
         log.debug(f"The response from publishing was: {rsp}")
 

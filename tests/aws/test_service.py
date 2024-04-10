@@ -513,16 +513,6 @@ class TestAWSProductService:
         with pytest.raises(Timeout, match="Timed out waiting for fake-change-set-id to finish"):
             aws_service.wait_for_changeset("fake-change-set-id")
 
-    def test_start_image_scan(self, aws_service: AWSProductService) -> None:
-        # future test for image scan
-        with pytest.raises(NotImplementedError, match="To be added at a future date"):
-            aws_service.start_image_scan("ami_ids")
-
-    def test_check_image_scan(self, aws_service: AWSProductService) -> None:
-        # future test for image scan
-        with pytest.raises(NotImplementedError, match="To be added at a future date"):
-            aws_service.check_image_scan("ami_ids")
-
     @mock.patch("cloudpub.aws.AWSProductService.wait_for_changeset")
     def test_publish(
         self,
@@ -544,14 +534,15 @@ class TestAWSProductService:
                         "Type": "fake-product-type@1.0",
                         "Identifier": "fake-entity-id",
                     },
-                    "Details": mock.ANY,
+                    "DetailsDocument": mock.ANY,
                 },
             ],
+            Intent="APPLY",
         )
         mock_wait_for_changeset.assert_called_once_with("fake-change-set-id")
 
         _, asserted_kwargs = mock_start_change_set.call_args
-        details_json = json.loads(asserted_kwargs["ChangeSet"][0]["Details"])
+        details_json = asserted_kwargs["ChangeSet"][0]["DetailsDocument"]
         assert isinstance(details_json, dict)
         assert isinstance(details_json["DeliveryOptions"], list)
         assert isinstance(details_json["DeliveryOptions"][0], dict)
@@ -610,14 +601,15 @@ class TestAWSProductService:
                         "Type": "fake-product-type@1.0",
                         "Identifier": "fake-entity-id",
                     },
-                    "Details": mock.ANY,
+                    "DetailsDocument": mock.ANY,
                 },
             ],
+            Intent="APPLY",
         )
         mock_wait_for_changeset.assert_called_once_with("fake-change-set-id")
 
         _, asserted_kwargs = mock_start_change_set.call_args
-        details_json = json.loads(asserted_kwargs["ChangeSet"][0]["Details"])
+        details_json = asserted_kwargs["ChangeSet"][0]["DetailsDocument"]
         assert isinstance(details_json, dict)
         assert isinstance(details_json["DeliveryOptions"], list)
         assert isinstance(details_json["DeliveryOptions"][0], dict)
@@ -636,8 +628,28 @@ class TestAWSProductService:
         version_metadata_obj.keepdraft = True
         aws_service.publish(version_metadata_obj)
 
-        mock_start_change_set.assert_not_called()
-        mock_wait_for_changeset.assert_not_called()
+        mock_start_change_set.assert_called_once_with(
+            Catalog="AWSMarketplace",
+            ChangeSet=[
+                {
+                    "ChangeType": "AddDeliveryOptions",
+                    "Entity": {
+                        "Type": "fake-product-type@1.0",
+                        "Identifier": "fake-entity-id",
+                    },
+                    "DetailsDocument": mock.ANY,
+                },
+            ],
+            Intent="VALIDATE",
+        )
+        mock_wait_for_changeset.assert_called_once_with("fake-change-set-id")
+
+        _, asserted_kwargs = mock_start_change_set.call_args
+        details_json = asserted_kwargs["ChangeSet"][0]["DetailsDocument"]
+        assert isinstance(details_json, dict)
+        assert isinstance(details_json["DeliveryOptions"], list)
+        assert isinstance(details_json["DeliveryOptions"][0], dict)
+        assert "Id" not in details_json["DeliveryOptions"][0]
 
     @mock.patch("cloudpub.aws.AWSProductService.get_product_versions")
     @mock.patch("cloudpub.aws.AWSProductService.set_restrict_versions")

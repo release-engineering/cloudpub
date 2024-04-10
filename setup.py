@@ -22,7 +22,7 @@ setup(
         'attrs',
         'requests',
         'tenacity',
-        "boto3",
+        "boto3>=1.34.80",
     ],
     zip_safe=False,
 )
