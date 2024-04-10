@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.7.2 - 2024-04-10
+
+- AWS: Changes KeepDraft/preview_only to create a draft version change in AWS
+
 ## 0.7.1 - 2024-03-12
 
 - Azure: Pass the SecurityType on VMISku
