@@ -2,15 +2,20 @@
 import json
 import logging
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-import dateutil.parser
 from boto3.session import Session
 from tenacity import RetryError, Retrying
 from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+from cloudpub.aws.utils import (
+    create_version_tree,
+    get_restricted_major_versions,
+    get_restricted_minor_versions,
+    get_restricted_patch_versions,
+)
 from cloudpub.common import BaseService, PublishingMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
 from cloudpub.models.aws import (
@@ -221,7 +226,6 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 "ami_ids": ami_id_list,
             }
             version_ids[v.version_title] = delivery_options  # type: ignore
-
         return version_ids
 
     def get_product_version_by_name(self, entity_id: str, version_name: str) -> DeliveryOption:
@@ -368,14 +372,15 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         except RetryError:
             self._raise_error(Timeout, f"Timed out waiting for {change_set_id} to finish")
 
-    def restrict_minor_versions(
+    def restrict_versions(
         self,
         entity_id: str,
         marketplace_entity_type: str,
-        restrict_version: str,
+        restrict_major: Optional[int] = None,
+        restrict_minor: Optional[int] = 1,
     ) -> List[str]:
         """
-        Restrict the old minor versions of a release.
+        Restrict the old versions of a release.
 
         Args:
             entity_id (str)
@@ -383,36 +388,38 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             marketplace_entity_type (str)
                 Product type of the AWS product
                 Example: AmiProduct
-            restrict_version (str)
-                The restrict version to look for.
-                example: 9.0
+            restrict_major (optional int)
+                How many major versions are allowed
+                Example: 3
+            restrict_minor (optional int)
+                how many minor versions are allowed
+                Example: 3
         Returns:
             List[str]: List of AMI ids of restricted versions
         """
         versions = self.get_product_versions(entity_id)
-
-        # TODO: Version matching using regex
-
-        matching_version_list = [v for t, v in versions.items() if restrict_version in t]
-
-        if not matching_version_list:
-            return []
-
-        newest_matching_version_created_date = max(
-            (x["created_date"] for x in matching_version_list),
-            key=lambda x: dateutil.parser.isoparse(x),
-        )
+        version_tree = create_version_tree(versions)
 
         restrict_delivery_ids = []
         restrict_ami_ids = []
-        for version in matching_version_list:
-            if newest_matching_version_created_date != version["created_date"]:
-                for del_opt in version["delivery_options"]:
-                    # Usually there is only one delivery option
-                    # but we'll iterate through to make sure nothing is missing
-                    if del_opt.visibility == "Public":
-                        restrict_delivery_ids.append(del_opt.id)
-                        restrict_ami_ids.extend(version["ami_ids"])
+
+        if restrict_major and len(version_tree) > restrict_major:
+            major_delivery_ids, major_ami_ids, version_tree = get_restricted_major_versions(
+                version_tree, restrict_major
+            )
+            restrict_delivery_ids.extend(major_delivery_ids)
+            restrict_ami_ids.extend(major_ami_ids)
+
+        if restrict_minor:
+            minor_delivery_ids, minor_ami_ids, version_tree = get_restricted_minor_versions(
+                version_tree, restrict_minor
+            )
+            restrict_delivery_ids.extend(minor_delivery_ids)
+            restrict_ami_ids.extend(minor_ami_ids)
+
+        patch_delivery_ids, patch_ami_ids = get_restricted_patch_versions(version_tree)
+        restrict_delivery_ids.extend(patch_delivery_ids)
+        restrict_ami_ids.extend(patch_ami_ids)
 
         if restrict_delivery_ids:
             log.debug(f"Restricting these minor version(s) with id(s): {restrict_delivery_ids}")

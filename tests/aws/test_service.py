@@ -662,84 +662,157 @@ class TestAWSProductService:
         aws_service: AWSProductService,
     ) -> None:
         mock_version_ids = {
-            '9.0 20220513-0': {
+            '6.9 20220513-0': {
                 "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id1', "visibility": "Restricted"})
+                    DeliveryOption.from_json({"id": 'fake-6.9 ', "visibility": "Public"})
                 ],
                 "created_date": "2022-01-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-1"],
+                "ami_ids": ["ami-fake-id-6-9"],
+            },
+            '7.9 20220513-0': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-7.9 ', "visibility": "Public"})
+                ],
+                "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-newest-7"],
+            },
+            '7.8 20220513-0': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-7.8', "visibility": "Public"})
+                ],
+                "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-2"],
+            },
+            '8.9 20220513-0': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-8.9', "visibility": "Public"})
+                ],
+                "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-3"],
+            },
+            '8.8 20220513-0': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-8.8', "visibility": "Public"})
+                ],
+                "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-4"],
+            },
+            '8.10 20220513-0': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-8.10', "visibility": "Public"})
+                ],
+                "created_date": "2022-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-newest-8"],
+            },
+            '9.0 20220513-0': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-9.0.0', "visibility": "Public"})
+                ],
+                "created_date": "2024-01-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-5"],
             },
             '9.0 20220613': {
                 "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id2', "visibility": "Public"})
+                    DeliveryOption.from_json({"id": 'fake-9.0.1', "visibility": "Public"})
                 ],
-                "created_date": "2022-02-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-2"],
+                "created_date": "2023-02-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-6"],
             },
             '9.0 20220713': {
                 "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id3', "visibility": "Limited"})
-                ],
-                "created_date": "2022-03-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-3"],
-            },
-            '9.0 20220813': {
-                "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id4', "visibility": "Restricted"})
-                ],
-                "created_date": "2022-04-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-4"],
-            },
-            '9.0 20220913': {
-                "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id5', "visibility": "Public"})
-                ],
-                "created_date": "2022-05-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-5"],
-            },
-            'OpenShift Container Platform 9.0': {
-                "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id6', "visibility": "Public"})
-                ],
-                "created_date": "2022-01-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-6"],
-            },
-            '9.1 20220913': {
-                "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id1-2', "visibility": "Public"})
+                    DeliveryOption.from_json({"id": 'fake-9.0.2', "visibility": "Public"})
                 ],
                 "created_date": "2022-03-24T12:41:25.503Z",
                 "ami_ids": ["ami-fake-id-7"],
             },
+            '9.0 20220813': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-9.0.3', "visibility": "Public"})
+                ],
+                "created_date": "2021-04-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-8"],
+            },
+            '9.0 20220916': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-9.0.4', "visibility": "Public"})
+                ],
+                "created_date": "2020-05-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-9"],
+            },
+            '9.1 20220915': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-9.1.3', "visibility": "Restricted"})
+                ],
+                "created_date": "2025-03-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-10"],
+            },
+            '9.1 20220913': {
+                "delivery_options": [
+                    DeliveryOption.from_json({"id": 'fake-9.1.1', "visibility": "Public"})
+                ],
+                "created_date": "2024-03-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-newest-9"],
+            },
             '9.1 20220513': {
                 "delivery_options": [
-                    DeliveryOption.from_json({"id": 'fake-id1-3', "visibility": "Public"})
+                    DeliveryOption.from_json({"id": 'fake-9.1.2', "visibility": "Public"})
                 ],
-                "created_date": "2022-03-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-8"],
+                "created_date": "2023-03-24T12:41:25.503Z",
+                "ami_ids": ["ami-fake-id-11"],
             },
             'BadVersion': {
                 "delivery_options": [
                     DeliveryOption.from_json({"id": 'fake-id1-6', "visibility": "Public"})
                 ],
                 "created_date": "2022-01-24T12:41:25.503Z",
-                "ami_ids": ["ami-fake-id-9"],
+                "ami_ids": ["ami-fake-id-12"],
             },
         }
+
+        not_restricted_versions = [
+            'ami-fake-id-newest-9',
+            'ami-fake-id-newest-8',
+            'ami-fake-id-newest-7',
+        ]
+
         get_product_versions.return_value = mock_version_ids
         mock_set_restrict_versions.return_value = "fake-change-set-id1"
 
-        restricted_vers = aws_service.restrict_minor_versions(
-            "fake-entity", "fake-entity-type", "9.0"
-        )
+        restricted_vers = aws_service.restrict_versions("fake-entity", "fake-entity-type", 3, 1)
 
         get_product_versions.assert_called_once_with("fake-entity")
         mock_set_restrict_versions.assert_called_once_with(
-            'fake-entity', 'fake-entity-type', ['fake-id2', 'fake-id6']
+            'fake-entity',
+            'fake-entity-type',
+            [
+                'fake-6.9 ',
+                'fake-7.8',
+                'fake-8.9',
+                'fake-8.8',
+                'fake-9.0.0',
+                'fake-9.0.1',
+                'fake-9.0.2',
+                'fake-9.0.3',
+                'fake-9.0.4',
+                'fake-9.1.2',
+            ],
         )
         mock_wait_for_changeset.assert_called_once_with("fake-change-set-id1")
 
-        assert restricted_vers == ['ami-fake-id-2', 'ami-fake-id-6']
+        assert restricted_vers == [
+            'ami-fake-id-6-9',
+            'ami-fake-id-2',
+            'ami-fake-id-3',
+            'ami-fake-id-4',
+            'ami-fake-id-5',
+            'ami-fake-id-6',
+            'ami-fake-id-7',
+            'ami-fake-id-8',
+            'ami-fake-id-9',
+            'ami-fake-id-11',
+        ]
+
+        assert not_restricted_versions not in restricted_vers
 
     @mock.patch("cloudpub.aws.AWSProductService.get_product_versions")
     @mock.patch("cloudpub.aws.AWSProductService.set_restrict_versions")
@@ -760,9 +833,7 @@ class TestAWSProductService:
         get_product_versions.return_value = mock_version_ids
         mock_set_restrict_versions.return_value = "fake-change-set-id1"
 
-        restrcited_vers = aws_service.restrict_minor_versions(
-            "fake-entity", "fake-entity-type", "9.0"
-        )
+        restrcited_vers = aws_service.restrict_versions("fake-entity", "fake-entity-type")
 
         get_product_versions.assert_called_once_with("fake-entity")
         mock_set_restrict_versions.assert_not_called()
