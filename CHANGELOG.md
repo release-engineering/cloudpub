@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.8.0 - 2024-04-22
+
+- AWS: Added major/minor params for restricting versions.
+    - major: Limits versions on major version, defaults to None.
+    - minor: Limits versions on minor version, defaults to 1.
+    - patch versions work as previously by limiting to 1 if restrict_version is true.
+- Updated dependencies for CloudPub
+
 ## 0.7.2 - 2024-04-10
 
 - AWS: Changes KeepDraft/preview_only to create a draft version change in AWS
