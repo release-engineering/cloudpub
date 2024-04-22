@@ -586,6 +586,9 @@ class TestDrive(AzureProductLinkedResource):
     `Schema definition for TestDrive <https://schema.mp.microsoft.com/schema/test-drive/2022-03-01-preview2>`_
     """  # noqa E501
 
+    # Added to appease PytestCollection
+    __test__ = False
+
     enabled: bool
     """Whether the TestDrive is enabled or not."""
 
