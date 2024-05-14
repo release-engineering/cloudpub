@@ -156,11 +156,89 @@ class DeliveryOptionsDetails(AttrsJSONDecodeMixin):
 
 
 @define
+class DeliveryInstructionsAccess(AttrsJSONDecodeMixin):
+    """Represent a single element of access from class :class:`~cloudpub.models.aws.DeliveryOptionsInstructions`."""  # noqa: E501
+
+    type: str = field(metadata={"hide_unset": True, "alias": "Type"})
+    """Type instructions for access"""
+
+    port: int = field(validator=[instance_of(int), ge(0)], metadata={"alias": "Port"})
+    """Port used for AMI access"""
+
+    protocol: str = field(metadata={"hide_unset": True, "alias": "Protocol"})
+    """Protocol to use for AMI access"""
+
+
+@define
+class DeliveryOptionsInstructions(AttrsJSONDecodeMixin):
+    """Represent a single element of instructions from class :class:`~cloudpub.models.aws.DeliveryOption`."""  # noqa: E501
+
+    usage: str = field(metadata={"hide_unset": True, "alias": "Usage"})
+    """AMI usage instructions"""
+
+    access: Optional[DeliveryInstructionsAccess] = field(
+        converter=DeliveryInstructionsAccess.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"hide_unset": True, "alias": "Access"},
+    )
+    """Instructions on how to access this AMI"""
+
+
+@define
+class DeliveryOptionsRecommendations(AttrsJSONDecodeMixin):
+    """Represent a single element of recommendations from class :class:`~cloudpub.models.aws.DeliveryOption`."""  # noqa: E501
+
+    instance_type: str = field(metadata={"hide_unset": True, "alias": "InstanceType"})
+    """Instance type for this recommendation"""
+
+    security_groups: List[SecurityGroup] = field(
+        converter=lambda x: [SecurityGroup.from_json(a) for a in x] if x else [],
+        on_setattr=NO_OP,
+        metadata={"alias": "SecurityGroups"},
+    )
+    """Security groups to use with this AMI."""
+
+
+@define
 class DeliveryOption(AttrsJSONDecodeMixin):
     """Represent the delivery option information."""
 
     id: str = field(metadata={"hide_unset": True, "alias": "Id"})
     """AMI Id used for overwriting a current Version in AWS"""
+
+    type: str = field(metadata={"hide_unset": True, "alias": "Type"})
+    """Type of delivery option
+
+    Expected value:
+
+    * ``AmazonMachineImage``
+    """
+
+    source_id: str = field(metadata={"hide_unset": True, "alias": "SourceId"})
+    """Source Id for the delivery option"""
+
+    short_description: str = field(metadata={"hide_unset": True, "alias": "ShortDescription"})
+    """Short description of the delivery options"""
+
+    long_description: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "LongDescription", "hide_unset": True},
+    )
+    """Long description of Delivery option. (optional)"""
+
+    instructions: DeliveryOptionsInstructions = field(
+        converter=DeliveryOptionsInstructions.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "Instructions"},
+    )
+    """Instructions on usage of this AMI"""
+
+    recommendations: DeliveryOptionsRecommendations = field(
+        converter=DeliveryOptionsRecommendations.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "Recommendations"},
+    )
+    """Recommendations when using this AMI"""
 
     visibility: Optional[str] = field(
         validator=optional(instance_of(str)), metadata={"alias": "Visibility", "hide_unset": True}
@@ -180,6 +258,14 @@ class DeliveryOption(AttrsJSONDecodeMixin):
         metadata={"alias": "Details"},
     )
     """Details object for Delivery Options"""
+
+    title: str = field(metadata={"hide_unset": True, "alias": "Title"})
+    """Title for this DeliveryOption"""
+
+    ami_alias: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "AmiAlias", "hide_unset": True}
+    )
+    """Alias for the ami"""
 
 
 @define
@@ -267,8 +353,9 @@ class ProductDetailDescription(AttrsJSONDecodeMixin):
     * ``Restricted``
     """
 
-    associated_products: Optional[List[str]] = field(
-        metadata={"alias": "AssociatedProducts", "hide_unset": True}
+    associated_products: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "AssociatedProducts", "hide_unset": True},
     )
     """Associated products within the current one."""
     # we could see just null
@@ -523,8 +610,9 @@ class PromoResourcesVideo(BaseResources):
 class PromotionalResources(AttrsJSONDecodeMixin):
     """Represent the "PromotionalResources" section of the :class:`~cloudpub.models.aws.ProductDetailResponse`."""  # noqa: E501
 
-    promotional_media: Optional[Any] = field(
-        metadata={"alias": "PromotionalMedia", "hide_unset": True}
+    promotional_media: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "PromotionalMedia", "hide_unset": True},
     )
     """The product's promotional media."""
 
@@ -559,9 +647,10 @@ class Dimensions(AttrsJSONDecodeMixin):
     )
     """The dimensions types."""
 
-    description: Optional[Any] = field(metadata={"alias": "Description", "hide_unset": True})
+    description: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "Description", "hide_unset": True}
+    )
     """The dimensions description."""
-    # could not see anything else than null
 
     unit: str = field(validator=instance_of(str), metadata={"alias": "Unit"})
     """The unit measuring the dimensions consumption unit."""
