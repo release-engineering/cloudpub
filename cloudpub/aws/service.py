@@ -15,6 +15,7 @@ from cloudpub.aws.utils import (
     get_restricted_major_versions,
     get_restricted_minor_versions,
     get_restricted_patch_versions,
+    pprint_debug_logging,
 )
 from cloudpub.common import BaseService, PublishingMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
@@ -101,8 +102,8 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         super(AWSProductService, self).__init__()
 
     def _check_product_versions(self, details: ProductDetailResponse) -> None:
-        if not details or not details.versions:
-            log.debug(f"The details from the response are: {details}")
+        if not details.versions:
+            pprint_debug_logging(log, details.to_json(), "The details from the response are: ")
             self._raise_error(NotFoundError, "This product has no versions")
 
     def get_product_by_id(self, entity_id: str) -> ProductDetailResponse:
@@ -122,11 +123,11 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             self.marketplace.describe_entity(Catalog="AWSMarketplace", EntityId=entity_id)
         )
 
-        if not rsp.details:
-            log.debug(f"The response was: {rsp}")
+        if not rsp.details_document:
+            pprint_debug_logging(log, rsp)
             self._raise_error(NotFoundError, f"No such product with EntityId: \"{entity_id}\"")
 
-        return rsp.parsed_details
+        return rsp.details_document
 
     def get_product_by_name(
         self, marketplace_entity_type: str, product_name: str
@@ -156,11 +157,11 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
         )
 
         if len(entity_rsp.entity_summary_list) == 0:
-            log.debug(f"The response was: {entity_rsp}")
+            pprint_debug_logging(log, entity_rsp)
             self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
         if len(entity_rsp.entity_summary_list) > 1:
-            log.debug(f"The response was: {entity_rsp}")
+            pprint_debug_logging(log, entity_rsp)
             self._raise_error(InvalidStateError, f"Multiple responses found for \"{product_name}\"")
 
         # We should only get one response based on filtering
@@ -286,7 +287,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             ],
         )
 
-        log.debug(f"The response from the restrict version was: {rsp}")
+        pprint_debug_logging(log, rsp, "The response from the restrict version was: ")
 
         return rsp["ChangeSetId"]
 
@@ -304,7 +305,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             Catalog="AWSMarketplace", ChangeSetId=change_set_id
         )
 
-        log.debug(f"The response from cancelling a changeset was: {rsp}")
+        pprint_debug_logging(log, rsp, "The response from cancelling a changeset was: ")
 
         return rsp["ChangeSetId"]
 
@@ -335,7 +336,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             # ATM we're not batching changesets so
             # the first one should be the one we want.
             failure_list = rsp.change_set[0].error_details
-            log.debug(f"The response from the status was: {rsp}")
+            pprint_debug_logging(log, rsp, "The response from the status was: ")
             error_message = (
                 f"Changeset {change_set_id} failed with code {failure_code}: \n {failure_list}"
             )
@@ -469,7 +470,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             rsp = self.marketplace.start_change_set(
                 Catalog="AWSMarketplace", ChangeSet=[change_set], Intent="APPLY"
             )
-
-        log.debug(f"The response from publishing was: {rsp}")
+        if log.isEnabledFor(logging.DEBUG):
+            pprint_debug_logging(log, rsp, "The response from publishing was: ")
 
         self.wait_for_changeset(rsp["ChangeSetId"])

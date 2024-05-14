@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-import json
 import logging
 import sys
 from typing import Any, Dict, List, Optional, Union
@@ -849,28 +848,19 @@ class DescribeEntityResponse(AttrsJSONDecodeMixin):
     )
     """This stringified JSON object includes the details of the entity."""
 
+    details_document: ProductDetailResponse = field(
+        converter=ProductDetailResponse.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "DetailsDocument"},
+    )
+    """This json object of the details of the entity."""
+
     meta: ResponseMetadata = field(
         converter=ResponseMetadata.from_json,  # type: ignore
         on_setattr=NO_OP,
         metadata={"alias": "ResponseMetadata"},
     )
     """The describe_entity response's metadata."""
-
-    _parsed_details: ProductDetailResponse = field(init=False)
-
-    def __init__(self, **kwargs):
-        """Customize the initialization for private attribute support."""
-        self._parsed_details = kwargs.pop("_parsed_details")
-        self.__attrs_init__(**kwargs)
-
-    @property
-    def parsed_details(self) -> ProductDetailResponse:
-        """The parsed  :class:`~ProductDetailResponse` object from ``details``."""
-        if not self._parsed_details:
-            if not self.details:
-                raise ValueError(f"No valid JSON for details: {self.details}")
-            self._parsed_details = ProductDetailResponse.from_json(json.loads(self.details))
-        return self._parsed_details
 
 
 #

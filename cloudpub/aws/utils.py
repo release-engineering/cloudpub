@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-from typing import Any, Dict, List, Tuple
+import logging
+from pprint import pformat
+from typing import Any, Dict, List, Mapping, Tuple
 
 import dateutil.parser
 from packaging.version import InvalidVersion, Version
@@ -121,3 +123,21 @@ def get_restricted_patch_versions(version_tree: Dict[str, Any]) -> Tuple[List[st
                 restrict_delivery_ids.append(delivery_options[0].id)
                 restrict_ami_ids.extend(x["ami_ids"])
     return restrict_delivery_ids, restrict_ami_ids
+
+
+def pprint_debug_logging(
+    log: logging.Logger, rsp_log: Mapping[str, Any], log_tag: str = "Response: "
+) -> None:
+    """
+    Pprint a dict into the appropriate logger.
+
+    Args:
+        log (Logger)
+            The log to report to.
+        rsp_log (Dict[str, Any])
+            The dict to add to logging.
+    Returns:
+        None
+    """
+    if log.isEnabledFor(logging.DEBUG):
+        log.debug("%s\n%s", log_tag, pformat(rsp_log))

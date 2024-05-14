@@ -23,7 +23,7 @@ from cloudpub.models.aws import (
 
 
 @pytest.fixture
-def describe_entity_response_base() -> Dict[str, str]:
+def describe_entity_response_base() -> Dict[str, Any]:
     return {
         'EntityType': 'SaaSProduct@1.0',
         'EntityIdentifier': '3edd5534-75d7-49a5-bd3b-8e106e35f13f@12',
@@ -113,15 +113,9 @@ def test_convert_source(
 
 
 def test_describe_entity_response_parsed_details(
-    describe_entity_response_base: Dict[str, str], details_entity_json: Dict[str, Any]
+    describe_entity_response_base: Dict[str, Any], details_entity_json: Dict[str, Any]
 ) -> None:
     describe_entity_response_base["Details"] = json.dumps(details_entity_json)
+    describe_entity_response_base["DetailsDocument"] = details_entity_json
     resp = DescribeEntityResponse.from_json(describe_entity_response_base)
-    assert isinstance(resp.parsed_details, ProductDetailResponse)
-
-
-def test_describe_entity_response_no_details(describe_entity_response_base: Dict[str, str]) -> None:
-    obj = DescribeEntityResponse.from_json(describe_entity_response_base)
-
-    with pytest.raises(ValueError, match="No valid JSON for details: None"):
-        obj.parsed_details
+    assert isinstance(resp.details_document, ProductDetailResponse)
