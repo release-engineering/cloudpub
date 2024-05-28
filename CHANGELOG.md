@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.9.0 - 2024-05-28
+
+- Add missing models for AWS
+- Bump requests to fix CVE-2024-35195
+- Pprint long response logs
+
 ## 0.8.0 - 2024-04-22
 
 - AWS: Added major/minor params for restricting versions.
