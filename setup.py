@@ -20,6 +20,7 @@ setup(
     ],
     install_requires=[
         'attrs',
+        'deepdiff',
         'requests',
         'tenacity',
         "boto3>=1.34.80",
