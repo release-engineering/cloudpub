@@ -443,6 +443,46 @@ class TestAzureService:
         mock_products.__iter__.assert_called_once()
         mock_getpr.assert_not_called()
 
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product")
+    @mock.patch("cloudpub.ms_azure.AzureService.products")
+    def test_diff_offer_changed(
+        self,
+        mock_products: mock.MagicMock,
+        mock_getpr: mock.MagicMock,
+        azure_service: AzureService,
+        product_obj: Product,
+        product_summary_obj: ProductSummary,
+    ) -> None:
+        mock_products.__iter__.return_value = [product_summary_obj]
+        mock_getpr.return_value = product_obj
+
+        data_product = deepcopy(product_obj.to_json())
+        data_product["resources"][0]["id"] = "product/foo/bar"
+
+        diff = azure_service.diff_offer(Product.from_json(data_product))
+        assert diff == {
+            'values_changed': {
+                "root['resources'][0]['id']": {
+                    'new_value': 'product/foo/bar',
+                    'old_value': 'product/ffffffff-ffff-ffff-ffff-ffffffffffff',
+                },
+            },
+        }
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product")
+    @mock.patch("cloudpub.ms_azure.AzureService.products")
+    def test_diff_offer_no_change(
+        self,
+        mock_products: mock.MagicMock,
+        mock_getpr: mock.MagicMock,
+        azure_service: AzureService,
+        product_obj: Product,
+        product_summary_obj: ProductSummary,
+    ) -> None:
+        mock_products.__iter__.return_value = [product_summary_obj]
+        mock_getpr.return_value = product_obj
+        assert azure_service.diff_offer(product_obj) == {}
+
     @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
     def test_get_submissions(
         self,
@@ -969,6 +1009,7 @@ class TestAzureService:
             assert res is True
             mock_substt.assert_called_once_with(current.product_id, "live")
 
+    @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")
@@ -987,6 +1028,7 @@ class TestAzureService:
         mock_prep_img: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
+        mock_diff_offer: mock.MagicMock,
         product_obj: Product,
         plan_summary_obj: PlanSummary,
         metadata_azure_obj: AzurePublishingMetadata,
@@ -1045,8 +1087,10 @@ class TestAzureService:
         )
         mock_disk_scratch.assert_not_called()
         mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_diff_offer.assert_called_once_with(product_obj, first_target='draft')
         mock_submit.assert_called_once_with(product_id=product_obj.id, status="preview")
 
+    @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")
@@ -1065,6 +1109,7 @@ class TestAzureService:
         mock_prep_img: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
+        mock_diff_offer: mock.MagicMock,
         product_obj: Product,
         plan_summary_obj: PlanSummary,
         metadata_azure_obj: AzurePublishingMetadata,
@@ -1119,6 +1164,7 @@ class TestAzureService:
             source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
+        mock_diff_offer.assert_called_once_with(product_obj)
         mock_configure.assert_called_once_with(resource=technical_config_obj)
         submit_calls = [
             mock.call(product_id=product_obj.id, status="preview"),

@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
+from deepdiff import DeepDiff
 from requests import HTTPError
 from tenacity import retry
 from tenacity.retry import retry_if_result
@@ -77,6 +78,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
     AZURE_API_VERSION = os.environ.get("AZURE_API_VERSION", "2022-07-01")
     AZURE_SCHEMA_VERSION = os.environ.get("AZURE_SCHEMA_VERSION", "2022-07-01")
     CONFIGURE_SCHEMA = "https://schema.mp.microsoft.com/schema/configure/{AZURE_API_VERSION}"
+    DIFF_EXCLUDES = [r"root\['resources'\]\[[0-9]+\]\['url'\]"]
 
     def __init__(self, credentials: Dict[str, str]):
         """
@@ -365,6 +367,20 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 return p
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
+    def diff_offer(self, product: Product, first_target="preview") -> DeepDiff:
+        """Compute the difference between the provided product and the one in the remote.
+
+        Args:
+            product (Product)
+                The local product to diff with the remote one.
+            first_target (str)
+                The first target to lookup into. Defaults to ``preview``.
+        Returns:
+            DeepDiff: The diff data.
+        """
+        remote = self.get_product(product.id, first_target=first_target)
+        return DeepDiff(remote.to_json(), product.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES)
+
     def submit_to_status(self, product_id: str, status: str) -> ConfigureStatus:
         """
         Send a submission request to Microsoft with a new Product status.
@@ -636,6 +652,12 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
         self.submit_to_status(product_id=product.id, status='live')
 
+    @staticmethod
+    def _logdiff(diff: DeepDiff) -> None:
+        """Log the offer diff if it exists."""
+        if diff:
+            log.warning(f"Found the following offer diff before publishing:\n{diff.pretty()}")
+
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it if required.
@@ -715,6 +737,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 5. Proceed to publishing if it was requested.
         if not metadata.keepdraft:
+            self._logdiff(self.diff_offer(product, **get_prd_params))
+
             self._publish_preview(product, product_name)
 
             if not metadata.preview_only:
