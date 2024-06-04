@@ -11,6 +11,7 @@ from cloudpub.models.aws import (
     DeliveryOption,
     DeliveryOptionsDetails,
     DescribeEntityResponse,
+    ListChangeSetsResponse,
     ProductDetailResponse,
     ProductVersionsBase,
     ProductVersionsCloudFormationSource,
@@ -119,3 +120,8 @@ def test_describe_entity_response_parsed_details(
     describe_entity_response_base["DetailsDocument"] = details_entity_json
     resp = DescribeEntityResponse.from_json(describe_entity_response_base)
     assert isinstance(resp.details_document, ProductDetailResponse)
+
+
+def test_list_changeset_response_parsed(list_changeset_response: Dict[str, Any]) -> None:
+    resp = ListChangeSetsResponse.from_json(list_changeset_response)
+    assert len(resp.change_set_list) == 1

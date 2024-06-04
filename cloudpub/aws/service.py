@@ -25,6 +25,8 @@ from cloudpub.models.aws import (
     DescribeChangeSetReponse,
     DescribeEntityResponse,
     GroupedVersions,
+    ListChangeSet,
+    ListChangeSetsResponse,
     ListEntitiesResponse,
     ProductDetailResponse,
     ProductVersionsResponse,
@@ -178,7 +180,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         Args:
             entity_id (str)
-                The Id of the entity to edit
+                The Id of the entity to get version details from
             version_id (str)
                 The version id of a product to get the details of
         Returns:
@@ -202,7 +204,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         Args:
             entity_id (str)
-                The Id of the entity to edit
+                The Id of the entity to get versions from
         Returns:
             Dict[str, GroupedVersions]: A dictionary of versions
         Raises:
@@ -235,7 +237,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         Args:
             entity_id (str)
-                The Id of the entity to edit
+                The Id of the entity to get version by name from
             version_name (str)
                 A version title to get details of
         Returns:
@@ -253,6 +255,52 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
                 return version.delivery_options[0]
 
         self._raise_error(NotFoundError, f"No such version with name \"{version_name}\"")
+
+    def get_product_active_changesets(self, entity_id: str) -> List[ListChangeSet]:
+        """
+        Get the active changesets for a product.
+
+        Args:
+            entity_id (str)
+                The Id of the entity to get active changesets from
+        Returns:
+            str: A change set id
+        """
+        filter_list = [
+            {"Name": "EntityId", "ValueList": [entity_id]},
+            {"Name": "Status", "ValueList": ["APPLYING", "PREPARING"]},
+        ]
+
+        changeset_list = ListChangeSetsResponse.from_json(
+            self.marketplace.list_change_sets(Catalog="AWSMarketplace", FilterList=filter_list)
+        )
+        return changeset_list.change_set_list
+
+    def wait_active_changesets(self, entity_id: str) -> None:
+        """
+        Get the first active changeset, if there is one, and wait for it to finish.
+
+        Args:
+            entity_id (str)
+                The Id of the entity to wait for active changesets
+        """
+
+        def changeset_not_complete(change_set_list: List[ListChangeSet]) -> bool:
+            if change_set_list:
+                self.wait_for_changeset(change_set_list[0].id)
+                return True
+            else:
+                return False
+
+        r = Retrying(
+            stop=stop_after_attempt(self.wait_for_changeset_attempts),
+            retry=retry_if_result(changeset_not_complete),
+        )
+
+        try:
+            r(self.get_product_active_changesets, entity_id)
+        except RetryError:
+            self._raise_error(Timeout, f"Timed out waiting for {entity_id} to be unlocked")
 
     def set_restrict_versions(
         self, entity_id: str, marketplace_entity_type: str, delivery_option_ids: List[str]
@@ -350,7 +398,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
 
         Args:
             change_set_id (str)
-                Id for the change set
+                Id for the change set to wait on
         Raises:
             Timeout when the status doesn't change to either
             'Succeeded' or 'Failed' within the set retry time.
@@ -470,7 +518,6 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             rsp = self.marketplace.start_change_set(
                 Catalog="AWSMarketplace", ChangeSet=[change_set], Intent="APPLY"
             )
-        if log.isEnabledFor(logging.DEBUG):
-            pprint_debug_logging(log, rsp, "The response from publishing was: ")
+        pprint_debug_logging(log, rsp, "The response from publishing was: ")
 
         self.wait_for_changeset(rsp["ChangeSetId"])

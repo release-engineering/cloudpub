@@ -10,6 +10,7 @@ from cloudpub.models.aws import (
     AMISource,
     DeliveryOption,
     DeliveryOptionsDetails,
+    ListChangeSetsResponse,
     SecurityGroup,
     Version,
     VersionMapping,
@@ -269,6 +270,40 @@ def describe_entity_response() -> Dict[str, Any]:
 
 
 @pytest.fixture
+def list_changeset_response() -> Dict[str, Any]:
+    return {
+        "ResponseMetadata": {
+            "RequestId": "3f065885-b919-4fb2-8b4d-4684eae4466b",
+            "HTTPStatusCode": 200,
+            "HTTPHeaders": {
+                "date": "Mon, 03 Jun 2024 17:20:28 GMT",
+                "content-type": "application/json",
+                "content-length": "2166",
+                "connection": "keep-alive",
+                "x-amzn-requestid": "3f065885-b919-4fb2-8b4d-4684eae4466b",
+            },
+            "RetryAttempts": 0,
+        },
+        "ChangeSetSummaryList": [
+            {
+                "ChangeSetId": "2de11mwkeagfwj07225x1h5a5",
+                "ChangeSetArn": "testarn",
+                "ChangeSetName": "Update product information",
+                "StartTime": "2024-06-03T17:14:47Z",
+                "Status": "APPLYING",
+                "EntityIdList": ["d87bcebf-9cf4-47f5-9b5b-5470d4490f3d"],
+            }
+        ],
+        "NextToken": "nexttoken",
+    }
+
+
+@pytest.fixture
+def list_changeset_obj(list_changeset_response: Dict[str, Any]) -> ListChangeSetsResponse:
+    return ListChangeSetsResponse.from_json(list_changeset_response)
+
+
+@pytest.fixture
 def version_obj(version: Dict[str, Any]) -> Version:
     return Version.from_json(version)
 
@@ -351,3 +386,8 @@ def mock_cancel_change_set(aws_service: AWSProductService) -> mock.MagicMock:
 @pytest.fixture
 def mock_describe_change_set(aws_service: AWSProductService) -> mock.MagicMock:
     return mock.patch.object(aws_service.marketplace, "describe_change_set").start()
+
+
+@pytest.fixture
+def mock_list_change_sets(aws_service: AWSProductService) -> mock.MagicMock:
+    return mock.patch.object(aws_service.marketplace, "list_change_sets").start()
