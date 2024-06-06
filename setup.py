@@ -23,7 +23,7 @@ setup(
         'deepdiff',
         'requests',
         'tenacity',
-        "boto3>=1.34.80",
+        "boto3>=1.34.117",
     ],
     zip_safe=False,
 )

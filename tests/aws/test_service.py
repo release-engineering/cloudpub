@@ -9,7 +9,12 @@ from _pytest.logging import LogCaptureFixture
 
 from cloudpub.aws import AWSProductService, AWSVersionMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
-from cloudpub.models.aws import DeliveryOption, ProductVersionsResponse, VersionMapping
+from cloudpub.models.aws import (
+    DeliveryOption,
+    ListChangeSetsResponse,
+    ProductVersionsResponse,
+    VersionMapping,
+)
 
 
 @pytest.fixture
@@ -868,3 +873,72 @@ class TestAWSProductService:
         mock_wait_for_changeset.assert_not_called()
 
         assert restrcited_vers == []
+
+    def test_get_product_active_changesets(
+        self,
+        mock_list_change_sets: mock.MagicMock,
+        aws_service: AWSProductService,
+        list_changeset_response: Dict[str, Any],
+    ) -> None:
+        mock_list_change_sets.return_value = list_changeset_response
+        change_sets = aws_service.get_product_active_changesets("fake-entity")
+
+        filter_list = [
+            {"Name": "EntityId", "ValueList": ["fake-entity"]},
+            {"Name": "Status", "ValueList": ["APPLYING", "PREPARING"]},
+        ]
+
+        mock_list_change_sets.assert_called_once_with(
+            Catalog="AWSMarketplace", FilterList=filter_list
+        )
+
+        assert len(change_sets) == 1
+        assert change_sets[0].id == "2de11mwkeagfwj07225x1h5a5"
+        assert change_sets[0].entity_id_list[0] == "d87bcebf-9cf4-47f5-9b5b-5470d4490f3d"
+        assert change_sets[0].status == "APPLYING"
+
+    @mock.patch("cloudpub.aws.AWSProductService.get_product_active_changesets")
+    @mock.patch("cloudpub.aws.AWSProductService.wait_for_changeset")
+    def test_wait_product_active_changesets(
+        self,
+        mock_wait_for_changeset: mock.MagicMock,
+        mock_product_active_changesets: mock.MagicMock,
+        aws_service: AWSProductService,
+        list_changeset_obj: ListChangeSetsResponse,
+    ) -> None:
+        aws_service.wait_for_changeset_attempts = 2
+        mock_product_active_changesets.side_effect = [list_changeset_obj.change_set_list, []]
+        aws_service.wait_active_changesets("fake-entity")
+
+        mock_product_active_changesets.assert_has_calls(
+            [mock.call("fake-entity"), mock.call("fake-entity")]
+        )
+        mock_wait_for_changeset.assert_called_once_with("2de11mwkeagfwj07225x1h5a5")
+
+    @mock.patch("cloudpub.aws.AWSProductService.get_product_active_changesets")
+    @mock.patch("cloudpub.aws.AWSProductService.wait_for_changeset")
+    def test_wait_product_no_active_changesets(
+        self,
+        mock_wait_for_changeset: mock.MagicMock,
+        mock_product_active_changesets: mock.MagicMock,
+        aws_service: AWSProductService,
+    ) -> None:
+        mock_product_active_changesets.return_value = []
+        aws_service.wait_active_changesets("fake-entity")
+
+        mock_product_active_changesets.assert_called_once_with("fake-entity")
+        mock_wait_for_changeset.assert_not_called()
+
+    @mock.patch("cloudpub.aws.AWSProductService.get_product_active_changesets")
+    @mock.patch("cloudpub.aws.AWSProductService.wait_for_changeset")
+    def test_wait_product_active_changesets_timeout(
+        self,
+        mock_wait_for_changeset: mock.MagicMock,
+        mock_product_active_changesets: mock.MagicMock,
+        aws_service: AWSProductService,
+        list_changeset_obj: ListChangeSetsResponse,
+    ) -> None:
+        aws_service.wait_for_changeset_attempts = 1
+        mock_product_active_changesets.return_value = list_changeset_obj.change_set_list
+        with pytest.raises(Timeout, match="Timed out waiting for fake-entity to be unlocked"):
+            aws_service.wait_active_changesets("fake-entity")

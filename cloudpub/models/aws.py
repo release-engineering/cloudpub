@@ -1040,6 +1040,93 @@ class DescribeChangeSetReponse(AttrsJSONDecodeMixin):
     """An array of ChangeSummary objects."""
 
 
+@define
+class ListChangeSet(AttrsJSONDecodeMixin):
+    """Represent a single element of the "change_set_list" attribute of :class:`~cloudpub.models.aws.ListChangeSetsResponse`."""  # noqa: E501
+
+    id: str = field(validator=instance_of(str), metadata={"alias": "ChangeSetId"})
+    """The unique identifier for the change set referenced in this request."""
+
+    arn: str = field(validator=instance_of(str), metadata={"alias": "ChangeSetArn"})
+    """The ARN associated with the unique identifier for the change set referenced in this request."""  # noqa: E501
+
+    name: Optional[str] = field(
+        validator=optional(instance_of(str)),
+        metadata={"alias": "ChangeSetName", "hide_unset": True},
+    )
+    """The name of the Changeset."""
+
+    start_time: str = field(validator=instance_of(str), metadata={"alias": "StartTime"})
+    """The date and time, in ISO 8601 format (2018-02-27T13:45:22Z), the request started."""
+
+    end_time: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "EndTime", "hide_unset": True}
+    )
+    """The date and time, in ISO 8601 format (2018-02-27T13:45:22Z) the request transitioned to a terminal state.
+
+    The change cannot transition to a different state.
+    Null if the request is not in a terminal state.
+    """  # noqa: E501
+
+    status: str = field(validator=instance_of(str), metadata={"alias": "Status"})
+    """The status of the change request.
+
+    Expected value (one of):
+
+    * ``PREPARING``
+    * ``APPLYING``
+    * ``SUCCEEDED``
+    * ``CANCELLED``
+    * ``FAILED``
+    """
+
+    entity_id_list: List[str] = field(
+        validator=deep_iterable(
+            member_validator=instance_of(str),
+            iterable_validator=instance_of(list),
+        ),
+        metadata={"alias": "EntityIdList"},
+    )
+    """List of entities that this changeset affects. This should generally be length of 1."""
+
+    failure_code: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "FailureCode", "hide_unset": True}
+    )
+    """Returned if the change set is in ``FAILED`` status.
+
+    Can be either ``CLIENT_ERROR``, which means that there are issues with the request
+    (see the ``ErrorDetailList``), or ``SERVER_FAULT``, which means that there is a problem
+    in the system, and you should retry your request.
+    """
+
+
+@define
+class ListChangeSetsResponse(AttrsJSONDecodeMixin):
+    """Represent the response of ``MarketplaceCatalog.Client.list_change_sets``.
+
+    `Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/marketplace-catalog/client/list_change_sets.html#MarketplaceCatalog.Client.list_change_sets>`_
+    """  # noqa: E501
+
+    meta: ResponseMetadata = field(
+        converter=ResponseMetadata.from_json,  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "ResponseMetadata"},
+    )
+    """The describe_entity response's metadata."""
+
+    change_set_list: List[ListChangeSet] = field(
+        converter=lambda x: [ListChangeSet.from_json(a) for a in x] if x else [],  # type: ignore
+        on_setattr=NO_OP,
+        metadata={"alias": "ChangeSetSummaryList"},
+    )
+    """An array of ChangeSummary objects."""
+
+    next_token: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "NextToken", "hide_unset": True}
+    )
+    """The value of the next token if it exists. Null if there is no more result."""
+
+
 #
 # Custom dictionaries
 #
