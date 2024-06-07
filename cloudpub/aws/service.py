@@ -147,6 +147,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             str: A dict of details for the first response of a product
         Raises:
             NotFoundError when the product is not found.
+            InvalidStateError when more than one product is found.
         """
         filter_list = [{"Name": "Name", "ValueList": [product_name]}]
 
@@ -162,12 +163,12 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             pprint_debug_logging(log, entity_rsp)
             self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
-        if len(entity_rsp.entity_summary_list) > 1:
+        elif len(entity_rsp.entity_summary_list) > 1:
             pprint_debug_logging(log, entity_rsp)
             self._raise_error(InvalidStateError, f"Multiple responses found for \"{product_name}\"")
 
         # We should only get one response based on filtering
-        if hasattr(entity_rsp.entity_summary_list[0], "entity_id"):
+        elif hasattr(entity_rsp.entity_summary_list[0], "entity_id"):
             return self.get_product_by_id(entity_rsp.entity_summary_list[0].entity_id)
 
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
