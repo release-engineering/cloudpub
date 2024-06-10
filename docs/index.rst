@@ -82,7 +82,7 @@ Example for AWS:
             {
               "FromPort": 22,
               "IpProtocol": "tcp",
-              "IpRanges": [
+              "CidrIps": [
               "0.0.0.0/0"
               ],
               "ToPort": 22
