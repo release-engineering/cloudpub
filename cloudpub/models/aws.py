@@ -81,6 +81,39 @@ class SecurityGroup(AttrsJSONDecodeMixin):
             member_validator=instance_of(str),
             iterable_validator=instance_of(list),
         ),
+        metadata={"alias": "IpRanges"},
+    )
+    """The IPv4 ranges."""
+
+    to_port: int = field(validator=instance_of(int), metadata={"alias": "ToPort"})
+    """
+    If the protocol is TCP or UDP, this is the end of the port range.
+    If the protocol is ICMP or ICMPv6, this is the type number.
+    A value of -1 indicates all ICMP/ICMPv6 types. If you specify all ICMP/ICMPv6 types,
+    you must specify all ICMP/ICMPv6 codes.
+    """
+
+
+@define
+class SecurityGroupRecommendations(AttrsJSONDecodeMixin):
+    """Represent the security group information for recommendations."""
+
+    from_port: int = field(validator=instance_of(int), metadata={"alias": "FromPort"})
+    """
+    If the protocol is TCP or UDP, this is the start of the port range.
+    If the protocol is ICMP or ICMPv6, this is the type number.
+    A value of -1 indicates all ICMP/ICMPv6 types. If you specify all ICMP/ICMPv6 types,
+    you must specify all ICMP/ICMPv6 codes.
+    """
+
+    ip_protocol: str = field(validator=instance_of(str), metadata={"alias": "Protocol"})
+
+    """The IP protocol name ( tcp , udp , icmp , icmpv6 )."""
+    cidr_ips: List[str] = field(
+        validator=deep_iterable(
+            member_validator=instance_of(str),
+            iterable_validator=instance_of(list),
+        ),
         metadata={"alias": "CidrIps"},
     )
     """The IPv4 ranges."""
@@ -190,8 +223,8 @@ class DeliveryOptionsRecommendations(AttrsJSONDecodeMixin):
     instance_type: str = field(metadata={"hide_unset": True, "alias": "InstanceType"})
     """Instance type for this recommendation"""
 
-    security_groups: List[SecurityGroup] = field(
-        converter=lambda x: [SecurityGroup.from_json(a) for a in x] if x else [],
+    security_groups: List[SecurityGroupRecommendations] = field(
+        converter=lambda x: [SecurityGroupRecommendations.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
         metadata={"alias": "SecurityGroups"},
     )

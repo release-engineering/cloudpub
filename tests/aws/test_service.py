@@ -242,6 +242,16 @@ class TestAWSProductService:
                         {
                             "Id": "fake-id2",
                             "Visibility": "Public",
+                            "Recommendations": {
+                                "SecurityGroups": [
+                                    {
+                                        "Protocol": "tcp",
+                                        "FromPort": 22,
+                                        "ToPort": 22,
+                                        "CidrIps": ["0.0.0.0/0"],
+                                    }
+                                ],
+                            },
                         },
                     ],
                 },
