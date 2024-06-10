@@ -261,14 +261,14 @@ class DeliveryOption(AttrsJSONDecodeMixin):
     instructions: DeliveryOptionsInstructions = field(
         converter=DeliveryOptionsInstructions.from_json,  # type: ignore
         on_setattr=NO_OP,
-        metadata={"alias": "Instructions"},
+        metadata={"alias": "Instructions", "hide_unset": True},
     )
     """Instructions on usage of this AMI"""
 
     recommendations: DeliveryOptionsRecommendations = field(
         converter=DeliveryOptionsRecommendations.from_json,  # type: ignore
         on_setattr=NO_OP,
-        metadata={"alias": "Recommendations"},
+        metadata={"alias": "Recommendations", "hide_unset": True},
     )
     """Recommendations when using this AMI"""
 
