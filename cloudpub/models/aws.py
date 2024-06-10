@@ -81,7 +81,7 @@ class SecurityGroup(AttrsJSONDecodeMixin):
             member_validator=instance_of(str),
             iterable_validator=instance_of(list),
         ),
-        metadata={"alias": "IpRanges"},
+        metadata={"alias": "CidrIps"},
     )
     """The IPv4 ranges."""
 

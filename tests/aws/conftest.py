@@ -39,7 +39,7 @@ def security_group() -> Dict[str, Any]:
     return {
         "FromPort": 22,
         "IpProtocol": "Test notes",
-        "IpRanges": ["22.22.22.22", "00.00.00.00"],
+        "CidrIps": ["22.22.22.22", "00.00.00.00"],
         "ToPort": 22,
     }
 
