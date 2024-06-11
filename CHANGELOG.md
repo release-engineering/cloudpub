@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.9.1 - 2024-06-11
+
+- Log diff offer for Azure 
+- Adds waiting for the most current changeset to avoid collision in AWS.
+- fixes issue with sonarqube
+- AWS change IpRanges replaced with CidrIps.
+- Bugfix security groups recommendations.
+- Fixes optional items in delivery option.
+- Prevent empty keys to warn 
+- AWS: Clears up what is actually happening between draft or creation.
+
 ## 0.9.0 - 2024-05-28
 
 - Add missing models for AWS
