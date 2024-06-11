@@ -66,8 +66,10 @@ class AttrsJSONDecodeMixin:
         attributes: Tuple[Attribute] = cls.__attrs_attrs__  # type: ignore
         for at in attributes:
             alias = at.metadata.get("alias")
-            if alias and json.get(alias, None) is not None:
-                json_copy[at.name] = json_copy.pop(alias)
+            if alias:
+                alias_value = json_copy.pop(alias, None)
+                if alias_value is not None:
+                    json_copy[at.name] = alias_value
             # Add defaults to unset attributes when required
             default = at.metadata.get("default")
             if default and not json_copy.get(at.name):
