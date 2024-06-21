@@ -53,7 +53,6 @@ class AttrsJSONDecodeMixin:
             The converted object from JSON.
         """
         if not json:
-            log.debug("Not converting an empty JSON.")
             return
 
         # Ensure it's a dictionary
