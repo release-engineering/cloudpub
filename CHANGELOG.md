@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.9.2 - 2024-06-25
+
+- Bump urllib3 to fix a CVE
+- Remove "Not converting empty JSON" message from logs
+
 ## 0.9.1 - 2024-06-11
 
 - Log diff offer for Azure 
