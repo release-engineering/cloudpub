@@ -443,6 +443,78 @@ class TestAzureService:
         mock_products.__iter__.assert_called_once()
         mock_getpr.assert_not_called()
 
+    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    def test_get_product_plan_by_name_success_first_attempt(
+        self,
+        mock_getpr: mock.MagicMock,
+        mock_getpl: mock.MagicMock,
+        product_obj: Product,
+        plan_summary_obj: ProductSummary,
+        azure_service: AzureService,
+    ) -> None:
+        """Ensure the product/plan can be retrieved in the first attempt."""
+        mock_getpr.return_value = product_obj
+        mock_getpl.return_value = plan_summary_obj
+
+        product, plan = azure_service.get_product_plan_by_name("product", "plan")
+
+        assert product == product_obj
+        assert plan == plan_summary_obj
+        mock_getpr.assert_called_once_with("product", first_target="preview")
+        mock_getpl.assert_called_once_with(product_obj, "plan")
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    def test_get_product_plan_by_name_success_next_attempt(
+        self,
+        mock_getpr: mock.MagicMock,
+        mock_getpl: mock.MagicMock,
+        product_obj: Product,
+        plan_summary_obj: ProductSummary,
+        azure_service: AzureService,
+    ) -> None:
+        """Ensure the product/plan can be retrieved after the first attempt."""
+        mock_getpr.return_value = product_obj
+        mock_getpl.side_effect = [NotFoundError("Not found"), plan_summary_obj]
+
+        product, plan = azure_service.get_product_plan_by_name("product", "plan")
+
+        assert product == product_obj
+        assert plan == plan_summary_obj
+        mock_getpr.assert_has_calls(
+            [
+                mock.call("product", first_target="preview"),
+                mock.call("product", first_target="draft"),
+            ]
+        )
+        mock_getpl.assert_has_calls([mock.call(product_obj, "plan") for _ in range(2)])
+
+    @pytest.mark.parametrize(
+        "product_rv,plan_rv",
+        [
+            (NotFoundError("Test"), mock.MagicMock()),
+            (mock.MagicMock(), NotFoundError("Test")),
+        ],
+        ids=["product_not_found", "plan_not_found"],
+    )
+    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    def test_get_product_plan_by_name_failure_not_found(
+        self,
+        mock_getpr: mock.MagicMock,
+        mock_getpl: mock.MagicMock,
+        product_rv: Any,
+        plan_rv: Any,
+        azure_service: AzureService,
+    ) -> None:
+        """Ensure the product/plan will raise NotFoundError when not found."""
+        mock_getpr.side_effect = product_rv
+        mock_getpl.side_effect = plan_rv
+
+        with pytest.raises(NotFoundError):
+            azure_service.get_product_plan_by_name("product", "plan")
+
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")
     def test_diff_offer_changed(
@@ -646,12 +718,10 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
     def test_publish_overwrite(
         self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
+        mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
@@ -669,8 +739,7 @@ class TestAzureService:
         metadata_azure_obj.overwrite = True
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_disk_scratch.return_value = disk_version_obj
         mock_upd_sku.return_value = technical_config_obj
@@ -684,8 +753,7 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
@@ -708,12 +776,10 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
     def test_publish_nodiskversion(
         self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
+        mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
@@ -732,8 +798,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.disk_version = "1.0.0"
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         technical_config_obj.disk_versions = []
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
@@ -753,8 +818,7 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
@@ -777,12 +841,10 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
     def test_publish_saspresent(
         self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
+        mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
@@ -801,8 +863,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = True
         mock_disk_scratch.return_value = disk_version_obj
@@ -810,8 +871,7 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
@@ -831,12 +891,10 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
     def test_publish_novmimages(
         self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
+        mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
@@ -856,8 +914,7 @@ class TestAzureService:
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
         technical_config_obj.disk_versions[0].vm_images = []
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         mock_disk_scratch.return_value = disk_version_obj
@@ -882,8 +939,7 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
@@ -902,12 +958,10 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
     def test_publish_disk_has_images(
         self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
+        mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
@@ -926,8 +980,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         expected_source = VMImageSource(
@@ -951,8 +1004,7 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
 
         azure_service.publish(metadata_azure_obj)
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
@@ -1016,93 +1068,10 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
-    def test_publish_preview(
-        self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
-        mock_filter: mock.MagicMock,
-        mock_disk_scratch: mock.MagicMock,
-        mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
-        mock_submit: mock.MagicMock,
-        mock_configure: mock.MagicMock,
-        mock_diff_offer: mock.MagicMock,
-        product_obj: Product,
-        plan_summary_obj: PlanSummary,
-        metadata_azure_obj: AzurePublishingMetadata,
-        technical_config_obj: VMIPlanTechConfig,
-        disk_version_obj: DiskVersion,
-        submission_obj: ProductSubmission,
-        azure_service: AzureService,
-    ) -> None:
-        metadata_azure_obj.overwrite = False
-        metadata_azure_obj.keepdraft = False
-        metadata_azure_obj.support_legacy = True
-        metadata_azure_obj.preview_only = True
-        metadata_azure_obj.destination = "example-product/plan-1"
-        metadata_azure_obj.disk_version = "2.0.0"
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
-        mock_filter.side_effect = [
-            [technical_config_obj],
-            [submission_obj],
-        ]
-        mock_is_sas.return_value = False
-        expected_source = VMImageSource(
-            source_type="sasUri",
-            os_disk=OSDiskURI(uri=metadata_azure_obj.image_path).to_json(),
-            data_disks=[],
-        )
-        disk_version_obj.vm_images[0] = VMImageDefinition(
-            image_type=get_image_type_mapping(metadata_azure_obj.architecture, "V1"),
-            source=expected_source.to_json(),
-        )
-        mock_prep_img.return_value = deepcopy(
-            disk_version_obj.vm_images
-        )  # During submit it will pop the disk_versions
-        technical_config_obj.disk_versions = [disk_version_obj]
-        technical_config_obj.disk_versions = [disk_version_obj]
-
-        azure_service.publish(metadata_azure_obj)
-        mock_getpr_name.assert_called_once_with(
-            product_name="example-product", first_target="draft"
-        )
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
-        filter_calls = [
-            mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
-            mock.call(product=product_obj, resource="submission"),
-        ]
-        mock_filter.assert_has_calls(filter_calls)
-        mock_is_sas.assert_called_once_with(
-            technical_config_obj,
-            metadata_azure_obj.image_path,
-        )
-        mock_prep_img.assert_called_once_with(
-            metadata=metadata_azure_obj,
-            gen1=disk_version_obj.vm_images[0],
-            gen2=disk_version_obj.vm_images[1],
-            source=expected_source,
-        )
-        mock_disk_scratch.assert_not_called()
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
-        mock_diff_offer.assert_called_once_with(product_obj, first_target='draft')
-        mock_submit.assert_called_once_with(product_id=product_obj.id, status="preview")
-
-    @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
-    @mock.patch("cloudpub.ms_azure.AzureService.configure")
-    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
-    @mock.patch("cloudpub.ms_azure.service.prepare_vm_images")
-    @mock.patch("cloudpub.ms_azure.service.is_sas_present")
-    @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
-    @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
     def test_publish_live(
         self,
-        mock_getpr_name: mock.MagicMock,
-        mock_getpl_name: mock.MagicMock,
+        mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
@@ -1123,8 +1092,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getpr_name.return_value = product_obj
-        mock_getpl_name.return_value = plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.side_effect = [
             [technical_config_obj],
             [submission_obj],
@@ -1146,8 +1114,7 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
 
         azure_service.publish(metadata_azure_obj)
-        mock_getpr_name.assert_called_once_with(product_name="example-product")
-        mock_getpl_name.assert_called_once_with(product=product_obj, plan_name="plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
             mock.call(product=product_obj, resource="submission"),
