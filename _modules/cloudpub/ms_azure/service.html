@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cloudpub.ms_azure.service &#8212; cloudpub 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for cloudpub.ms_azure.service</h1><div class="highlight"><pre>
+<span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span> <span class="nn">deepdiff</span> <span class="kn">import</span> <span class="n">DeepDiff</span>
+<span class="kn">from</span> <span class="nn">requests</span> <span class="kn">import</span> <span class="n">HTTPError</span>
+<span class="kn">from</span> <span class="nn">tenacity</span> <span class="kn">import</span> <span class="n">retry</span>
+<span class="kn">from</span> <span class="nn">tenacity.retry</span> <span class="kn">import</span> <span class="n">retry_if_result</span>
+<span class="kn">from</span> <span class="nn">tenacity.stop</span> <span class="kn">import</span> <span class="n">stop_after_delay</span>
+<span class="kn">from</span> <span class="nn">tenacity.wait</span> <span class="kn">import</span> <span class="n">wait_chain</span><span class="p">,</span> <span class="n">wait_fixed</span>
+
+<span class="kn">from</span> <span class="nn">cloudpub.common</span> <span class="kn">import</span> <span class="n">BaseService</span>
+<span class="kn">from</span> <span class="nn">cloudpub.error</span> <span class="kn">import</span> <span class="n">InvalidStateError</span><span class="p">,</span> <span class="n">NotFoundError</span>
+<span class="kn">from</span> <span class="nn">cloudpub.models.ms_azure</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RESOURCE_MAPING</span><span class="p">,</span>
+    <span class="n">AzureResource</span><span class="p">,</span>
+    <span class="n">ConfigureStatus</span><span class="p">,</span>
+    <span class="n">CustomerLeads</span><span class="p">,</span>
+    <span class="n">DiskVersion</span><span class="p">,</span>
+    <span class="n">Listing</span><span class="p">,</span>
+    <span class="n">ListingAsset</span><span class="p">,</span>
+    <span class="n">ListingTrailer</span><span class="p">,</span>
+    <span class="n">OSDiskURI</span><span class="p">,</span>
+    <span class="n">PlanListing</span><span class="p">,</span>
+    <span class="n">PlanSummary</span><span class="p">,</span>
+    <span class="n">PriceAndAvailabilityOffer</span><span class="p">,</span>
+    <span class="n">PriceAndAvailabilityPlan</span><span class="p">,</span>
+    <span class="n">Product</span><span class="p">,</span>
+    <span class="n">ProductProperty</span><span class="p">,</span>
+    <span class="n">ProductReseller</span><span class="p">,</span>
+    <span class="n">ProductSubmission</span><span class="p">,</span>
+    <span class="n">ProductSummary</span><span class="p">,</span>
+    <span class="n">TestDrive</span><span class="p">,</span>
+    <span class="n">VMImageDefinition</span><span class="p">,</span>
+    <span class="n">VMImageSource</span><span class="p">,</span>
+    <span class="n">VMIPlanTechConfig</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">cloudpub.ms_azure.session</span> <span class="kn">import</span> <span class="n">PartnerPortalSession</span>
+<span class="kn">from</span> <span class="nn">cloudpub.ms_azure.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AzurePublishingMetadata</span><span class="p">,</span>
+    <span class="n">create_disk_version_from_scratch</span><span class="p">,</span>
+    <span class="n">get_image_type_mapping</span><span class="p">,</span>
+    <span class="n">is_azure_job_not_complete</span><span class="p">,</span>
+    <span class="n">is_sas_present</span><span class="p">,</span>
+    <span class="n">prepare_vm_images</span><span class="p">,</span>
+    <span class="n">update_skus</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">cloudpub.utils</span> <span class="kn">import</span> <span class="n">get_url_params</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">AZURE_PRODUCT_RESOURCES</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
+    <span class="n">CustomerLeads</span><span class="p">,</span>
+    <span class="n">Listing</span><span class="p">,</span>
+    <span class="n">ListingAsset</span><span class="p">,</span>
+    <span class="n">ListingTrailer</span><span class="p">,</span>
+    <span class="n">PlanListing</span><span class="p">,</span>
+    <span class="n">PlanSummary</span><span class="p">,</span>
+    <span class="n">PriceAndAvailabilityOffer</span><span class="p">,</span>
+    <span class="n">PriceAndAvailabilityPlan</span><span class="p">,</span>
+    <span class="n">ProductProperty</span><span class="p">,</span>
+    <span class="n">ProductReseller</span><span class="p">,</span>
+    <span class="n">ProductSubmission</span><span class="p">,</span>
+    <span class="n">ProductSummary</span><span class="p">,</span>
+    <span class="n">TestDrive</span><span class="p">,</span>
+    <span class="n">VMIPlanTechConfig</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="AzureService"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService">[docs]</a><span class="k">class</span> <span class="nc">AzureService</span><span class="p">(</span><span class="n">BaseService</span><span class="p">[</span><span class="n">AzurePublishingMetadata</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service provider for Microsoft Azure using the Product Ingestion API.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Product ingestion API Docs:</span>
+    <span class="c1"># https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api</span>
+
+    <span class="n">AZURE_API_VERSION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;AZURE_API_VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;2022-07-01&quot;</span><span class="p">)</span>
+    <span class="n">AZURE_SCHEMA_VERSION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;AZURE_SCHEMA_VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;2022-07-01&quot;</span><span class="p">)</span>
+    <span class="n">CONFIGURE_SCHEMA</span> <span class="o">=</span> <span class="s2">&quot;https://schema.mp.microsoft.com/schema/configure/</span><span class="si">{AZURE_API_VERSION}</span><span class="s2">&quot;</span>
+    <span class="n">DIFF_EXCLUDES</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;root\[&#39;resources&#39;\]\[[0-9]+\]\[&#39;url&#39;\]&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="AzureService.__init__"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">credentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new AuzureService object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            credentials (dict)</span>
+<span class="sd">                Dictionary with Azure credentials to authenticate on Product Ingestion API.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">PartnerPortalSession</span><span class="o">.</span><span class="n">make_graph_api_session</span><span class="p">(</span>
+            <span class="n">auth_keys</span><span class="o">=</span><span class="n">credentials</span><span class="p">,</span> <span class="n">schema_version</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">AZURE_SCHEMA_VERSION</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_products</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ProductSummary</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+    <span class="k">def</span> <span class="nf">_configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Submit a `configure` request to create or modify an Azure resource.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict)</span>
+<span class="sd">                The configure request data to send to the Product Ingestion API.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The job ID to track its status alongside the initial status.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Received the following data to create/modify: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;configure&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">(</span><span class="n">response</span><span class="o">=</span><span class="n">resp</span><span class="p">)</span>
+        <span class="n">parsed_resp</span> <span class="o">=</span> <span class="n">ConfigureStatus</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Create/modify request response: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">parsed_resp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parsed_resp</span>
+
+    <span class="k">def</span> <span class="nf">_query_job_details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a `configure` job status.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            job_id (str)</span>
+<span class="sd">                The job ID from a `configure` request.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The updated job status.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Query job details for </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;configure/</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">/status&quot;</span><span class="p">)</span>
+
+        <span class="c1"># We don&#39;t want to fail if there&#39;s a server error thus we make a fake</span>
+        <span class="c1"># response for it so the query job details will be retried.</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">&gt;=</span> <span class="mi">500</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Got HTTP </span><span class="si">{</span><span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2"> from server when querying job </span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2"> status.&quot;</span>
+                    <span class="s2">&quot; Considering the job_status as </span><span class="se">\&quot;</span><span class="s2">pending</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">ConfigureStatus</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;job_id&quot;</span><span class="p">:</span> <span class="n">job_id</span><span class="p">,</span>
+                    <span class="s2">&quot;job_status&quot;</span><span class="p">:</span> <span class="s2">&quot;pending&quot;</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">(</span><span class="n">response</span><span class="o">=</span><span class="n">resp</span><span class="p">)</span>
+        <span class="n">parsed_resp</span> <span class="o">=</span> <span class="n">ConfigureStatus</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Query Job details response: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">parsed_resp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parsed_resp</span>
+
+    <span class="nd">@retry</span><span class="p">(</span>
+        <span class="n">retry</span><span class="o">=</span><span class="n">retry_if_result</span><span class="p">(</span><span class="n">predicate</span><span class="o">=</span><span class="n">is_azure_job_not_complete</span><span class="p">),</span>
+        <span class="n">wait</span><span class="o">=</span><span class="n">wait_chain</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">[</span><span class="n">wait_fixed</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="mi">60</span><span class="p">)]</span>  <span class="c1"># First wait for 1 minute  # noqa: W503</span>
+            <span class="o">+</span> <span class="p">[</span><span class="n">wait_fixed</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="mi">10</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)]</span>  <span class="c1"># Then wait for 10 minutes  # noqa: W503</span>
+            <span class="o">+</span> <span class="p">[</span><span class="n">wait_fixed</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="mi">30</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)]</span>  <span class="c1"># Finally wait each 30 minutes  # noqa: W503</span>
+        <span class="p">),</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_delay</span><span class="p">(</span><span class="n">max_delay</span><span class="o">=</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">7</span><span class="p">),</span>  <span class="c1"># Give up after retrying for 7 days</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_wait_for_job_completion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wait until the specified job ID is complete.</span>
+
+<span class="sd">        By using the retry we repeat this action  until the `jobStatus` will be `completed`.</span>
+<span class="sd">        The `jobStatus` values may be: `notStarted`, `running` or `completed`</span>
+
+<span class="sd">        When it is `completed` we will get the `jobResult`.</span>
+<span class="sd">        The `JobResult` values may be: `pending`, `succeeded` or `failed`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            job_id (str)</span>
+<span class="sd">                The job id to get the details for.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The job details in case of success</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            InvalidStateError if the job failed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">job_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query_job_details</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_result</span> <span class="o">==</span> <span class="s2">&quot;failed&quot;</span><span class="p">:</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Job </span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2"> failed: </span><span class="se">\n</span><span class="si">{</span><span class="n">job_details</span><span class="o">.</span><span class="n">errors</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">InvalidStateError</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_result</span> <span class="o">==</span> <span class="s2">&quot;succeeded&quot;</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Job </span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2"> succeeded&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">job_details</span>
+
+<div class="viewcode-block" id="AzureService.configure"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">AzureResource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create or update a resource and wait until it&#39;s done.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            resource (AzureResource):</span>
+<span class="sd">                The resource to create/modify in Azure.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: The result of job execution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;$schema&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONFIGURE_SCHEMA</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">AZURE_API_VERSION</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">AZURE_API_VERSION</span><span class="p">),</span>
+            <span class="s2">&quot;resources&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">resource</span><span class="o">.</span><span class="n">to_json</span><span class="p">()],</span>
+        <span class="p">}</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Data to configure: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_configure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_job_completion</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">products</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">ProductSummary</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over all products from Azure Marketplace.&quot;&quot;&quot;</span>
+        <span class="n">has_next</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">while</span> <span class="n">has_next</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Requesting the products list.&quot;</span><span class="p">)</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;/product&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assert_dict</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+
+            <span class="n">values</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Expected response.values to contain a list, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+
+            <span class="c1"># Yield the values</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">ProductSummary</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+            <span class="c1"># Get the nextLink parameters or cease the loop</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">get_url_params</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@nextLink&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">:</span>
+                <span class="n">has_next</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="AzureService.list_products"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.list_products">[docs]</a>    <span class="k">def</span> <span class="nf">list_products</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ProductSummary</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a list with the summary of products registerd in Azure.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: A list with ProductSummary for all products in Azure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_products</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_products</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_products</span></div>
+
+<div class="viewcode-block" id="AzureService.get_product"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_product">[docs]</a>    <span class="k">def</span> <span class="nf">get_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">first_target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;preview&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Product</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the requested Product by its ID.</span>
+
+<span class="sd">        It will return the product with the latest publishing status, trying to</span>
+<span class="sd">        fetch it in the following order: &quot;preview&quot; -&gt; &quot;draft&quot; -&gt; &quot;live&quot;. The first</span>
+<span class="sd">        status to fech must be &quot;preview&quot; in order to indepotently detect an existing</span>
+<span class="sd">        publishing which could be missing to go live.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product_durable_id (str)</span>
+<span class="sd">                The product UUID</span>
+<span class="sd">            first_target (str, optional)</span>
+<span class="sd">                The first target to lookup into. Defaults to ``preview``.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Product: the requested product</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="n">first_target</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;preview&quot;</span><span class="p">,</span> <span class="s2">&quot;draft&quot;</span><span class="p">,</span> <span class="s2">&quot;live&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">tgt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+                <span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tgt</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Requesting the product ID </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> with state </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">product_id</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/resource-tree/product/</span><span class="si">{</span><span class="n">product_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;targetType&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">}</span>
+                <span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assert_dict</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">Product</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">HTTPError</span><span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t find the product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> with state </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">product_id</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such product with id </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">product_id</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureService.get_product_by_name"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_product_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_product_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">first_target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;preview&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Product</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the requested Product by its name from Legacy CPP API.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product_name (str)</span>
+<span class="sd">                The product name according to Legacy CPP API.</span>
+<span class="sd">            first_target (str, optional)</span>
+<span class="sd">                The first target to lookup into. Defaults to ``preview``.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Product: the requested product when found</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError when the product is not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">product</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">product</span><span class="o">.</span><span class="n">identity</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">product_name</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Product alias </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> has the ID </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">product_name</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">first_target</span><span class="o">=</span><span class="n">first_target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such product with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureService.get_submissions"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_submissions">[docs]</a>    <span class="k">def</span> <span class="nf">get_submissions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ProductSubmission</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a list of submissions for the given Product id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product_id (str): The Product id to retrieve the submissions.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[ProductSubmission]: List of all submissions for the given Product.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Requesting the submissions for product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">product_id</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/submission/</span><span class="si">{</span><span class="n">product_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assert_dict</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ProductSubmission</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="p">[])]</span></div>
+
+<div class="viewcode-block" id="AzureService.get_submission_state"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_submission_state">[docs]</a>    <span class="k">def</span> <span class="nf">get_submission_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;preview&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ProductSubmission</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve a particular submission with the given state from the given Product id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product_id (_type_): The product id to request the submissions.</span>
+<span class="sd">            state (str, optional): The state to filter the submission. Defaults to &quot;preview&quot;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[ProductSubmission]: The requested submission when found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">submissions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submissions</span><span class="p">(</span><span class="n">product_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">submissions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sub</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">targetType</span> <span class="o">==</span> <span class="n">state</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sub</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="AzureService.filter_product_resources"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.filter_product_resources">[docs]</a>    <span class="k">def</span> <span class="nf">filter_product_resources</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">AZURE_PRODUCT_RESOURCES</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a subset of Product resources with the corresponding type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product (Product)</span>
+<span class="sd">                The product to retrieve the resources from.</span>
+<span class="sd">            resource (str):</span>
+<span class="sd">                The resource type</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list: The subset of resources by the given type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">resource</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESOURCE_MAPING</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Invalid resource type </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">resource</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">. Expected </span><span class="si">{</span><span class="n">RESOURCE_MAPING</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Filtering the resource </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for product ID </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">product</span><span class="o">.</span><span class="n">resources</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">RESOURCE_MAPING</span><span class="p">[</span><span class="n">resource</span><span class="p">]):</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Filtered resources </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for product ID </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">AZURE_PRODUCT_RESOURCES</span><span class="p">],</span> <span class="n">res</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureService.get_plan_by_name"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_plan_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_plan_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PlanSummary</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the respective plan by searching for its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product (Product)</span>
+<span class="sd">                The product to retrieve the plans from.</span>
+<span class="sd">            plan_name (str):</span>
+<span class="sd">                The plan name to filter</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            PlanSummary: The respective plan summary when found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resources</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="n">PlanSummary</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_product_resources</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="s2">&quot;plan&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">resources</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">identity</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">plan_name</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Plan alias </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> has the ID </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such plan with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureService.diff_offer"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.diff_offer">[docs]</a>    <span class="k">def</span> <span class="nf">diff_offer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">first_target</span><span class="o">=</span><span class="s2">&quot;preview&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepDiff</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the difference between the provided product and the one in the remote.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product (Product)</span>
+<span class="sd">                The local product to diff with the remote one.</span>
+<span class="sd">            first_target (str)</span>
+<span class="sd">                The first target to lookup into. Defaults to ``preview``.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            DeepDiff: The diff data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">remote</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">first_target</span><span class="o">=</span><span class="n">first_target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DeepDiff</span><span class="p">(</span><span class="n">remote</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">product</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AzureService.submit_to_status"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.submit_to_status">[docs]</a>    <span class="k">def</span> <span class="nf">submit_to_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send a submission request to Microsoft with a new Product status.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product_id (str)</span>
+<span class="sd">                The product ID to submit the new status.</span>
+<span class="sd">            status (str)</span>
+<span class="sd">                The new status: &#39;preview&#39; or &#39;live&#39;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The response from configure request.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># We need to get the previous state of the given one to request the submission</span>
+        <span class="n">prev_state_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;preview&quot;</span><span class="p">:</span> <span class="s2">&quot;draft&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;live&quot;</span><span class="p">:</span> <span class="s2">&quot;preview&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">prev_state</span> <span class="o">=</span> <span class="n">prev_state_mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="s2">&quot;draft&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Now we call the submission with the previous state to get its ID when available</span>
+        <span class="n">submission</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submission_state</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product_id</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">prev_state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">submission</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Could not find the submission state </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">prev_state</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2"> for product </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">product_id</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Update the status with the expected one</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">targetType</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Set the status </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> to submission.&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">submission</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_plan_tech_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">plan</span><span class="p">:</span> <span class="n">PlanSummary</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VMIPlanTechConfig</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the VMIPlanTechConfig resource for the given product/plan.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product</span>
+<span class="sd">                The product with all resources to retrieve the technical confuguration.</span>
+<span class="sd">            plan</span>
+<span class="sd">                The plan match the technical configuration.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The technical configuration for the requested product/plan.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Retrieving the plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> technical configuration.&quot;</span><span class="p">,</span> <span class="n">plan</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">tconfigs</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="n">VMIPlanTechConfig</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="n">tcfg</span>
+                <span class="k">for</span> <span class="n">tcfg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_product_resources</span><span class="p">(</span>
+                    <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="s2">&quot;virtual-machine-plan-technical-configuration&quot;</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">tcfg</span><span class="o">.</span><span class="n">plan_id</span> <span class="o">==</span> <span class="n">plan</span><span class="o">.</span><span class="n">id</span>  <span class="c1"># type: ignore</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">tconfigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># It should have only one VMIPlanTechConfig per plan.</span>
+
+    <span class="k">def</span> <span class="nf">_seek_disk_version</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span> <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the requested DiskVersion when it exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tech_config</span>
+<span class="sd">                The technical configuration to seek the disk versions.</span>
+<span class="sd">            version_number</span>
+<span class="sd">                The expected version number to retrieve. When absent the max value will be returned</span>
+<span class="sd">                if there are existing disk versions.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The expected disk version when found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="s2">&quot;Seeking the DiskVersion with version number </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">version_number</span><span class="p">,</span>
+            <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">dv</span> <span class="ow">in</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">version_number</span> <span class="ow">and</span> <span class="n">dv</span><span class="o">.</span><span class="n">version_number</span> <span class="o">==</span> <span class="n">version_number</span><span class="p">:</span>  <span class="c1"># Metadata set</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found the DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">dv</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Disk Version </span><span class="si">%s</span><span class="s2"> was not found.&quot;</span><span class="p">,</span> <span class="n">version_number</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_vm_images_by_generation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">disk_version</span><span class="p">:</span> <span class="n">DiskVersion</span><span class="p">,</span> <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">],</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple containing the Gen1 and Gen2 VHD images in this order.</span>
+
+<span class="sd">        If one of the images doesn&#39;t exist it will return None in the expected tuple position.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            disk_version</span>
+<span class="sd">                The disk version to retrieve the VMImageDefinitions from</span>
+<span class="sd">            architecture</span>
+<span class="sd">                The expected architecture for the VMImageDefinition.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Gen1 and Gen2 VMImageDefinitions when they exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sorting the VMImageDefinition by generation.&quot;</span><span class="p">)</span>
+        <span class="c1"># Here we have 3 possibilities:</span>
+        <span class="c1"># 1. vm_images =&gt; &quot;Gen1&quot; only</span>
+        <span class="c1"># 2. vm_images =&gt; &quot;Gen2&quot; only</span>
+        <span class="c1"># 3. vm_images =&gt; &quot;Gen1&quot; and &quot;Gen2&quot;</span>
+
+        <span class="c1"># So let&#39;s get the first image whatever it is</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># If first `img` is Gen2 we set the other one as `img_legacy`</span>
+        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">):</span>
+            <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Otherwise we set it as `img_legacy` and get the gen2</span>
+            <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">img</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image for current generation: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image for legacy generation: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">img_legacy</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span>
+
+    <span class="k">def</span> <span class="nf">_create_vm_images</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a list of VMImageDefinition from scratch using the incoming source and metadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            metadata</span>
+<span class="sd">                The publishing metadata to create the VMImageDefinition objects.</span>
+<span class="sd">            source</span>
+<span class="sd">                The VMImageDefinition to use as source.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A list with the new VMImageDefinitions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating VMImageDefinitions for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+        <span class="n">vm_images</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">VMImageDefinition</span><span class="p">(</span>
+                <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">),</span>
+                <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>  <span class="c1"># Only True when metadata.generation == V2</span>
+            <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">VMImageDefinition</span><span class="p">(</span>
+                    <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
+                    <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;VMImageDefinitions created for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">vm_images</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vm_images</span>
+
+    <span class="k">def</span> <span class="nf">_set_new_sas_disk_version</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">disk_version</span><span class="p">:</span> <span class="n">DiskVersion</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiskVersion</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Change the SAS URI of an existing Disk Version.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            disk_version:</span>
+<span class="sd">                The disk version to change the image with the new SAS URI.</span>
+<span class="sd">            metadata:</span>
+<span class="sd">                The publishing metadata to retrieve additional information</span>
+<span class="sd">            source:</span>
+<span class="sd">                The VMImageSource with the new SAS URI</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The changed disk version with the given source.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If we already have a VMImageDefinition let&#39;s use it</span>
+        <span class="k">if</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> contains inner images.&quot;</span> <span class="o">%</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
+            <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_images_by_generation</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">)</span>
+
+            <span class="c1"># Now we replace the SAS URI for the vm_images</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Adjusting the VMImages from existing DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="n">prepare_vm_images</span><span class="p">(</span>
+                <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+                <span class="n">gen1</span><span class="o">=</span><span class="n">img_legacy</span><span class="p">,</span>
+                <span class="n">gen2</span><span class="o">=</span><span class="n">img</span><span class="p">,</span>
+                <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># If no VMImages, we need to create them from scratch</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> does not contain inner images.&quot;</span>
+                <span class="o">%</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span>
+            <span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Setting the new image </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> on DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_vm_images</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">disk_version</span>
+
+    <span class="k">def</span> <span class="nf">_is_submission_in_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="n">ProductSubmission</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the latest submission state is &quot;preview&quot;, False otherwise.</span>
+
+<span class="sd">           The product is considered to be in preview if the targetType is &quot;preview&quot; and the</span>
+<span class="sd">           submission id is not the same from the &quot;live&quot; target.</span>
+
+<span class="sd">           See also: https://learn.microsoft.com/en-us/partner-center/marketplace/product-ingestion-api#querying-your-submissions</span>
+<span class="sd">        Args:</span>
+<span class="sd">            current (ProductSubmission): the submission from the get_product</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the latest submission is &quot;preview&quot;, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>  <span class="c1"># noqa: E501</span>
+        <span class="k">if</span> <span class="n">current</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">targetType</span> <span class="o">!=</span> <span class="s2">&quot;preview&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># We need to check whether there&#39;s a live state with the same ID as current</span>
+        <span class="n">live</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submission_state</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">product_id</span><span class="p">,</span> <span class="s2">&quot;live&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">live</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">current</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">live</span><span class="o">.</span><span class="n">id</span>  <span class="c1"># If they&#39;re the same then state == live</span>
+        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># when no live it means it&#39;s in preview</span>
+
+    <span class="k">def</span> <span class="nf">_publish_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Submit the product to &#39;preview&#39;  if it&#39;s not already in this state.</span>
+
+<span class="sd">        This is required to execute the validation pipeline on Azure side.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product</span>
+<span class="sd">                The product with changes to publish live</span>
+<span class="sd">            product_name</span>
+<span class="sd">                The product name to display in logs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># We just want to set the ProductSubmission to &#39;preview&#39; if it&#39;s not in this status.</span>
+        <span class="c1">#</span>
+        <span class="c1"># The `preview` stage runs the Azure pipeline which takes up to 4 days.</span>
+        <span class="c1"># Meanwhile the `submit_for_status` will be blocked querying the `job_status`until</span>
+        <span class="c1"># all the Azure verification pipeline finishes.</span>
+        <span class="n">submission</span><span class="p">:</span> <span class="n">ProductSubmission</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="n">ProductSubmission</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filter_product_resources</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="s2">&quot;submission&quot;</span><span class="p">),</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_submission_in_preview</span><span class="p">(</span><span class="n">submission</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Submitting the product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2"> to </span><span class="se">\&quot;</span><span class="s2">preview</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;preview&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_publish_live</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Submit the product to &#39;live&#39; after going through Azure Marketplace Validation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product</span>
+<span class="sd">                The product with changes to publish live</span>
+<span class="sd">            product_name</span>
+<span class="sd">                The product name to display in logs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Note: the offer can only go `live` after successfully being changed to `preview`</span>
+        <span class="c1"># which takes up to 4 days.</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting the product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2"> to </span><span class="se">\&quot;</span><span class="s2">live</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;live&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_logdiff</span><span class="p">(</span><span class="n">diff</span><span class="p">:</span> <span class="n">DeepDiff</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log the offer diff if it exists.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">diff</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">{</span><span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AzureService.publish"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Associate a VM image with a given product listing (destination) and publish it if required.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            metadata (AzurePublishingMetadata): metadata for the VHD image publishing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Resolve the destination Product and Plan</span>
+        <span class="c1">#</span>
+        <span class="c1"># The given destination from StArMap has the following format:</span>
+        <span class="c1">#   &quot;product-name/plan-name&quot;</span>
+        <span class="n">product_name</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">plan_name</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">get_prd_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">preview_only</span><span class="p">:</span>
+            <span class="n">get_prd_params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;first_target&quot;</span><span class="p">:</span> <span class="s2">&quot;draft&quot;</span><span class="p">})</span>
+        <span class="n">product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_name</span><span class="p">(</span><span class="n">product_name</span><span class="o">=</span><span class="n">product_name</span><span class="p">,</span> <span class="o">**</span><span class="n">get_prd_params</span><span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_plan_by_name</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Preparing to associate the image with the plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> from product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 2. Retrieve the VM Technical configuration for the given plan</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Retrieving the technical config for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+        <span class="n">tech_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plan_tech_config</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>
+
+        <span class="c1"># 3. Prepare the Disk Version</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating the VMImageResource with SAS: </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
+        <span class="n">sas</span> <span class="o">=</span> <span class="n">OSDiskURI</span><span class="p">(</span><span class="n">uri</span><span class="o">=</span><span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">VMImageSource</span><span class="p">(</span><span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;sasUri&quot;</span><span class="p">,</span> <span class="n">os_disk</span><span class="o">=</span><span class="n">sas</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">data_disks</span><span class="o">=</span><span class="p">[])</span>
+
+        <span class="c1"># Note: If `overwrite` is True it means we can set this VM image as the only one in the</span>
+        <span class="c1"># plan&#39;s technical config and discard all other VM images which may&#39;ve been present.</span>
+        <span class="n">disk_version</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># just to make mypy happy</span>
+        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">overwrite</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Overwriting the plan </span><span class="si">%s</span><span class="s2"> with the given image.&quot;</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
+            <span class="n">disk_version</span> <span class="o">=</span> <span class="n">create_disk_version_from_scratch</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span> <span class="o">=</span> <span class="p">[</span><span class="n">disk_version</span><span class="p">]</span>
+
+        <span class="c1"># We just want to append a new image if the SAS is not already present.</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">is_sas_present</span><span class="p">(</span><span class="n">tech_config</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">):</span>
+            <span class="c1"># Here we can have the metadata.disk_version set or empty.</span>
+            <span class="c1"># When set we want to get the existing disk_version which matches its value.</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Scanning the disk versions from </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+            <span class="n">disk_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seek_disk_version</span><span class="p">(</span><span class="n">tech_config</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">disk_version</span><span class="p">)</span>
+
+            <span class="c1"># Check the images of the selected DiskVersion if it exists</span>
+            <span class="k">if</span> <span class="n">disk_version</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> exists in </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">disk_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_new_sas_disk_version</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># The disk version doesn&#39;t exist, we need to create one from scratch</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion doesn&#39;t exist, creating one from scratch.&quot;</span><span class="p">)</span>
+                <span class="n">disk_version</span> <span class="o">=</span> <span class="n">create_disk_version_from_scratch</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+                <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">disk_version</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;The destination </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> already contains the SAS URI: </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># 4. With the updated disk_version we should adjust the SKUs and submit the changes</span>
+        <span class="k">if</span> <span class="n">disk_version</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updating SKUs for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+            <span class="n">tech_config</span><span class="o">.</span><span class="n">skus</span> <span class="o">=</span> <span class="n">update_skus</span><span class="p">(</span>
+                <span class="n">disk_versions</span><span class="o">=</span><span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="p">,</span>
+                <span class="n">generation</span><span class="o">=</span><span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">,</span>
+                <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span><span class="p">,</span>
+                <span class="n">old_skus</span><span class="o">=</span><span class="n">tech_config</span><span class="o">.</span><span class="n">skus</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Updating the technical configuration for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">tech_config</span><span class="p">)</span>
+
+        <span class="c1"># 5. Proceed to publishing if it was requested.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">metadata</span><span class="o">.</span><span class="n">keepdraft</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logdiff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diff_offer</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="o">**</span><span class="n">get_prd_params</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_publish_preview</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">metadata</span><span class="o">.</span><span class="n">preview_only</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_publish_live</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">cloudpub</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../cloud_providers/base.html">Base Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cloud_providers/azure.html">Azure Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cloud_providers/aws.html">AWS Provider</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Red Hat.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

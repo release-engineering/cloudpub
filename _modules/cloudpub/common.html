@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cloudpub.common &#8212; cloudpub 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for cloudpub.common</h1><div class="highlight"><pre>
+<span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">NoReturn</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">requests</span> <span class="kn">import</span> <span class="n">HTTPError</span><span class="p">,</span> <span class="n">Response</span>
+
+<span class="kn">from</span> <span class="nn">cloudpub.error</span> <span class="kn">import</span> <span class="n">NotFoundError</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PublishingMetadata"><a class="viewcode-back" href="../../cloud_providers/base.html#cloudpub.common.PublishingMetadata">[docs]</a><span class="k">class</span> <span class="nc">PublishingMetadata</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A collection of necessary information for associating a VM Image with a product.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PublishingMetadata.__init__"><a class="viewcode-back" href="../../cloud_providers/base.html#cloudpub.common.PublishingMetadata.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">destination</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">keepdraft</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">preview_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an instanece of PublishingMetadata.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        image_path (str)</span>
+<span class="sd">            The image URL or ID to be associated with a product listing</span>
+<span class="sd">        architecture (str)</span>
+<span class="sd">            The VM Image architecture</span>
+<span class="sd">        destination (str)</span>
+<span class="sd">            The product listing to update with the given ``image_path``</span>
+<span class="sd">        overwrite (bool, optional)</span>
+<span class="sd">            Whether to overwrite the product listing with the given image or not (append only).</span>
+<span class="sd">            This defaults to `False`.</span>
+<span class="sd">        keepdraft (bool, optional):</span>
+<span class="sd">            Whether to just associate the VM Image with the destination but avoid publishing or not.</span>
+<span class="sd">            When set to `False` it will publish the content as GA.</span>
+<span class="sd">            This defaults to `True`.</span>
+<span class="sd">        preview_only (boolean, optional)</span>
+<span class="sd">            Whether the final publish status should be ``preview`` (``True``)</span>
+<span class="sd">            or ``live`` (``False``). Defaults to ``False``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_path</span> <span class="o">=</span> <span class="n">image_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="n">architecture</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination</span> <span class="o">=</span> <span class="n">destination</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keepdraft</span> <span class="o">=</span> <span class="n">keepdraft</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preview_only</span> <span class="o">=</span> <span class="n">preview_only</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__validate</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">mandatory</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;image_path&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;architecture&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;destination&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">mandatory</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The parameter </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2"> must not be None.&quot;</span><span class="p">)</span></div>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">PublishingMetadata</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BaseService"><a class="viewcode-back" href="../../cloud_providers/base.html#cloudpub.common.BaseService">[docs]</a><span class="k">class</span> <span class="nc">BaseService</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all cloud provider services.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_raise_error</span><span class="p">(</span><span class="n">exception</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Log and raise an error.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            exception (Exception)</span>
+<span class="sd">                The exception type to raise.</span>
+<span class="sd">            message (str)</span>
+<span class="sd">                The error message.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: the requested exception with the incoming message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">exception</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_raise_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Log and raise a requests.Response error if any.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            response (requests.Response)</span>
+<span class="sd">                The response object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError: when the `response.status_code` is 404</span>
+<span class="sd">            HTTPError: when raised by `requests.Response.raise_for_status`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="s2">&quot;Resource not found.&quot;</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">HTTPError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">HTTPError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Response content:</span><span class="se">\n</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_assert_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ensure the JSON object in response is a dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (requests.Response)</span>
+<span class="sd">                The response object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if the response&#39;s JSON is not a dictionary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Expected response to be a dictionary, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Response: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="BaseService.publish"><a class="viewcode-back" href="../../cloud_providers/base.html#cloudpub.common.BaseService.publish">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Associate a VM image with a given product listing (destination) and publish it.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            metadata (PublishingMetadata): metadata for the VM image publishing.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">cloudpub</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../cloud_providers/base.html">Base Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cloud_providers/azure.html">Azure Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cloud_providers/aws.html">AWS Provider</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Red Hat.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

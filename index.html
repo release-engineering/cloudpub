@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>CloudPub &#8212; cloudpub 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=2389946f"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Base Provider" href="cloud_providers/base.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="cloudpub">
+<h1>CloudPub<a class="headerlink" href="#cloudpub" title="Permalink to this heading">¶</a></h1>
+<p>A library for publishing product listings on various clouds.</p>
+<section id="cloud-providers">
+<h2>Cloud Providers<a class="headerlink" href="#cloud-providers" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cloud_providers/base.html">Base Provider</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/base.html#providers">Providers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/base.html#cloudpub.common.PublishingMetadata"><code class="docutils literal notranslate"><span class="pre">PublishingMetadata</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/base.html#cloudpub.common.BaseService"><code class="docutils literal notranslate"><span class="pre">BaseService</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/base.html#models">Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/models/base.html">Resources for Models</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cloud_providers/azure.html">Azure Provider</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/azure.html#providers">Providers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#cloudpub.ms_azure.AzurePublishingMetadata"><code class="docutils literal notranslate"><span class="pre">AzurePublishingMetadata</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#cloudpub.ms_azure.AzureService"><code class="docutils literal notranslate"><span class="pre">AzureService</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/azure.html#session">Session</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession"><code class="docutils literal notranslate"><span class="pre">PartnerPortalSession</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#cloudpub.ms_azure.session.AccessToken"><code class="docutils literal notranslate"><span class="pre">AccessToken</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/azure.html#azure-models">Azure Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#azure-product">Azure Product</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#product-resources">Product Resources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/azure.html#resources-internal-elements">Resources internal elements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cloud_providers/aws.html">AWS Provider</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/aws.html#providers">Providers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/aws.html#cloudpub.aws.AWSVersionMetadata"><code class="docutils literal notranslate"><span class="pre">AWSVersionMetadata</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/aws.html#cloudpub.aws.AWSProductService"><code class="docutils literal notranslate"><span class="pre">AWSProductService</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="cloud_providers/aws.html#aws-models">AWS Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/aws.html#aws-version-mapping">AWS Version Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/aws.html#product-resources">Product Resources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud_providers/aws.html#resources-internal-elements">Resources internal elements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading">¶</a></h2>
+<p>Install cloudpub:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">.</span>
+</pre></div>
+</div>
+<p>Once installed it’s possible to use the cloud provider classes to associate an image with a product
+and publish it.</p>
+<p>Example for Azure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cloudpub.ms_azure</span> <span class="kn">import</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">AzureService</span>
+
+<span class="c1"># Instantiate the AzurePublishingMetadata with the required information</span>
+<span class="n">metadata</span> <span class="o">=</span> <span class="n">AzurePublishingMetadata</span><span class="p">(</span>
+  <span class="n">destination</span><span class="o">=</span><span class="s2">&quot;product-example/plan-example&quot;</span><span class="p">,</span>
+  <span class="n">sas_uri</span><span class="o">=</span><span class="s2">&quot;https://foo.com/bar/image.vhd&quot;</span><span class="p">,</span>
+  <span class="n">disk_version</span><span class="o">=</span><span class="s2">&quot;2.1.0&quot;</span><span class="p">,</span>
+  <span class="n">keepdraft</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># When `False` it means publish to live.</span>
+<span class="p">)</span>
+
+<span class="c1"># Associate the image with the destination and publish the changes</span>
+<span class="n">svc</span> <span class="o">=</span> <span class="n">AzureService</span><span class="p">(</span><span class="n">credentials</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+<span class="n">svc</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example for AWS:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cloudpub.ms_azure</span> <span class="kn">import</span> <span class="n">AWSVersionMetadata</span><span class="p">,</span> <span class="n">AWSProductService</span>
+<span class="kn">from</span> <span class="nn">cloudpub.models.aws</span> <span class="kn">import</span> <span class="n">VersionMapping</span>
+
+<span class="c1"># Fill out the version metadata</span>
+
+<span class="n">example_version_mapping</span> <span class="o">=</span> <span class="n">VersionMapping</span><span class="p">({</span>
+  <span class="s2">&quot;Version&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;VersionTitle&quot;</span><span class="p">:</span> <span class="s2">&quot;example-changeset&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ReleaseNotes&quot;</span><span class="p">:</span> <span class="s2">&quot;https://access.redhat.com/foo/bar&quot;</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;DeliveryOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s2">&quot;Details&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;AmiDeliveryOptionDetails&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;AmiSource&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;AmiId&quot;</span><span class="p">:</span> <span class="s2">&quot;ami-123412341234&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;AccessRoleArn&quot;</span><span class="p">:</span> <span class="s2">&quot;arn:aws:iam::12341234:role/example&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;UserName&quot;</span><span class="p">:</span> <span class="s2">&quot;example-user&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;OperatingSystemName&quot;</span><span class="p">:</span> <span class="s2">&quot;EXAMPLE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;OperatingSystemVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;EXAMPLE-1.2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ScanningPort&quot;</span><span class="p">:</span> <span class="mi">22</span>
+      <span class="p">},</span>
+      <span class="s2">&quot;UsageInstructions&quot;</span><span class="p">:</span> <span class="s2">&quot;Example.&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;RecommendedInstanceType&quot;</span><span class="p">:</span> <span class="s2">&quot;m5.large&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;SecurityGroups&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="s2">&quot;FromPort&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
+          <span class="s2">&quot;IpProtocol&quot;</span><span class="p">:</span> <span class="s2">&quot;tcp&quot;</span><span class="p">,</span>
+          <span class="s2">&quot;CidrIps&quot;</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s2">&quot;0.0.0.0/0&quot;</span>
+          <span class="p">],</span>
+          <span class="s2">&quot;ToPort&quot;</span><span class="p">:</span> <span class="mi">22</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">})</span>
+
+<span class="c1"># Instantiate the AWSVersionMetadata with the required information</span>
+<span class="n">metadata</span> <span class="o">=</span> <span class="n">AWSVersionMetadata</span><span class="p">(</span>
+  <span class="n">destination</span><span class="o">=</span><span class="s2">&quot;product-example/plan-example&quot;</span><span class="p">,</span>
+  <span class="n">sas_uri</span><span class="o">=</span><span class="s2">&quot;https://foo.com/bar/image.vhd&quot;</span><span class="p">,</span>
+  <span class="n">disk_version</span><span class="o">=</span><span class="s2">&quot;2.1.0&quot;</span><span class="p">,</span>
+  <span class="n">keepdraft</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># When `False` it means publish to live.</span>
+  <span class="n">marketplace_entity_type</span> <span class="o">=</span> <span class="s2">&quot;AmiProduct&quot;</span><span class="p">,</span>
+  <span class="n">entity_id</span> <span class="o">=</span> <span class="s2">&quot;1234-1234-1234-2134&quot;</span><span class="p">,</span>
+  <span class="n">version_mapping</span> <span class="o">=</span> <span class="n">example_version_mapping</span>
+<span class="p">)</span>
+
+<span class="c1"># Associate the image with the destination and publish the changes</span>
+<span class="n">svc</span> <span class="o">=</span> <span class="n">AWSProductService</span><span class="p">(</span><span class="n">access_id</span><span class="o">=</span><span class="n">example_id</span><span class="p">,</span> <span class="n">secret_key</span><span class="o">=</span><span class="n">example_secret</span><span class="p">)</span>
+<span class="n">svc</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">cloudpub</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cloud_providers/base.html">Base Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloud_providers/azure.html">Azure Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloud_providers/aws.html">AWS Provider</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="cloud_providers/base.html" title="next chapter">Base Provider</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Red Hat.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
