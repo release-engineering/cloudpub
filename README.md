@@ -1,22 +1,22 @@
 # CloudPub
 
-A library for publishing product listings on various clouds
+A library for publishing product listings on various clouds marketplaces
 
-[![pipeline](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/pipeline.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/pipelines)
-[![coverage](https://gitlab.cee.redhat.com/stratosphere/cloudpub/badges/main/coverage.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/jobs)
-[![Quality Gate Status](https://sonarqube.corp.redhat.com/api/project_badges/measure?project=stratosphere_cloudpub&metric=alert_status&token=561f41bcabdbf2ce035a40e35e387c0eaaba0a37)](https://sonarqube.corp.redhat.com/dashboard?id=stratosphere_cloudpub)
-[![releases](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/badges/release.svg)](https://gitlab.cee.redhat.com/stratosphere/cloudpub/-/releases/)
+used by [release-engineering](https://github.com/release-engineering) publishing tools.
+
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/release-engineering/cloudpub/tox-test.yml)
+![GitHub Release](https://img.shields.io/github/v/release/release-engineering/cloudpub)
+[![PyPI version](https://badge.fury.io/py/cloudpub.svg)](https://badge.fury.io/py/cloudpub)
+
+- [Source](https://github.com/release-engineering/cloudpub)
+- [Documentation](https://release-engineering.github.io/cloudpub/)
+
 
 ## Overview
 
 The `CloudPub` is a library to allow associating and publishing VM images into product listings on
 different cloud marketplaces.
 
-It's based on several Stratosphere Tooling such as:
-
-- [AMREAT](https://gitlab.cee.redhat.com/stratosphere/amreat)
-- [Hyperscaler-Automation-Azure](https://gitlab.cee.redhat.com/stratosphere/hyperscaler-automation-azure)
-- [Azure Private Offers](https://gitlab.cee.redhat.com/stratosphere/azure-private-offers)
 
 ### Objective
 
@@ -31,14 +31,10 @@ by:
 3. Following the same patterns from already existing Pub libraries
 4. Not implementing a CLI of any type as its intended to be used as a library only
 
-It also refactor the exising implementations to use [attrs](https://www.attrs.org/en/stable/) instead
-of [pydantic](https://docs.pydantic.dev/) for its models in order to have a better compatibility with
-Pub (which uses [attrs](https://www.attrs.org/en/stable/)) as well as
-[several other reasons](https://threeofwands.com/why-i-use-attrs-instead-of-pydantic/).
 
 ## Documentation
 
-The documentation of `CloudPub` is [available here](https://stratosphere.pages.redhat.com/cloudpub/).
+The documentation of `CloudPub` is [available here](https://release-engineering.github.io/cloudpub/).
 
 ## Installation
 
