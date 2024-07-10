@@ -398,6 +398,33 @@
                 <span class="k">return</span> <span class="n">p</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such plan with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="AzureService.get_product_plan_by_name"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_product_plan_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_product_plan_by_name</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Product</span><span class="p">,</span> <span class="n">PlanSummary</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a tuple with the desired Product and Plan after iterating over all targets.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product_name (str): The name of the product to search for</span>
+<span class="sd">            plan_name (str): The name of the plan to search for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[Product, PlanSummary]: The Product and PlanSummary when fonud</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError whenever all targets are exhausted and no information was found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;preview&quot;</span><span class="p">,</span> <span class="s2">&quot;draft&quot;</span><span class="p">,</span> <span class="s2">&quot;live&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">tgt</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_name</span><span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">first_target</span><span class="o">=</span><span class="n">tgt</span><span class="p">)</span>
+                <span class="n">plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_plan_by_name</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">product</span><span class="p">,</span> <span class="n">plan</span>
+            <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span>
+            <span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such plan with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
 <div class="viewcode-block" id="AzureService.diff_offer"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.diff_offer">[docs]</a>    <span class="k">def</span> <span class="nf">diff_offer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">first_target</span><span class="o">=</span><span class="s2">&quot;preview&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepDiff</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the difference between the provided product and the one in the remote.</span>
 
@@ -702,11 +729,7 @@
         <span class="c1">#   &quot;product-name/plan-name&quot;</span>
         <span class="n">product_name</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">plan_name</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">get_prd_params</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">preview_only</span><span class="p">:</span>
-            <span class="n">get_prd_params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;first_target&quot;</span><span class="p">:</span> <span class="s2">&quot;draft&quot;</span><span class="p">})</span>
-        <span class="n">product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_name</span><span class="p">(</span><span class="n">product_name</span><span class="o">=</span><span class="n">product_name</span><span class="p">,</span> <span class="o">**</span><span class="n">get_prd_params</span><span class="p">)</span>
-        <span class="n">plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_plan_by_name</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span><span class="p">)</span>
+        <span class="n">product</span><span class="p">,</span> <span class="n">plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_plan_by_name</span><span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s2">&quot;Preparing to associate the image with the plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> from product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
@@ -768,7 +791,7 @@
 
         <span class="c1"># 5. Proceed to publishing if it was requested.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">metadata</span><span class="o">.</span><span class="n">keepdraft</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logdiff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diff_offer</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="o">**</span><span class="n">get_prd_params</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logdiff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diff_offer</span><span class="p">(</span><span class="n">product</span><span class="p">))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_publish_preview</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span>
 
