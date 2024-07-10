@@ -367,6 +367,33 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 return p
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
+    def get_product_plan_by_name(
+        self, product_name: str, plan_name: str
+    ) -> Tuple[Product, PlanSummary]:
+        """Return a tuple with the desired Product and Plan after iterating over all targets.
+
+        Args:
+            product_name (str): The name of the product to search for
+            plan_name (str): The name of the plan to search for
+
+        Returns:
+            Tuple[Product, PlanSummary]: The Product and PlanSummary when fonud
+        Raises:
+            NotFoundError whenever all targets are exhausted and no information was found
+        """
+        targets = ["preview", "draft", "live"]
+
+        for tgt in targets:
+            try:
+                product = self.get_product_by_name(product_name, first_target=tgt)
+                plan = self.get_plan_by_name(product, plan_name)
+                return product, plan
+            except NotFoundError:
+                continue
+        self._raise_error(
+            NotFoundError, f"No such plan with name \"{plan_name} for {product_name}\""
+        )
+
     def diff_offer(self, product: Product, first_target="preview") -> DeepDiff:
         """Compute the difference between the provided product and the one in the remote.
 
@@ -671,11 +698,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
-        get_prd_params = {}
-        if metadata.preview_only:
-            get_prd_params.update({"first_target": "draft"})
-        product = self.get_product_by_name(product_name=product_name, **get_prd_params)
-        plan = self.get_plan_by_name(product=product, plan_name=plan_name)
+        product, plan = self.get_product_plan_by_name(product_name, plan_name)
         log.info(
             "Preparing to associate the image with the plan \"%s\" from product \"%s\""
             % (product_name, plan_name)
@@ -737,7 +760,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 5. Proceed to publishing if it was requested.
         if not metadata.keepdraft:
-            self._logdiff(self.diff_offer(product, **get_prd_params))
+            self._logdiff(self.diff_offer(product))
 
             self._publish_preview(product, product_name)
 
