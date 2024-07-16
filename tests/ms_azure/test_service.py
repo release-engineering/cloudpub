@@ -1312,6 +1312,7 @@ class TestAzureService:
             mock_substt.assert_called_once_with(current.product_id, "live")
 
     @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
     @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
@@ -1330,6 +1331,7 @@ class TestAzureService:
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_diff_offer: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
         mock_ensure_publish: mock.MagicMock,
         product_obj: Product,
         plan_summary_obj: PlanSummary,
@@ -1349,6 +1351,11 @@ class TestAzureService:
             [technical_config_obj],
             [submission_obj],
         ]
+        mock_getsubst.side_effect = ["preview", "live"]
+        mock_res_preview = mock.MagicMock()
+        mock_res_live = mock.MagicMock()
+        mock_res_preview.job_result = mock_res_live.job_result = "succeeded"
+        mock_submit.side_effect = [mock_res_preview, mock_res_live]
         mock_is_sas.return_value = False
         expected_source = VMImageSource(
             source_type="sasUri",
@@ -1365,6 +1372,7 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
         technical_config_obj.disk_versions = [disk_version_obj]
 
+        # Test
         azure_service.publish(metadata_azure_obj)
         mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         filter_calls = [
