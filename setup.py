@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='cloudpub',
     description='Services for publishing products in cloud environments',
-    version='0.9.2',
+    version='0.9.3',
     keywords='stratosphere cloudpub cloudpublish',
     author='Jonathan Gangi',
     author_email='jgangi@redhat.com',

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 0.9.3 - 2024-07-16
+
+- Allow publishing to draft plans in Azure
+- Bump certifi and zipp
+
 ## 0.9.2 - 2024-06-25
 
 - Bump urllib3 to fix a CVE
