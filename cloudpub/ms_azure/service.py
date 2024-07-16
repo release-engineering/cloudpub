@@ -553,6 +553,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 )
                 raise RuntimeError(failure_msg)
 
+    @retry(
+        wait=wait_fixed(wait=60),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
     def _publish_live(self, product: Product, product_name: str) -> None:
         """
         Submit the product to 'live' after going through Azure Marketplace Validation.
@@ -566,7 +571,15 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # Note: the offer can only go `live` after successfully being changed to `preview`
         # which takes up to 4 days.
         log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
-        self.submit_to_status(product_id=product.id, status='live')
+        res = self.submit_to_status(product_id=product.id, status='live')
+
+        if res.job_result != 'succeeded' or not self.get_submission_state(product.id, state="live"):
+            errors = "\n".join(res.errors)
+            failure_msg = (
+                f"Failed to submit the product {product.id} to live. "
+                f"Status: {res.job_result} Errors: {errors}"
+            )
+            raise RuntimeError(failure_msg)
 
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
