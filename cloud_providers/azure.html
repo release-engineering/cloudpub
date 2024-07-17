@@ -135,6 +135,23 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">{sku_id
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.ensure_can_publish">
+<span class="sig-name descname"><span class="pre">ensure_can_publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.ensure_can_publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.ensure_can_publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure the offer is not already being published.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – The product ID to check the offer’s publishing status</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.12)"><strong>RuntimeError</strong></a> – whenever a publishing is already in progress.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.filter_product_resources">
 <span class="sig-name descname"><span class="pre">filter_product_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resource</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.filter_product_resources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.filter_product_resources" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a subset of Product resources with the corresponding type.</p>
