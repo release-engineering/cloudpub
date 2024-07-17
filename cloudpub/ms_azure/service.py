@@ -440,6 +440,23 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         return self.configure(resource=submission)
 
+    def ensure_can_publish(self, product_id: str) -> None:
+        """
+        Ensure the offer is not already being published.
+
+        Args:
+            product_id (str)
+                The product ID to check the offer's publishing status
+        Raises:
+            RuntimeError: whenever a publishing is already in progress.
+        """
+        submission_targets = ["preview", "live"]
+
+        for target in submission_targets:
+            sub = self.get_submission_state(product_id, state=target)
+            if sub and sub.status and sub.status == "running":
+                raise RuntimeError(f"The offer {product_id} is already being published to {target}")
+
     def _get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
         """
         Return the VMIPlanTechConfig resource for the given product/plan.
@@ -761,6 +778,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # 5. Proceed to publishing if it was requested.
         if not metadata.keepdraft:
             self._logdiff(self.diff_offer(product))
+            self.ensure_can_publish(product.id)
 
             self._publish_preview(product, product_name)
 
