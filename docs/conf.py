@@ -35,6 +35,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
     # own extensions in 'ext' dir
     "attr_types",
     "attr_index",
