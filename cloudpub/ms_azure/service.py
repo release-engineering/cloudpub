@@ -781,6 +781,4 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             self.ensure_can_publish(product.id)
 
             self._publish_preview(product, product_name)
-
-            if not metadata.preview_only:
-                self._publish_live(product, product_name)
+            self._publish_live(product, product_name)
