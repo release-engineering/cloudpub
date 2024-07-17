@@ -711,6 +711,81 @@ class TestAzureService:
 
         mock_configure.assert_not_called()
 
+    @pytest.mark.parametrize("target", ["preview", "live"])
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    def test_ensure_can_publish_success(
+        self,
+        mock_getsubst: mock.MagicMock,
+        target: str,
+        azure_service: AzureService,
+    ) -> None:
+        submission = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",  # noqa: E501
+            "id": "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/0",
+            "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": target},
+            "lifecycleState": "generallyAvailable",
+            "status": "completed",
+            "result": "succeeded",
+            "created": "2024-07-04T22:06:16.2895521Z",
+        }
+        mock_getsubst.return_value = ProductSubmission.from_json(submission)
+
+        azure_service.ensure_can_publish("ffffffff-ffff-ffff-ffff-ffffffffffff")
+
+        # All targets are called by the method, it should pass all
+        mock_getsubst.assert_has_calls(
+            [
+                mock.call("ffffffff-ffff-ffff-ffff-ffffffffffff", state="preview"),
+                mock.call("ffffffff-ffff-ffff-ffff-ffffffffffff", state="live"),
+            ]
+        )
+
+    @pytest.mark.parametrize("target", ["preview", "live"])
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    def test_ensure_can_publish_raises(
+        self,
+        mock_getsubst: mock.MagicMock,
+        target: str,
+        azure_service: AzureService,
+    ) -> None:
+        next_target = {
+            "preview": "live",
+            "live": "preview",
+        }
+        sub1 = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",  # noqa: E501
+            "id": "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/0",
+            "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": next_target[target]},
+            "lifecycleState": "generallyAvailable",
+            "status": "completed",
+            "result": "succeeded",
+            "created": "2024-07-04T22:06:16.2895521Z",
+        }
+        sub2 = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",  # noqa: E501
+            "id": "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/0",
+            "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": target},
+            "lifecycleState": "generallyAvailable",
+            "status": "running",
+            "result": "pending",
+            "created": "2024-07-04T22:06:16.2895521Z",
+        }
+        if target == "preview":
+            subs = [ProductSubmission.from_json(sub2), ProductSubmission.from_json(sub1)]
+        else:
+            subs = [ProductSubmission.from_json(sub1), ProductSubmission.from_json(sub2)]
+        mock_getsubst.side_effect = subs
+
+        err = (
+            f"The offer ffffffff-ffff-ffff-ffff-ffffffffffff is already being published to {target}"
+        )
+
+        with pytest.raises(RuntimeError, match=err):
+            azure_service.ensure_can_publish("ffffffff-ffff-ffff-ffff-ffffffffffff")
+
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
@@ -1061,6 +1136,7 @@ class TestAzureService:
             assert res is True
             mock_substt.assert_called_once_with(current.product_id, "live")
 
+    @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
     @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
@@ -1079,6 +1155,7 @@ class TestAzureService:
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_diff_offer: mock.MagicMock,
+        mock_ensure_publish: mock.MagicMock,
         product_obj: Product,
         plan_summary_obj: PlanSummary,
         metadata_azure_obj: AzurePublishingMetadata,
@@ -1138,3 +1215,4 @@ class TestAzureService:
             mock.call(product_id=product_obj.id, status="live"),
         ]
         mock_submit.assert_has_calls(submit_calls)
+        mock_ensure_publish.assert_called_once_with(product_obj.id)
