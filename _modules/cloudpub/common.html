@@ -51,7 +51,6 @@
         <span class="n">destination</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">keepdraft</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">preview_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an instanece of PublishingMetadata.</span>
@@ -70,16 +69,12 @@
 <span class="sd">            Whether to just associate the VM Image with the destination but avoid publishing or not.</span>
 <span class="sd">            When set to `False` it will publish the content as GA.</span>
 <span class="sd">            This defaults to `True`.</span>
-<span class="sd">        preview_only (boolean, optional)</span>
-<span class="sd">            Whether the final publish status should be ``preview`` (``True``)</span>
-<span class="sd">            or ``live`` (``False``). Defaults to ``False``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">image_path</span> <span class="o">=</span> <span class="n">image_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="n">architecture</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">destination</span> <span class="o">=</span> <span class="n">destination</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="n">overwrite</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">keepdraft</span> <span class="o">=</span> <span class="n">keepdraft</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">preview_only</span> <span class="o">=</span> <span class="n">preview_only</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__validate</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">__validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
