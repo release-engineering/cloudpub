@@ -8,6 +8,7 @@ from _pytest.logging import LogCaptureFixture
 from httmock import response
 from requests import Response
 from requests.exceptions import HTTPError
+from tenacity.stop import stop_after_attempt
 
 from cloudpub.common import BaseService
 from cloudpub.error import InvalidStateError, NotFoundError
@@ -730,6 +731,8 @@ class TestAzureService:
             "created": "2024-07-04T22:06:16.2895521Z",
         }
         mock_getsubst.return_value = ProductSubmission.from_json(submission)
+        azure_service.ensure_can_publish.retry.sleep = mock.MagicMock()  # type: ignore
+        azure_service.ensure_can_publish.retry.stop = stop_after_attempt(1)  # type: ignore
 
         azure_service.ensure_can_publish("ffffffff-ffff-ffff-ffff-ffffffffffff")
 
@@ -740,6 +743,48 @@ class TestAzureService:
                 mock.call("ffffffff-ffff-ffff-ffff-ffffffffffff", state="live"),
             ]
         )
+
+    @pytest.mark.parametrize("target", ["preview", "live"])
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    def test_ensure_can_publish_success_after_retry(
+        self,
+        mock_getsubst: mock.MagicMock,
+        target: str,
+        azure_service: AzureService,
+    ) -> None:
+        running = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",  # noqa: E501
+            "id": "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/0",
+            "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": target},
+            "lifecycleState": "generallyAvailable",
+            "status": "running",
+            "result": "pending",
+            "created": "2024-07-04T22:06:16.2895521Z",
+        }
+        complete = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",  # noqa: E501
+            "id": "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/0",
+            "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": target},
+            "lifecycleState": "generallyAvailable",
+            "status": "completed",
+            "result": "succeeded",
+            "created": "2024-07-04T22:06:16.2895521Z",
+        }
+        mock_getsubst.side_effect = [
+            ProductSubmission.from_json(running),
+            ProductSubmission.from_json(running),
+            ProductSubmission.from_json(complete),
+            ProductSubmission.from_json(complete),
+        ]
+        azure_service.ensure_can_publish.retry.sleep = mock.MagicMock()  # type: ignore
+        azure_service.ensure_can_publish.retry.stop = stop_after_attempt(3)  # type: ignore
+
+        azure_service.ensure_can_publish("ffffffff-ffff-ffff-ffff-ffffffffffff")
+
+        # Calls for "live" and "preview" for 2 times before success == 4
+        assert mock_getsubst.call_count == 4
 
     @pytest.mark.parametrize("target", ["preview", "live"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
@@ -782,6 +827,8 @@ class TestAzureService:
         err = (
             f"The offer ffffffff-ffff-ffff-ffff-ffffffffffff is already being published to {target}"
         )
+        azure_service.ensure_can_publish.retry.sleep = mock.MagicMock()  # type: ignore
+        azure_service.ensure_can_publish.retry.stop = stop_after_attempt(1)  # type: ignore
 
         with pytest.raises(RuntimeError, match=err):
             azure_service.ensure_can_publish("ffffffff-ffff-ffff-ffff-ffffffffffff")

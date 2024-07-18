@@ -440,9 +440,17 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         return self.configure(resource=submission)
 
+    @retry(
+        wait=wait_fixed(300),
+        stop=stop_after_delay(max_delay=60 * 60 * 24 * 7),  # Give up after retrying for 7 days,
+        reraise=True,
+    )
     def ensure_can_publish(self, product_id: str) -> None:
         """
         Ensure the offer is not already being published.
+
+        It will wait for up to 7 days retrying to make sure it's possible to publish before
+        giving up and raising.
 
         Args:
             product_id (str)
