@@ -24,9 +24,6 @@ AWS Version Mapping
 .. autoclass:: cloudpub.models.aws.VersionMapping()
    :members:
 
-.. autoclass:: cloudpub.models.aws.DeliveryOptions()
-   :members:
-
 .. autoclass:: cloudpub.models.aws.DeliveryOption()
    :members:
 

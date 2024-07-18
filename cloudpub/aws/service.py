@@ -511,7 +511,7 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             change_set["ChangeType"] = "UpdateDeliveryOptions"
             change_set["DetailsDocument"] = json_mapping.to_json()
 
-        if metadata.keepdraft or metadata.preview_only:
+        if metadata.keepdraft:
             log.info("Sending draft version to %s.", metadata.marketplace_entity_type)
             rsp: ChangeSetResponse = self.marketplace.start_change_set(
                 Catalog="AWSMarketplace", ChangeSet=[change_set], Intent="VALIDATE"
