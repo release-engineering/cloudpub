@@ -471,9 +471,17 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">submission</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AzureService.ensure_can_publish"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.ensure_can_publish">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_can_publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="AzureService.ensure_can_publish"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.ensure_can_publish">[docs]</a>    <span class="nd">@retry</span><span class="p">(</span>
+        <span class="n">wait</span><span class="o">=</span><span class="n">wait_fixed</span><span class="p">(</span><span class="mi">300</span><span class="p">),</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_delay</span><span class="p">(</span><span class="n">max_delay</span><span class="o">=</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">7</span><span class="p">),</span>  <span class="c1"># Give up after retrying for 7 days,</span>
+        <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">ensure_can_publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Ensure the offer is not already being published.</span>
+
+<span class="sd">        It will wait for up to 7 days retrying to make sure it&#39;s possible to publish before</span>
+<span class="sd">        giving up and raising.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            product_id (str)</span>

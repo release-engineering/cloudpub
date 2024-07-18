@@ -138,6 +138,8 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">{sku_id
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.ensure_can_publish">
 <span class="sig-name descname"><span class="pre">ensure_can_publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.ensure_can_publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.ensure_can_publish" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ensure the offer is not already being published.</p>
+<p>It will wait for up to 7 days retrying to make sure it’s possible to publish before
+giving up and raising.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – The product ID to check the offer’s publishing status</p>
