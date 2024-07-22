@@ -17,7 +17,6 @@ from cloudpub.models.ms_azure import (
     AzureResource,
     ConfigureStatus,
     CustomerLeads,
-    DiskVersion,
     Listing,
     ListingAsset,
     ListingTrailer,
@@ -32,7 +31,6 @@ from cloudpub.models.ms_azure import (
     ProductSubmission,
     ProductSummary,
     TestDrive,
-    VMImageDefinition,
     VMImageSource,
     VMIPlanTechConfig,
 )
@@ -40,10 +38,11 @@ from cloudpub.ms_azure.session import PartnerPortalSession
 from cloudpub.ms_azure.utils import (
     AzurePublishingMetadata,
     create_disk_version_from_scratch,
-    get_image_type_mapping,
     is_azure_job_not_complete,
     is_sas_present,
-    prepare_vm_images,
+    logdiff,
+    seek_disk_version,
+    set_new_sas_disk_version,
     update_skus,
 )
 from cloudpub.utils import get_url_params
@@ -465,7 +464,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             if sub and sub.status and sub.status == "running":
                 raise RuntimeError(f"The offer {product_id} is already being published to {target}")
 
-    def _get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
+    def get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
         """
         Return the VMIPlanTechConfig resource for the given product/plan.
 
@@ -489,156 +488,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             ],
         )
         return tconfigs[0]  # It should have only one VMIPlanTechConfig per plan.
-
-    def _seek_disk_version(
-        self, tech_config: VMIPlanTechConfig, version_number: Optional[str] = None
-    ) -> Optional[DiskVersion]:
-        """
-        Return the requested DiskVersion when it exists.
-
-        Args:
-            tech_config
-                The technical configuration to seek the disk versions.
-            version_number
-                The expected version number to retrieve. When absent the max value will be returned
-                if there are existing disk versions.
-        Returns:
-            The expected disk version when found.
-        """
-        log.debug(
-            "Seeking the DiskVersion with version number \"%s\" for plan \"%s\"",
-            version_number,
-            tech_config.plan_id,
-        )
-
-        for dv in tech_config.disk_versions:
-            if version_number and dv.version_number == version_number:  # Metadata set
-                log.debug("Found the DiskVersion \"%s\" for plan \"%s\"", dv, tech_config.plan_id)
-                return dv
-
-        log.debug("Disk Version %s was not found.", version_number)
-        return None
-
-    def _vm_images_by_generation(
-        self, disk_version: DiskVersion, architecture: str
-    ) -> Tuple[Optional[VMImageDefinition], ...]:
-        """
-        Return a tuple containing the Gen1 and Gen2 VHD images in this order.
-
-        If one of the images doesn't exist it will return None in the expected tuple position.
-
-        Args:
-            disk_version
-                The disk version to retrieve the VMImageDefinitions from
-            architecture
-                The expected architecture for the VMImageDefinition.
-        Returns:
-            Gen1 and Gen2 VMImageDefinitions when they exist.
-        """
-        log.debug("Sorting the VMImageDefinition by generation.")
-        # Here we have 3 possibilities:
-        # 1. vm_images => "Gen1" only
-        # 2. vm_images => "Gen2" only
-        # 3. vm_images => "Gen1" and "Gen2"
-
-        # So let's get the first image whatever it is
-        img = disk_version.vm_images.pop(0)
-
-        # If first `img` is Gen2 we set the other one as `img_legacy`
-        if img.image_type == get_image_type_mapping(architecture, "V2"):
-            img_legacy = disk_version.vm_images.pop(0) if len(disk_version.vm_images) > 0 else None
-
-        else:  # Otherwise we set it as `img_legacy` and get the gen2
-            img_legacy = img
-            img = (
-                disk_version.vm_images.pop(0)  # type: ignore
-                if len(disk_version.vm_images) > 0
-                else None
-            )
-        log.debug("Image for current generation: %s", img)
-        log.debug("Image for legacy generation: %s", img_legacy)
-        return img, img_legacy
-
-    def _create_vm_images(
-        self, metadata: AzurePublishingMetadata, source: VMImageSource
-    ) -> List[VMImageDefinition]:
-        """
-        Create a list of VMImageDefinition from scratch using the incoming source and metadata.
-
-        Args:
-            metadata
-                The publishing metadata to create the VMImageDefinition objects.
-            source
-                The VMImageDefinition to use as source.
-        Returns:
-            A list with the new VMImageDefinitions.
-        """
-        log.debug("Creating VMImageDefinitions for \"%s\"", metadata.destination)
-        vm_images = []
-
-        vm_images.append(
-            VMImageDefinition(
-                image_type=get_image_type_mapping(metadata.architecture, metadata.generation),
-                source=source.to_json(),
-            )
-        )
-        if metadata.support_legacy:  # Only True when metadata.generation == V2
-            vm_images.append(
-                VMImageDefinition(
-                    image_type=get_image_type_mapping(metadata.architecture, "V1"),
-                    source=source.to_json(),
-                )
-            )
-        log.debug("VMImageDefinitions created for \"%s\": %s", metadata.destination, vm_images)
-        return vm_images
-
-    def _set_new_sas_disk_version(
-        self, disk_version: DiskVersion, metadata: AzurePublishingMetadata, source: VMImageSource
-    ) -> DiskVersion:
-        """
-        Change the SAS URI of an existing Disk Version.
-
-        Args:
-            disk_version:
-                The disk version to change the image with the new SAS URI.
-            metadata:
-                The publishing metadata to retrieve additional information
-            source:
-                The VMImageSource with the new SAS URI
-        Returns:
-            The changed disk version with the given source.
-        """
-        # If we already have a VMImageDefinition let's use it
-        if disk_version.vm_images:
-            log.debug("The DiskVersion \"%s\" contains inner images." % disk_version.version_number)
-            img, img_legacy = self._vm_images_by_generation(disk_version, metadata.architecture)
-
-            # Now we replace the SAS URI for the vm_images
-            log.debug(
-                "Adjusting the VMImages from existing DiskVersion \"%s\""
-                "to fit the new image with SAS \"%s\"."
-                % (disk_version.version_number, metadata.image_path)
-            )
-            disk_version.vm_images = prepare_vm_images(
-                metadata=metadata,
-                gen1=img_legacy,
-                gen2=img,
-                source=source,
-            )
-
-        # If no VMImages, we need to create them from scratch
-        else:
-            log.debug(
-                "The DiskVersion \"%s\" does not contain inner images."
-                % disk_version.version_number
-            )
-            log.debug(
-                "Setting the new image \"%s\" on DiskVersion \"%s\"."
-                % (metadata.image_path, disk_version.version_number)
-            )
-            disk_version.vm_images = self._create_vm_images(metadata, source)
-
-        return disk_version
 
     def _is_submission_in_preview(self, current: ProductSubmission) -> bool:
         """Return True if the latest submission state is "preview", False otherwise.
@@ -704,12 +553,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
         self.submit_to_status(product_id=product.id, status='live')
 
-    @staticmethod
-    def _logdiff(diff: DeepDiff) -> None:
-        """Log the offer diff if it exists."""
-        if diff:
-            log.warning(f"Found the following offer diff before publishing:\n{diff.pretty()}")
-
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it if required.
@@ -731,7 +574,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 2. Retrieve the VM Technical configuration for the given plan
         log.debug("Retrieving the technical config for \"%s\"." % metadata.destination)
-        tech_config = self._get_plan_tech_config(product, plan)
+        tech_config = self.get_plan_tech_config(product, plan)
 
         # 3. Prepare the Disk Version
         log.debug("Creating the VMImageResource with SAS: \"%s\"" % metadata.image_path)
@@ -751,7 +594,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             # Here we can have the metadata.disk_version set or empty.
             # When set we want to get the existing disk_version which matches its value.
             log.debug("Scanning the disk versions from %s" % metadata.destination)
-            disk_version = self._seek_disk_version(tech_config, metadata.disk_version)
+            disk_version = seek_disk_version(tech_config, metadata.disk_version)
 
             # Check the images of the selected DiskVersion if it exists
             if disk_version:
@@ -759,7 +602,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                     "DiskVersion \"%s\" exists in \"%s\"."
                     % (disk_version.version_number, metadata.destination)
                 )
-                disk_version = self._set_new_sas_disk_version(disk_version, metadata, source)
+                disk_version = set_new_sas_disk_version(disk_version, metadata, source)
 
             else:  # The disk version doesn't exist, we need to create one from scratch
                 log.debug("The DiskVersion doesn't exist, creating one from scratch.")
@@ -785,7 +628,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 5. Proceed to publishing if it was requested.
         if not metadata.keepdraft:
-            self._logdiff(self.diff_offer(product))
+            logdiff(self.diff_offer(product))
             self.ensure_can_publish(product.id)
 
             self._publish_preview(product, product_name)
