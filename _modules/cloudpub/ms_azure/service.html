@@ -48,7 +48,6 @@
     <span class="n">AzureResource</span><span class="p">,</span>
     <span class="n">ConfigureStatus</span><span class="p">,</span>
     <span class="n">CustomerLeads</span><span class="p">,</span>
-    <span class="n">DiskVersion</span><span class="p">,</span>
     <span class="n">Listing</span><span class="p">,</span>
     <span class="n">ListingAsset</span><span class="p">,</span>
     <span class="n">ListingTrailer</span><span class="p">,</span>
@@ -63,7 +62,6 @@
     <span class="n">ProductSubmission</span><span class="p">,</span>
     <span class="n">ProductSummary</span><span class="p">,</span>
     <span class="n">TestDrive</span><span class="p">,</span>
-    <span class="n">VMImageDefinition</span><span class="p">,</span>
     <span class="n">VMImageSource</span><span class="p">,</span>
     <span class="n">VMIPlanTechConfig</span><span class="p">,</span>
 <span class="p">)</span>
@@ -71,10 +69,11 @@
 <span class="kn">from</span> <span class="nn">cloudpub.ms_azure.utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">AzurePublishingMetadata</span><span class="p">,</span>
     <span class="n">create_disk_version_from_scratch</span><span class="p">,</span>
-    <span class="n">get_image_type_mapping</span><span class="p">,</span>
     <span class="n">is_azure_job_not_complete</span><span class="p">,</span>
     <span class="n">is_sas_present</span><span class="p">,</span>
-    <span class="n">prepare_vm_images</span><span class="p">,</span>
+    <span class="n">logdiff</span><span class="p">,</span>
+    <span class="n">seek_disk_version</span><span class="p">,</span>
+    <span class="n">set_new_sas_disk_version</span><span class="p">,</span>
     <span class="n">update_skus</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">cloudpub.utils</span> <span class="kn">import</span> <span class="n">get_url_params</span>
@@ -496,7 +495,7 @@
             <span class="k">if</span> <span class="n">sub</span> <span class="ow">and</span> <span class="n">sub</span><span class="o">.</span><span class="n">status</span> <span class="ow">and</span> <span class="n">sub</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;running&quot;</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The offer </span><span class="si">{</span><span class="n">product_id</span><span class="si">}</span><span class="s2"> is already being published to </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_get_plan_tech_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">plan</span><span class="p">:</span> <span class="n">PlanSummary</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VMIPlanTechConfig</span><span class="p">:</span>
+<div class="viewcode-block" id="AzureService.get_plan_tech_config"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_plan_tech_config">[docs]</a>    <span class="k">def</span> <span class="nf">get_plan_tech_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">plan</span><span class="p">:</span> <span class="n">PlanSummary</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VMIPlanTechConfig</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the VMIPlanTechConfig resource for the given product/plan.</span>
 
@@ -519,157 +518,7 @@
                 <span class="k">if</span> <span class="n">tcfg</span><span class="o">.</span><span class="n">plan_id</span> <span class="o">==</span> <span class="n">plan</span><span class="o">.</span><span class="n">id</span>  <span class="c1"># type: ignore</span>
             <span class="p">],</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">tconfigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># It should have only one VMIPlanTechConfig per plan.</span>
-
-    <span class="k">def</span> <span class="nf">_seek_disk_version</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span> <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return the requested DiskVersion when it exists.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tech_config</span>
-<span class="sd">                The technical configuration to seek the disk versions.</span>
-<span class="sd">            version_number</span>
-<span class="sd">                The expected version number to retrieve. When absent the max value will be returned</span>
-<span class="sd">                if there are existing disk versions.</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            The expected disk version when found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Seeking the DiskVersion with version number </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="n">version_number</span><span class="p">,</span>
-            <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">dv</span> <span class="ow">in</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">version_number</span> <span class="ow">and</span> <span class="n">dv</span><span class="o">.</span><span class="n">version_number</span> <span class="o">==</span> <span class="n">version_number</span><span class="p">:</span>  <span class="c1"># Metadata set</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found the DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">dv</span>
-
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Disk Version </span><span class="si">%s</span><span class="s2"> was not found.&quot;</span><span class="p">,</span> <span class="n">version_number</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">_vm_images_by_generation</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">disk_version</span><span class="p">:</span> <span class="n">DiskVersion</span><span class="p">,</span> <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">],</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return a tuple containing the Gen1 and Gen2 VHD images in this order.</span>
-
-<span class="sd">        If one of the images doesn&#39;t exist it will return None in the expected tuple position.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            disk_version</span>
-<span class="sd">                The disk version to retrieve the VMImageDefinitions from</span>
-<span class="sd">            architecture</span>
-<span class="sd">                The expected architecture for the VMImageDefinition.</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            Gen1 and Gen2 VMImageDefinitions when they exist.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sorting the VMImageDefinition by generation.&quot;</span><span class="p">)</span>
-        <span class="c1"># Here we have 3 possibilities:</span>
-        <span class="c1"># 1. vm_images =&gt; &quot;Gen1&quot; only</span>
-        <span class="c1"># 2. vm_images =&gt; &quot;Gen2&quot; only</span>
-        <span class="c1"># 3. vm_images =&gt; &quot;Gen1&quot; and &quot;Gen2&quot;</span>
-
-        <span class="c1"># So let&#39;s get the first image whatever it is</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
-        <span class="c1"># If first `img` is Gen2 we set the other one as `img_legacy`</span>
-        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">):</span>
-            <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
-
-        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Otherwise we set it as `img_legacy` and get the gen2</span>
-            <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">img</span>
-            <span class="n">img</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                <span class="k">else</span> <span class="kc">None</span>
-            <span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image for current generation: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image for legacy generation: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">img_legacy</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span>
-
-    <span class="k">def</span> <span class="nf">_create_vm_images</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create a list of VMImageDefinition from scratch using the incoming source and metadata.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            metadata</span>
-<span class="sd">                The publishing metadata to create the VMImageDefinition objects.</span>
-<span class="sd">            source</span>
-<span class="sd">                The VMImageDefinition to use as source.</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            A list with the new VMImageDefinitions.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating VMImageDefinitions for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
-        <span class="n">vm_images</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">VMImageDefinition</span><span class="p">(</span>
-                <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">),</span>
-                <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>  <span class="c1"># Only True when metadata.generation == V2</span>
-            <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">VMImageDefinition</span><span class="p">(</span>
-                    <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
-                    <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;VMImageDefinitions created for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">vm_images</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">vm_images</span>
-
-    <span class="k">def</span> <span class="nf">_set_new_sas_disk_version</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">disk_version</span><span class="p">:</span> <span class="n">DiskVersion</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiskVersion</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Change the SAS URI of an existing Disk Version.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            disk_version:</span>
-<span class="sd">                The disk version to change the image with the new SAS URI.</span>
-<span class="sd">            metadata:</span>
-<span class="sd">                The publishing metadata to retrieve additional information</span>
-<span class="sd">            source:</span>
-<span class="sd">                The VMImageSource with the new SAS URI</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            The changed disk version with the given source.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># If we already have a VMImageDefinition let&#39;s use it</span>
-        <span class="k">if</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> contains inner images.&quot;</span> <span class="o">%</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
-            <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vm_images_by_generation</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">)</span>
-
-            <span class="c1"># Now we replace the SAS URI for the vm_images</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;Adjusting the VMImages from existing DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="n">prepare_vm_images</span><span class="p">(</span>
-                <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
-                <span class="n">gen1</span><span class="o">=</span><span class="n">img_legacy</span><span class="p">,</span>
-                <span class="n">gen2</span><span class="o">=</span><span class="n">img</span><span class="p">,</span>
-                <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="c1"># If no VMImages, we need to create them from scratch</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> does not contain inner images.&quot;</span>
-                <span class="o">%</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span>
-            <span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;Setting the new image </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> on DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_vm_images</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">disk_version</span>
+        <span class="k">return</span> <span class="n">tconfigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># It should have only one VMIPlanTechConfig per plan.</span></div>
 
     <span class="k">def</span> <span class="nf">_is_submission_in_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="n">ProductSubmission</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the latest submission state is &quot;preview&quot;, False otherwise.</span>
@@ -735,12 +584,6 @@
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting the product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2"> to </span><span class="se">\&quot;</span><span class="s2">live</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;live&#39;</span><span class="p">)</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_logdiff</span><span class="p">(</span><span class="n">diff</span><span class="p">:</span> <span class="n">DeepDiff</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log the offer diff if it exists.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">diff</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">{</span><span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
 <div class="viewcode-block" id="AzureService.publish"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Associate a VM image with a given product listing (destination) and publish it if required.</span>
@@ -762,7 +605,7 @@
 
         <span class="c1"># 2. Retrieve the VM Technical configuration for the given plan</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Retrieving the technical config for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
-        <span class="n">tech_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_plan_tech_config</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>
+        <span class="n">tech_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_plan_tech_config</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>
 
         <span class="c1"># 3. Prepare the Disk Version</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating the VMImageResource with SAS: </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
@@ -782,7 +625,7 @@
             <span class="c1"># Here we can have the metadata.disk_version set or empty.</span>
             <span class="c1"># When set we want to get the existing disk_version which matches its value.</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Scanning the disk versions from </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
-            <span class="n">disk_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seek_disk_version</span><span class="p">(</span><span class="n">tech_config</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">disk_version</span><span class="p">)</span>
+            <span class="n">disk_version</span> <span class="o">=</span> <span class="n">seek_disk_version</span><span class="p">(</span><span class="n">tech_config</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">disk_version</span><span class="p">)</span>
 
             <span class="c1"># Check the images of the selected DiskVersion if it exists</span>
             <span class="k">if</span> <span class="n">disk_version</span><span class="p">:</span>
@@ -790,7 +633,7 @@
                     <span class="s2">&quot;DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> exists in </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
                     <span class="o">%</span> <span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
                 <span class="p">)</span>
-                <span class="n">disk_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_new_sas_disk_version</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+                <span class="n">disk_version</span> <span class="o">=</span> <span class="n">set_new_sas_disk_version</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># The disk version doesn&#39;t exist, we need to create one from scratch</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion doesn&#39;t exist, creating one from scratch.&quot;</span><span class="p">)</span>
@@ -816,7 +659,7 @@
 
         <span class="c1"># 5. Proceed to publishing if it was requested.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">metadata</span><span class="o">.</span><span class="n">keepdraft</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logdiff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diff_offer</span><span class="p">(</span><span class="n">product</span><span class="p">))</span>
+            <span class="n">logdiff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diff_offer</span><span class="p">(</span><span class="n">product</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ensure_can_publish</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_publish_preview</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span>
