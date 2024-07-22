@@ -464,7 +464,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             if sub and sub.status and sub.status == "running":
                 raise RuntimeError(f"The offer {product_id} is already being published to {target}")
 
-    def _get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
+    def get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
         """
         Return the VMIPlanTechConfig resource for the given product/plan.
 
@@ -574,7 +574,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 2. Retrieve the VM Technical configuration for the given plan
         log.debug("Retrieving the technical config for \"%s\"." % metadata.destination)
-        tech_config = self._get_plan_tech_config(product, plan)
+        tech_config = self.get_plan_tech_config(product, plan)
 
         # 3. Prepare the Disk Version
         log.debug("Creating the VMImageResource with SAS: \"%s\"" % metadata.image_path)
