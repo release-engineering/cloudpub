@@ -38,7 +38,7 @@
 <span class="kn">from</span> <span class="nn">requests</span> <span class="kn">import</span> <span class="n">HTTPError</span>
 <span class="kn">from</span> <span class="nn">tenacity</span> <span class="kn">import</span> <span class="n">retry</span>
 <span class="kn">from</span> <span class="nn">tenacity.retry</span> <span class="kn">import</span> <span class="n">retry_if_result</span>
-<span class="kn">from</span> <span class="nn">tenacity.stop</span> <span class="kn">import</span> <span class="n">stop_after_delay</span>
+<span class="kn">from</span> <span class="nn">tenacity.stop</span> <span class="kn">import</span> <span class="n">stop_after_attempt</span><span class="p">,</span> <span class="n">stop_after_delay</span>
 <span class="kn">from</span> <span class="nn">tenacity.wait</span> <span class="kn">import</span> <span class="n">wait_chain</span><span class="p">,</span> <span class="n">wait_fixed</span>
 
 <span class="kn">from</span> <span class="nn">cloudpub.common</span> <span class="kn">import</span> <span class="n">BaseService</span>
@@ -542,6 +542,11 @@
             <span class="k">return</span> <span class="n">current</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">live</span><span class="o">.</span><span class="n">id</span>  <span class="c1"># If they&#39;re the same then state == live</span>
         <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># when no live it means it&#39;s in preview</span>
 
+    <span class="nd">@retry</span><span class="p">(</span>
+        <span class="n">wait</span><span class="o">=</span><span class="n">wait_fixed</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="mi">60</span><span class="p">),</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_publish_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Submit the product to &#39;preview&#39;  if it&#39;s not already in this state.</span>
@@ -567,8 +572,23 @@
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;Submitting the product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2"> to </span><span class="se">\&quot;</span><span class="s2">preview</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;preview&#39;</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;preview&#39;</span><span class="p">)</span>
 
+            <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">job_result</span> <span class="o">!=</span> <span class="s1">&#39;succeeded&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submission_state</span><span class="p">(</span>
+                <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;preview&quot;</span>
+            <span class="p">):</span>
+                <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+                <span class="n">failure_msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Failed to submit the product </span><span class="si">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> to preview. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">job_result</span><span class="si">}</span><span class="s2"> Errors: </span><span class="si">{</span><span class="n">errors</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">failure_msg</span><span class="p">)</span>
+
+    <span class="nd">@retry</span><span class="p">(</span>
+        <span class="n">wait</span><span class="o">=</span><span class="n">wait_fixed</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="mi">60</span><span class="p">),</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
+        <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_publish_live</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Submit the product to &#39;live&#39; after going through Azure Marketplace Validation.</span>
@@ -582,7 +602,15 @@
         <span class="c1"># Note: the offer can only go `live` after successfully being changed to `preview`</span>
         <span class="c1"># which takes up to 4 days.</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting the product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)</span><span class="se">\&quot;</span><span class="s2"> to </span><span class="se">\&quot;</span><span class="s2">live</span><span class="se">\&quot;</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">product_name</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;live&#39;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;live&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">job_result</span> <span class="o">!=</span> <span class="s1">&#39;succeeded&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submission_state</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;live&quot;</span><span class="p">):</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+            <span class="n">failure_msg</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to submit the product </span><span class="si">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> to live. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">job_result</span><span class="si">}</span><span class="s2"> Errors: </span><span class="si">{</span><span class="n">errors</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">failure_msg</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AzureService.publish"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
