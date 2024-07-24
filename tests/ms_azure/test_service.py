@@ -833,6 +833,134 @@ class TestAzureService:
         with pytest.raises(RuntimeError, match=err):
             azure_service.ensure_can_publish("ffffffff-ffff-ffff-ffff-ffffffffffff")
 
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.AzureService._is_submission_in_preview")
+    def test_publish_preview_success_on_retry(
+        self,
+        mock_is_sbpreview: mock.MagicMock,
+        mock_subst: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+    ) -> None:
+        # Prepare mocks
+        mock_config_res = mock.MagicMock()
+        mock_config_res.job_result = "succeeded"
+        mock_is_sbpreview.return_value = False
+        mock_subst.side_effect = [mock_config_res for _ in range(3)]
+        mock_getsubst.side_effect = [
+            None,  # Fail on 1st call
+            None,
+            mock.MagicMock(),  # Success on 3rd call
+        ]
+        # Remove the retry sleep
+        azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
+
+        # Test
+        azure_service._publish_preview(product_obj, "test-product")
+
+        mock_subst.assert_has_calls(
+            [mock.call(product_id=product_obj.id, status="preview") for _ in range(3)]
+        )
+        mock_getsubst.assert_has_calls(
+            [mock.call(product_obj.id, state="preview") for _ in range(3)]
+        )
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.AzureService._is_submission_in_preview")
+    def test_publish_preview_fail_on_retry(
+        self,
+        mock_is_sbpreview: mock.MagicMock,
+        mock_subst: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+    ) -> None:
+        # Prepare mocks
+        err_resp = ConfigureStatus.from_json(
+            {
+                "jobId": "1",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": ["failure1", "failure2"],
+            }
+        )
+        mock_is_sbpreview.return_value = False
+        mock_subst.side_effect = [err_resp for _ in range(3)]
+        mock_getsubst.side_effect = [None for _ in range(3)]
+        # Remove the retry sleep
+        azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
+        expected_err = (
+            f"Failed to submit the product {product_obj.id} to preview. "
+            "Status: failed Errors: failure1\nfailure2"
+        )
+
+        # Test
+        with pytest.raises(RuntimeError, match=expected_err):
+            azure_service._publish_preview(product_obj, "test-product")
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    def test_publish_live_success_on_retry(
+        self,
+        mock_subst: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+    ) -> None:
+        # Prepare mocks
+        mock_config_res = mock.MagicMock()
+        mock_config_res.job_result = "succeeded"
+        mock_subst.side_effect = [mock_config_res for _ in range(3)]
+        mock_getsubst.side_effect = [
+            None,  # Fail on 1st call
+            None,
+            mock.MagicMock(),  # Success on 3rd call
+        ]
+        # Remove the retry sleep
+        azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
+
+        # Test
+        azure_service._publish_live(product_obj, "test-product")
+
+        mock_subst.assert_has_calls(
+            [mock.call(product_id=product_obj.id, status="live") for _ in range(3)]
+        )
+        mock_getsubst.assert_has_calls([mock.call(product_obj.id, state="live") for _ in range(3)])
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    def test_publish_live_fail_on_retry(
+        self,
+        mock_subst: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+    ) -> None:
+        # Prepare mocks
+        err_resp = ConfigureStatus.from_json(
+            {
+                "jobId": "1",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": ["failure1", "failure2"],
+            }
+        )
+        mock_subst.side_effect = [err_resp for _ in range(3)]
+        mock_getsubst.side_effect = [None for _ in range(3)]
+        # Remove the retry sleep
+        azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
+        expected_err = (
+            f"Failed to submit the product {product_obj.id} to live. "
+            "Status: failed Errors: failure1\nfailure2"
+        )
+
+        # Test
+        with pytest.raises(RuntimeError, match=expected_err):
+            azure_service._publish_live(product_obj, "test-product")
+
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
@@ -1184,6 +1312,7 @@ class TestAzureService:
             mock_substt.assert_called_once_with(current.product_id, "live")
 
     @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
     @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
@@ -1202,6 +1331,7 @@ class TestAzureService:
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_diff_offer: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
         mock_ensure_publish: mock.MagicMock,
         product_obj: Product,
         plan_summary_obj: PlanSummary,
@@ -1221,6 +1351,11 @@ class TestAzureService:
             [technical_config_obj],
             [submission_obj],
         ]
+        mock_getsubst.side_effect = ["preview", "live"]
+        mock_res_preview = mock.MagicMock()
+        mock_res_live = mock.MagicMock()
+        mock_res_preview.job_result = mock_res_live.job_result = "succeeded"
+        mock_submit.side_effect = [mock_res_preview, mock_res_live]
         mock_is_sas.return_value = False
         expected_source = VMImageSource(
             source_type="sasUri",
@@ -1237,6 +1372,7 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
         technical_config_obj.disk_versions = [disk_version_obj]
 
+        # Test
         azure_service.publish(metadata_azure_obj)
         mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
         filter_calls = [

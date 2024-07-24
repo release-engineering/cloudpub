@@ -7,7 +7,7 @@ from deepdiff import DeepDiff
 from requests import HTTPError
 from tenacity import retry
 from tenacity.retry import retry_if_result
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_chain, wait_fixed
 
 from cloudpub.common import BaseService
@@ -511,6 +511,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             return current.id != live.id  # If they're the same then state == live
         return True  # when no live it means it's in preview
 
+    @retry(
+        wait=wait_fixed(wait=60),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
     def _publish_preview(self, product: Product, product_name: str) -> None:
         """
         Submit the product to 'preview'  if it's not already in this state.
@@ -536,8 +541,23 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.info(
                 "Submitting the product \"%s (%s)\" to \"preview\"." % (product_name, product.id)
             )
-            self.submit_to_status(product_id=product.id, status='preview')
+            res = self.submit_to_status(product_id=product.id, status='preview')
 
+            if res.job_result != 'succeeded' or not self.get_submission_state(
+                product.id, state="preview"
+            ):
+                errors = "\n".join(res.errors)
+                failure_msg = (
+                    f"Failed to submit the product {product.id} to preview. "
+                    f"Status: {res.job_result} Errors: {errors}"
+                )
+                raise RuntimeError(failure_msg)
+
+    @retry(
+        wait=wait_fixed(wait=60),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
     def _publish_live(self, product: Product, product_name: str) -> None:
         """
         Submit the product to 'live' after going through Azure Marketplace Validation.
@@ -551,7 +571,15 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # Note: the offer can only go `live` after successfully being changed to `preview`
         # which takes up to 4 days.
         log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
-        self.submit_to_status(product_id=product.id, status='live')
+        res = self.submit_to_status(product_id=product.id, status='live')
+
+        if res.job_result != 'succeeded' or not self.get_submission_state(product.id, state="live"):
+            errors = "\n".join(res.errors)
+            failure_msg = (
+                f"Failed to submit the product {product.id} to live. "
+                f"Status: {res.job_result} Errors: {errors}"
+            )
+            raise RuntimeError(failure_msg)
 
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
