@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.0.0 - 2024-07-30
+
+- Azure: Add publishing collision detection
+- Remove some stage_preview code leftovers
+- Remove wrong model class from Docs
+- Azure: Wait to publish during publish collision
+- Azure Refactor: Make some methos public in utils
+- Azure: Retry on publish_preview
+- Azure: Retry on publish_live
+
 ## 0.9.3 - 2024-07-16
 
 - Allow publishing to draft plans in Azure
