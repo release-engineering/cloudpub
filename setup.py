@@ -7,7 +7,7 @@ setup(
     keywords='stratosphere cloudpub cloudpublish',
     author='Jonathan Gangi',
     author_email='jgangi@redhat.com',
-    url='https://gitlab.cee.redhat.com/stratosphere/cloudpub',
+    url='https://github.com/release-engineering/cloudpub',
     license='GPLv3+',
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
