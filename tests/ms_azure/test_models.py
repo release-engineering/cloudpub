@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from cloudpub.models.ms_azure import (
+    CoreVMIPlanTechConfig,
     CustomerLeads,
     DeprecationAlternative,
     DeprecationSchedule,
@@ -13,6 +14,7 @@ from cloudpub.models.ms_azure import (
     PlanSummary,
     Product,
     PublishTarget,
+    SoftwareType,
     VMImageSource,
     VMIPlanTechConfig,
     VMISku,
@@ -123,6 +125,28 @@ def test_vmi_plan_tech_config_property(technical_config: Dict[str, Any]) -> None
     obj = VMIPlanTechConfig.from_json(technical_config)
 
     assert obj.base_plan_id == plan_id
+
+
+def test_vmi_plan_tech_config_properties(core_technical_config: Dict[str, Any]) -> None:
+    # Test base_plan_id not set
+    obj = CoreVMIPlanTechConfig.from_json(core_technical_config)
+
+    assert obj.base_plan_id is None
+
+    # Test base_plan_id set
+    plan_id = "00000000-0000-0000-0000-000000000000"
+    plan_durable = f"plan/ffffffff-ffff-ffff-ffff-ffffffffffff/{plan_id}"
+    core_technical_config.update({"basePlan": plan_durable})
+
+    obj = CoreVMIPlanTechConfig.from_json(core_technical_config)
+
+    assert obj.base_plan_id == plan_id
+
+
+@pytest.mark.parametrize("software_type", ["operatingSystem", "solution"])
+def test_software_type_render_str(software_type: str) -> None:
+    s = SoftwareType(software_type)
+    assert str(s) == software_type
 
 
 def test_deprecation_schedule_defaults() -> None:
