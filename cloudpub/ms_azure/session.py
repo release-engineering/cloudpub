@@ -66,7 +66,6 @@ class PartnerPortalSession:
         self.resource = base_url(prefix_url)
         self._mandatory_params = mandatory_params
         self._token: Optional[AccessToken] = None
-        self.publisher = auth_keys["AZURE_PUBLISHER_NAME"]
         self._additional_args = kwargs
         self.session = requests.Session()
         total_retries = kwargs.pop("total_retries", 5)
@@ -104,7 +103,6 @@ class PartnerPortalSession:
     def _validate_auth_keys(auth_keys: Dict[str, str]) -> Dict[str, str]:
         """Validate whether auth_keys contains all required keys."""
         mandatory_keys = [
-            "AZURE_PUBLISHER_NAME",
             "AZURE_CLIENT_ID",
             "AZURE_TENANT_ID",
             "AZURE_API_SECRET",
