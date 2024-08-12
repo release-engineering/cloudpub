@@ -33,7 +33,6 @@ class TestPartnerPortalSession:
 
     def test_make_session_invalid_auth_dict(self, auth_dict: Dict[str, str]) -> None:
         keys = [
-            "AZURE_PUBLISHER_NAME",
             "AZURE_CLIENT_ID",
             "AZURE_TENANT_ID",
             "AZURE_API_SECRET",
