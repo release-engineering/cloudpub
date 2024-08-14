@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.0.1 - 2024-08-14
+
+- Documentation: Fixes url from internal gitlab to github
+- Azure: Remove unnecessary "AZURE_PUBLISHER_NAME"
+
 ## 1.0.0 - 2024-07-30
 
 - Azure: Add publishing collision detection
