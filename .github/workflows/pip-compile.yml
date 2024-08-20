@@ -29,7 +29,7 @@ jobs:
          COMMIT_MESSAGE: 'chore: scheduled pip-compile'
          COMMIT_NAME: 'GitHub Actions'
          COMMIT_EMAIL: 'noreply@github.com'
-         GITHUB_TOKEN: ${{ secrets.PIP_COMPILE_TOKEN }}
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
          PR_BRANCH_PREFIX: deps/
          PR_BRANCH_NAME: 'pip-compile'
          PR_TITLE: 'chore: scheduled pip-compile'
