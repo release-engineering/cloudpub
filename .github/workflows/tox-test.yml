@@ -91,7 +91,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install Tox
-        run: pip install tox 'virtualenv<20.21.1'
+        run: pip install tox
       - name: Run Tox
         run: tox -e security
       - name: Install project
@@ -100,6 +100,64 @@ jobs:
         uses: pypa/gh-action-pip-audit@v1.1.0
         with:
           inputs: requirements.txt requirements-test.txt
+      - name: Cache OWASP
+        uses: actions/cache@v3
+        with:
+          path: .code_scanning/dependency-check
+          key: ${{ runner.os }}-build-owasp-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-build-owasp-
+      - name: OWASP check
+        run: |
+          VERSION=$(curl -s https://jeremylong.github.io/DependencyCheck/current.txt)
+          curl -L "https://github.com/jeremylong/DependencyCheck/releases/download/v$VERSION/dependency-check-$VERSION-release.zip" --output dependency-check.zip
+          unzip -o dependency-check.zip
+          rm -f dependency-check.zip
+          ./dependency-check/bin/dependency-check.sh \
+          --project "starmap-client" \
+          --out "dependency-check" \
+          --format "ALL" \
+          --enableExperimental \
+          --scan . \
+          --data .code_scanning/dependency-check/data \
+          --exclude '**/dependency-check/**' \
+          --exclude '**/build/**' \
+          --exclude '**/.tox/**' \
+          --exclude '**/.git/**' \
+          --failOnCVSS ${{ vars.OWASP_CVSS_LEVEL}} \
+          --disableMSBuild \
+          --disableNodeJS \
+          --disableYarnAudit \
+          --disablePnpmAudit \
+          --disableNodeAudit \
+          --disableRubygems \
+          --disableBundleAudit \
+          --disableCocoapodsAnalyzer \
+          --disableSwiftPackageManagerAnalyzer \
+          --disableSwiftPackageResolvedAnalyzer \
+          --disableAutoconf \
+          --disableJar \
+          --disableCpan \
+          --disableDart \
+          --disableNugetconf \
+          --disableAssembly \
+          --disableGolangDep \
+          --disableGolangMod \
+          --disableMixAudit \
+          --disableRetireJS \
+          -log "${OUTPUT_PATH}/dependency-check/dependency-check.log" \
+          || exit_code=$?
+          exit $exit_code
+      - name: Store OWASP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owasp-report
+          path: |
+            dependency-check/dependency-check-report.html
+            dependency-check/dependency-check-report.xml
+            dependency-check/dependency-check-report.json
+            dependency-check/dependency-check-report.csv
+            dependency-check/dependency-check-report.sarif
   docs:
     runs-on: ubuntu-latest
     steps:
