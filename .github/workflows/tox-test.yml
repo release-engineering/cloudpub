@@ -101,7 +101,7 @@ jobs:
         with:
           inputs: requirements.txt requirements-test.txt
       - name: Cache OWASP
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .code_scanning/dependency-check
           key: ${{ runner.os }}-build-owasp-${{ hashFiles('**/requirements.txt') }}
