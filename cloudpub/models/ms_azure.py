@@ -1420,6 +1420,9 @@ class VMIProperties(AttrsJSONDecodeMixin):
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
+    networkVirtualAppliance: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating the network virtual appliance support for core machines."""
+
     supportsNVMe: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the NVMe support. `See the docs`_ for more details.
@@ -1462,6 +1465,18 @@ class VMIProperties(AttrsJSONDecodeMixin):
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
+
+    availableToFreeAccounts: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image is available for free accounts."""
+
+    supportsClientHub: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image supports the client hub."""
+
+    supportsHubOnOffSwitch: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image supports the on/off switch."""
+
+    supportsSriov: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image supports SR-IOV."""
 
 
 @define
