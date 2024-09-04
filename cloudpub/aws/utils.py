@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import json
 import logging
+import re
 from pprint import pformat
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping, Match, Optional, Tuple
 
 import dateutil.parser
+import requests
 from packaging.version import InvalidVersion, Version
 
-from cloudpub.models.aws import GroupedVersions
+from cloudpub.models.aws import ErrorDetail, GroupedVersions
 
 
 def create_version_tree(versions: Dict[str, GroupedVersions]) -> Dict[str, Any]:
@@ -141,3 +144,59 @@ def pprint_debug_logging(
     """
     if log.isEnabledFor(logging.DEBUG):
         log.debug("%s\n%s", log_tag, pformat(rsp_log))
+
+
+def is_str_url(url_str: str) -> Optional[Match[str]]:
+    """
+    Check if string is a URL.
+
+    Args:
+        url_str (str)
+            A string represenation of a URL.
+    Returns:
+        Bool
+    """
+    regex = re.compile(
+        r'^(?:http)s?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
+        r'+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?:/?|[/?]\S+)$',
+        re.IGNORECASE,
+    )
+    result = re.match(regex, url_str)
+    return result
+
+
+def get_text_url(url: str) -> List[ErrorDetail]:
+    """
+    Get text from remote URL.
+
+    Args:
+        url (str)
+            The url that the messsage is stored at.
+    Returns:
+        List[ErrorDetail]
+    """
+    resp = requests.get(url, timeout=10)
+    data = json.loads(resp.text)
+    error_list = []
+    for e in data:
+        error_list.append(ErrorDetail.from_json(e))
+    return error_list
+
+
+def convert_error_list_str(error_list: List[ErrorDetail]) -> List[Dict[str, Any]]:
+    """
+    Convert a list of ErrorDetail to json str.
+
+    Args:
+        error_list (List[ErrorDetail])
+            A list of ErrorDetails.
+    Returns:
+        List[Dict[str, Any]]
+    """
+    error_str_list = []
+    for e in error_list:
+        error_str_list.append(e.to_json())
+    return error_str_list
