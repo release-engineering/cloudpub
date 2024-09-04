@@ -6,6 +6,7 @@ from unittest import mock
 
 import pytest
 from _pytest.logging import LogCaptureFixture
+from httmock import HTTMock, urlmatch
 
 from cloudpub.aws import AWSProductService, AWSVersionMetadata
 from cloudpub.error import InvalidStateError, NotFoundError, Timeout
@@ -476,6 +477,43 @@ class TestAWSProductService:
         mock_describe_change_set.return_value = ret
         with pytest.raises(InvalidStateError):
             _ = aws_service.check_publish_status("fake-change-set-id")
+
+    def test_check_publish_status_failed_url(
+        self, mock_describe_change_set: mock.MagicMock, aws_service: AWSProductService
+    ) -> None:
+        @urlmatch(netloc=r'(.*\.)?fake\.com$')
+        def request_mock(url, request):
+            error_list = [{"ErrorCode": "EOL", "ErrorMessage": "some text"}]
+            return json.dumps(error_list)
+
+        failure_list = [
+            {
+                "ErrorCode": "SCAN_ERROR",
+                "ErrorMessage": "https://www.fake.com/error-message",
+            }
+        ]
+        change_set = [
+            {
+                "ChangeType": "RestrictDeliveryOptions",
+                "Details": r"{}",
+                "ErrorDetailList": failure_list,
+            }
+        ]
+        ret = {
+            "ChangeSetId": "change",
+            "ChangeSetArn": "fake-arn",
+            "Status": "Failed",
+            "FailureCode": "fake-code",
+            "ChangeSet": change_set,
+            "StartTime": "fake-start-time",
+            "EndTime": "fake-end-time",
+        }
+        mock_describe_change_set.return_value = ret
+        with HTTMock(request_mock):
+            with pytest.raises(InvalidStateError) as error:
+                aws_service.check_publish_status("fake-change-set-id")
+            assert "https://www.fake.com/error-message" in str(error)
+            assert "EOL" in str(error)
 
     def test_wait_for_changeset(
         self, mock_describe_change_set: mock.MagicMock, aws_service: AWSProductService

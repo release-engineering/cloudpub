@@ -11,10 +11,13 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from cloudpub.aws.utils import (
+    convert_error_list_str,
     create_version_tree,
     get_restricted_major_versions,
     get_restricted_minor_versions,
     get_restricted_patch_versions,
+    get_text_url,
+    is_str_url,
     pprint_debug_logging,
 )
 from cloudpub.common import BaseService, PublishingMetadata
@@ -386,8 +389,15 @@ class AWSProductService(BaseService[AWSVersionMetadata]):
             # the first one should be the one we want.
             failure_list = rsp.change_set[0].error_details
             pprint_debug_logging(log, rsp, "The response from the status was: ")
+            # Check if message is a URL and download the message.
+            added_messages = []
+            for failure in failure_list:
+                if is_str_url(failure.message):
+                    added_messages.extend(get_text_url(failure.message))
+            failure_list.extend(added_messages)
+            error_list_str = convert_error_list_str(failure_list)
             error_message = (
-                f"Changeset {change_set_id} failed with code {failure_code}: \n {failure_list}"
+                f"Changeset {change_set_id} failed with code {failure_code}: \n {error_list_str}"
             )
             self._raise_error(InvalidStateError, error_message)
 
