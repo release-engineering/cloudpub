@@ -1084,6 +1084,7 @@ class TestAzureService:
         mock_configure.assert_called_once_with(resource=expected_tech_config)
         mock_submit.assert_not_called()
 
+    @pytest.mark.parametrize("keepdraft", [True, False], ids=["nochannel", "push"])
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
@@ -1102,6 +1103,7 @@ class TestAzureService:
         mock_upd_sku: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
+        keepdraft: bool,
         product_obj: Product,
         plan_summary_obj: PlanSummary,
         metadata_azure_obj: AzurePublishingMetadata,
@@ -1110,7 +1112,7 @@ class TestAzureService:
         azure_service: AzureService,
     ) -> None:
         metadata_azure_obj.overwrite = False
-        metadata_azure_obj.keepdraft = True
+        metadata_azure_obj.keepdraft = keepdraft
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
         mock_getprpl_name.return_value = product_obj, plan_summary_obj

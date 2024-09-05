@@ -637,8 +637,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 disk_version = create_disk_version_from_scratch(metadata, source)
                 tech_config.disk_versions.append(disk_version)
         else:
-            log.debug(
-                "The destination \"%s\" already contains the SAS URI: \"%s\""
+            log.info(
+                "The destination \"%s\" already contains the SAS URI: \"%s\"."
                 % (metadata.destination, metadata.image_path)
             )
 
@@ -655,7 +655,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             self.configure(resource=tech_config)
 
         # 5. Proceed to publishing if it was requested.
-        if not metadata.keepdraft:
+        # Note: The publishing will only occur if it made changes in disk_version.
+        if disk_version and not metadata.keepdraft:
             logdiff(self.diff_offer(product))
             self.ensure_can_publish(product.id)
 
