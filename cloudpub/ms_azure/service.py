@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import json
 import logging
 import os
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
@@ -102,11 +103,12 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The job ID to track its status alongside the initial status.
         """
-        log.debug("Received the following data to create/modify: %s" % data)
+        log.debug("Received the following data to create/modify: %s" % json.dumps(data, indent=2))
         resp = self.session.post(path="configure", json=data)
         self._raise_for_status(response=resp)
-        parsed_resp = ConfigureStatus.from_json(resp.json())
-        log.debug("Create/modify request response: %s", parsed_resp)
+        rsp_data = resp.json()
+        log.debug("Create/modify request response: %s", rsp_data)
+        parsed_resp = ConfigureStatus.from_json(rsp_data)
         return parsed_resp
 
     def _query_job_details(self, job_id: str) -> ConfigureStatus:
@@ -192,7 +194,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             "$schema": self.CONFIGURE_SCHEMA.format(AZURE_API_VERSION=self.AZURE_API_VERSION),
             "resources": [resource.to_json()],
         }
-        log.debug("Data to configure: %s", data)
+        log.info("Data to configure: %s", json.dumps(data, indent=2))
         res = self._configure(data=data)
         return self._wait_for_job_completion(job_id=res.job_id)
 

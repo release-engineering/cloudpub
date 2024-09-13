@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 import sys
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 if sys.version_info >= (3, 8):
@@ -1419,6 +1420,9 @@ class VMIProperties(AttrsJSONDecodeMixin):
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
 
+    networkVirtualAppliance: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating the network virtual appliance support for core machines."""
+
     supportsNVMe: bool = field(default=False, metadata={"hide_unset": True})
     """
     Boolean indicating the NVMe support. `See the docs`_ for more details.
@@ -1461,6 +1465,18 @@ class VMIProperties(AttrsJSONDecodeMixin):
 
     .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties
     """  # noqa E501
+
+    availableToFreeAccounts: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image is available for free accounts."""
+
+    supportsClientHub: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image supports the client hub."""
+
+    supportsHubOnOffSwitch: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image supports the on/off switch."""
+
+    supportsSriov: bool = field(default=False, metadata={"hide_unset": True})
+    """Boolean indicating whether image supports SR-IOV."""
 
 
 @define
@@ -1684,6 +1700,43 @@ class VMIPlanTechConfig(AzurePlanLinkedResource):
         return None
 
 
+class SoftwareType(str, Enum):
+    """Define the ``SoftwareType`` enum for :class:`~cloudpub.models.ms_azure.CoreVMIPlanTechConfig`."""  # noqa: E501
+
+    operating_system = "operatingSystem"
+    solution = "solution"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@define
+class CoreVMIPlanTechConfig(VMIPlanTechConfig):
+    """
+    Represent the Core VM technical configuration of a Plan.
+
+    `Schema definition for VMIPlanTechConfig <https://schema.mp.microsoft.com/schema/core-virtual-machine-plan-technical-configuration/2022-03-01-preview5>`_
+    """  # noqa E501
+
+    schema: str = field(
+        validator=instance_of(str),
+        metadata={
+            "alias": MS_SCHEMA,
+            "const": "https://schema.mp.microsoft.com/schema/core-virtual-machine-plan-technical-configuration/2022-03-01-preview5",  # noqa E501
+        },
+    )
+    """
+    The `resource schema`_ for Graph API.
+
+    .. _resource schema: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference
+    """  # noqa E501
+
+    software_type: SoftwareType = field(
+        default=SoftwareType.operating_system,
+        metadata={"alias": "softwareType"},
+    )
+
+
 RESOURCE_MAPING = {
     "product": ProductSummary,
     "customer-leads": CustomerLeads,
@@ -1697,6 +1750,7 @@ RESOURCE_MAPING = {
     "price-and-availability-offer": PriceAndAvailabilityOffer,
     "price-and-availability-plan": PriceAndAvailabilityPlan,
     "virtual-machine-plan-technical-configuration": VMIPlanTechConfig,
+    "core-virtual-machine-plan-technical-configuration": CoreVMIPlanTechConfig,
     "reseller": ProductReseller,
     "submission": ProductSubmission,
 }

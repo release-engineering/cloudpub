@@ -373,6 +373,18 @@ def technical_config(disk_version: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @pytest.fixture
+def core_technical_config(technical_config: Dict[str, Any]) -> Dict[str, Any]:
+    technical_config.update(
+        {
+            "$schema": "https://schema.mp.microsoft.com/schema/core-virtual-machine-plan-technical-configuration/2022-03-01-preview5",  # noqa: E501
+            "id": "core-virtual-machine-plan-technical-configuration/ffffffff-ffff-ffff-ffff-ffffffffffff/00000000-0000-0000-0000-000000000000",  # noqa: E501
+            "softwareType": "operatingSystem",
+        }
+    )
+    return technical_config
+
+
+@pytest.fixture
 def reseller() -> Dict[str, Any]:
     return {
         "$schema": "https://product-ingestion.azureedge.net/schema/reseller/2022-03-01-preview2",

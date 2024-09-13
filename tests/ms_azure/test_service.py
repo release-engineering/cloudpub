@@ -1,3 +1,4 @@
+import json
 import logging
 from copy import deepcopy
 from typing import Any, Dict, List
@@ -139,7 +140,10 @@ class TestAzureService:
                 mock_post.assert_called_once_with(path="configure", json=req_json)
                 mock_raise_status.assert_called_once_with(response=res_obj)
                 assert res == ConfigureStatus.from_json(res_json)
-                assert f"Received the following data to create/modify: {req_json}" in caplog.text
+                assert (
+                    f"Received the following data to create/modify: {json.dumps(req_json, indent=2)}"  # noqa: E501
+                    in caplog.text
+                )
 
     @mock.patch("cloudpub.ms_azure.AzureService._raise_for_status")
     def test_query_job_details(
@@ -262,7 +266,7 @@ class TestAzureService:
 
         mock_configure.assert_called_once_with(data=expected_data)
         mock_wait_completion.assert_called_once_with(job_id=job_id)
-        assert f"Data to configure: {expected_data}" in caplog.text
+        assert f"Data to configure: {json.dumps(expected_data, indent=2)}" in caplog.text
 
     @mock.patch("cloudpub.ms_azure.AzureService._raise_error")
     @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
