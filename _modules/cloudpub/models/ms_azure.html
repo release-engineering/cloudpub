@@ -32,6 +32,7 @@
 <span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
@@ -1450,6 +1451,9 @@
 <span class="sd">    .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties</span>
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
 
+    <span class="n">networkVirtualAppliance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean indicating the network virtual appliance support for core machines.&quot;&quot;&quot;</span>
+
     <span class="n">supportsNVMe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Boolean indicating the NVMe support. `See the docs`_ for more details.</span>
@@ -1491,7 +1495,19 @@
 <span class="sd">    `See the docs`_ for more details.</span>
 
 <span class="sd">    .. _See the docs: https://learn.microsoft.com/en-us/azure/marketplace/azure-vm-plan-technical-configuration#properties</span>
-<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span></div>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
+
+    <span class="n">availableToFreeAccounts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean indicating whether image is available for free accounts.&quot;&quot;&quot;</span>
+
+    <span class="n">supportsClientHub</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean indicating whether image supports the client hub.&quot;&quot;&quot;</span>
+
+    <span class="n">supportsHubOnOffSwitch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean indicating whether image supports the on/off switch.&quot;&quot;&quot;</span>
+
+    <span class="n">supportsSriov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean indicating whether image supports SR-IOV.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="VMISku"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMISku">[docs]</a><span class="nd">@define</span>
@@ -1715,6 +1731,43 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
+<span class="k">class</span> <span class="nc">SoftwareType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define the ``SoftwareType`` enum for :class:`~cloudpub.models.ms_azure.CoreVMIPlanTechConfig`.&quot;&quot;&quot;</span>  <span class="c1"># noqa: E501</span>
+
+    <span class="n">operating_system</span> <span class="o">=</span> <span class="s2">&quot;operatingSystem&quot;</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="s2">&quot;solution&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+
+<span class="nd">@define</span>
+<span class="k">class</span> <span class="nc">CoreVMIPlanTechConfig</span><span class="p">(</span><span class="n">VMIPlanTechConfig</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represent the Core VM technical configuration of a Plan.</span>
+
+<span class="sd">    `Schema definition for VMIPlanTechConfig &lt;https://schema.mp.microsoft.com/schema/core-virtual-machine-plan-technical-configuration/2022-03-01-preview5&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
+
+    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">validator</span><span class="o">=</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="n">MS_SCHEMA</span><span class="p">,</span>
+            <span class="s2">&quot;const&quot;</span><span class="p">:</span> <span class="s2">&quot;https://schema.mp.microsoft.com/schema/core-virtual-machine-plan-technical-configuration/2022-03-01-preview5&quot;</span><span class="p">,</span>  <span class="c1"># noqa E501</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The `resource schema`_ for Graph API.</span>
+
+<span class="sd">    .. _resource schema: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference</span>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
+
+    <span class="n">software_type</span><span class="p">:</span> <span class="n">SoftwareType</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">SoftwareType</span><span class="o">.</span><span class="n">operating_system</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="s2">&quot;softwareType&quot;</span><span class="p">},</span>
+    <span class="p">)</span>
+
+
 <span class="n">RESOURCE_MAPING</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="n">ProductSummary</span><span class="p">,</span>
     <span class="s2">&quot;customer-leads&quot;</span><span class="p">:</span> <span class="n">CustomerLeads</span><span class="p">,</span>
@@ -1728,6 +1781,7 @@
     <span class="s2">&quot;price-and-availability-offer&quot;</span><span class="p">:</span> <span class="n">PriceAndAvailabilityOffer</span><span class="p">,</span>
     <span class="s2">&quot;price-and-availability-plan&quot;</span><span class="p">:</span> <span class="n">PriceAndAvailabilityPlan</span><span class="p">,</span>
     <span class="s2">&quot;virtual-machine-plan-technical-configuration&quot;</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span>
+    <span class="s2">&quot;core-virtual-machine-plan-technical-configuration&quot;</span><span class="p">:</span> <span class="n">CoreVMIPlanTechConfig</span><span class="p">,</span>
     <span class="s2">&quot;reseller&quot;</span><span class="p">:</span> <span class="n">ProductReseller</span><span class="p">,</span>
     <span class="s2">&quot;submission&quot;</span><span class="p">:</span> <span class="n">ProductSubmission</span><span class="p">,</span>
 <span class="p">}</span>
