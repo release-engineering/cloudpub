@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.1.0 - 2024-09-13
+
+- Add support for Python 3.12
+- Adds ability to handle error messages that are URLs.
+- Azure: Only publish when changes were made
+- Azure: Support coreVirtualMachine publishing
+
 ## 1.0.1 - 2024-08-14
 
 - Documentation: Fixes url from internal gitlab to github
