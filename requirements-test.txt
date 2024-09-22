@@ -18,13 +18,13 @@ babel==2.16.0 \
     --hash=sha256:368b5b98b37c06b7daf6696391c3240c938b37767d4584413e8438c5c435fa8b \
     --hash=sha256:d1f3554ca26605fe173f3de0c65f750f5a42f924499bf134de6423582298e316
     # via sphinx
-boto3==1.35.19 \
-    --hash=sha256:84b3fe1727945bc3cada832d969ddb3dc0d08fce1677064ca8bdc13a89c1a143 \
-    --hash=sha256:9979fe674780a0b7100eae9156d74ee374cd1638a9f61c77277e3ce712f3e496
+boto3==1.35.24 \
+    --hash=sha256:97fcc1a14cbc759e4ba9535ced703a99fcf652c9c4b8dfcd06f292c80551684b \
+    --hash=sha256:be7807f30f26d6c0057e45cfd09dad5968e664488bf4f9138d0bb7a0f6d8ed40
     # via cloudpub (setup.py)
-botocore==1.35.19 \
-    --hash=sha256:42d6d8db7250cbd7899f786f9861e02cab17dc238f64d6acb976098ed9809625 \
-    --hash=sha256:c83f7f0cacfe7c19b109b363ebfa8736e570d24922f16ed371681f58ebab44a9
+botocore==1.35.24 \
+    --hash=sha256:1e59b0f14f4890c4f70bd6a58a634b9464bed1c4c6171f87c8795d974ade614b \
+    --hash=sha256:eb9ccc068255cc3d24c36693fda6aec7786db05ae6c2b13bcba66dce6a13e2e3
     # via
     #   boto3
     #   s3transfer
