@@ -235,6 +235,38 @@ def prepare_vm_images(
         return [VMImageDefinition.from_json(json_gen1)]
 
 
+def _build_skus(
+    disk_versions: List[DiskVersion],
+    default_gen: str,
+    alt_gen: str,
+    plan_name: str,
+    security_type: Optional[List[str]] = None,
+) -> List[VMISku]:
+    sku_mapping: Dict[str, str] = {}
+    # Update the SKUs for each image in DiskVersions if needed
+    for disk_version in disk_versions:
+        # Each disk version may have multiple images (Gen1 / Gen2)
+        for vmid in disk_version.vm_images:
+            # We'll name the main generation SKU as "{plan_name}" and
+            # the alternate generation SKU as "{plan-name}-genX"
+            arch = vmid.image_type.split("Gen")[0]
+            new_img_type = get_image_type_mapping(arch, default_gen)
+            new_img_alt_type = get_image_type_mapping(arch, alt_gen)
+
+            # we just want to add SKU whenever it's not set
+            if vmid.image_type == new_img_type:
+                sku_mapping.setdefault(new_img_type, plan_name)
+            elif vmid.image_type == new_img_alt_type:
+                sku_mapping.setdefault(new_img_alt_type, f"{plan_name}-gen{alt_gen[1:]}")
+
+    # Return the expected SKUs list
+    res = [
+        VMISku.from_json({"image_type": k, "id": v, "security_type": security_type})
+        for k, v in sku_mapping.items()
+    ]
+    return sorted(res, key=attrgetter("id"))
+
+
 def update_skus(
     disk_versions: List[DiskVersion],
     generation: str,
@@ -257,33 +289,33 @@ def update_skus(
     Returns:
         The updated list with VMISkus.
     """
-    sku_mapping: Dict[str, str] = {}
-    # All SKUs must have the same security_type thus picking the first one is OK
-    security_type = old_skus[0].security_type if old_skus else None
+    if not old_skus:
+        alt_gen = "V2" if generation == "V1" else "V1"
+        return _build_skus(
+            disk_versions, default_gen=generation, alt_gen=alt_gen, plan_name=plan_name
+        )
 
-    # Update the SKUs for each image in DiskVersions
-    for disk_version in disk_versions:
-        # Each disk version may have multiple images (Gen1 / Gen2)
-        for vmid in disk_version.vm_images:
-            # We'll name the main generation SKU as "{plan_name}" and
-            # the alternate generation SKU as "{plan-name}-genX"
-            alt_gen = 2 if generation == "V1" else 1
-            arch = vmid.image_type.split("Gen")[0]
-            new_img_type = get_image_type_mapping(arch, generation)
-            new_img_alt_type = get_image_type_mapping(arch, f"V{alt_gen}")
+    # The security type may exist only for Gen2, so it iterates over all gens to find it
+    security_type = None
+    # The alternate plan name ends with the suffix "-genX" and we can't change that once
+    # the offer is live, otherwise it will raise "BadRequest" with the message:
+    # "The property 'PlanId' is locked by a previous submission".
+    default_gen = "V2"
+    alt_gen = "V1"
+    for osku in old_skus:
+        if osku.security_type is not None:
+            security_type = osku.security_type
+        if osku.id.endswith("-gen2"):  # alternate is gen2 hence V1 is the default.
+            default_gen = "V1"
+            alt_gen = "V2"
 
-            # we just want to add SKU whenever it's not set
-            if vmid.image_type == new_img_type:
-                sku_mapping.setdefault(new_img_type, plan_name)
-            elif vmid.image_type == new_img_alt_type:
-                sku_mapping.setdefault(new_img_alt_type, f"{plan_name}-gen{alt_gen}")
-
-    # Return the expected SKUs list
-    res = [
-        VMISku.from_json({"image_type": k, "id": v, "security_type": security_type})
-        for k, v in sku_mapping.items()
-    ]
-    return sorted(res, key=attrgetter("id"))
+    return _build_skus(
+        disk_versions,
+        default_gen=default_gen,
+        alt_gen=alt_gen,
+        plan_name=plan_name,
+        security_type=security_type,
+    )
 
 
 def create_disk_version_from_scratch(

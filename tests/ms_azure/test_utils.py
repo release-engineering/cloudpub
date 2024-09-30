@@ -11,6 +11,7 @@ from cloudpub.models.ms_azure import (
     VMImageDefinition,
     VMImageSource,
     VMIPlanTechConfig,
+    VMISku,
 )
 from cloudpub.ms_azure.utils import (
     AzurePublishingMetadata,
@@ -198,18 +199,77 @@ class TestAzureUtils:
                 )
             assert expected_err in caplog.text
 
-    def test_update_skus(
+    def test_update_new_skus_gen2_default(
         self, technical_config_obj: VMIPlanTechConfig, metadata_azure_obj: AzurePublishingMetadata
     ) -> None:
         """Test for a "SKU update" from scratch."""
-        skus = technical_config_obj.skus
+        expected = technical_config_obj.skus
 
         res = update_skus(
             disk_versions=technical_config_obj.disk_versions,
             generation=metadata_azure_obj.generation,
             plan_name="plan-1",
         )
-        assert res == skus
+        assert res == expected
+
+    def test_update_new_skus_gen1_default(self, technical_config_obj: VMIPlanTechConfig) -> None:
+        """Test for a "SKU update" from scratch."""
+        expected = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan1", "security_type": None},
+                {"imageType": "x64Gen2", "skuId": "plan1-gen2", "security_type": None},
+            ]
+        ]
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation="V1",
+            plan_name="plan1",
+        )
+        assert res == expected
+
+    def test_update_existing_skus_gen2_default(
+        self, technical_config_obj: VMIPlanTechConfig, metadata_azure_obj: AzurePublishingMetadata
+    ) -> None:
+        """Test for a "SKU update" from scratch."""
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation=metadata_azure_obj.generation,
+            plan_name="plan-1",
+            old_skus=technical_config_obj.skus,
+        )
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "plan-1", "securityType": None},
+                {"imageType": "x64Gen1", "skuId": "plan-1-gen1", "securityType": None},
+            ]
+        ]
+
+    def test_update_existing_skus_gen1_default(
+        self, technical_config_obj: VMIPlanTechConfig
+    ) -> None:
+        skus = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan1"},
+                {"imageType": "x64Gen2", "skuId": "plan1-gen2", "securityType": ["trusted"]},
+            ]
+        ]
+        technical_config_obj.skus = skus
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation="V1",
+            plan_name="plan1",
+            old_skus=technical_config_obj.skus,
+        )
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan1", "securityType": ["trusted"]},
+                {"imageType": "x64Gen2", "skuId": "plan1-gen2", "securityType": ["trusted"]},
+            ]
+        ]
 
     def test_create_disk_version_from_scratch(
         self,
