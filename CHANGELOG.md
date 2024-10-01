@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.0 - 2024-10-01
+
+- Azure: Fix update_skus rountine for Gen1 default
+- Azure: Pin ProductSubmission schema
+- Bump dependencies
+
 ## 1.1.0 - 2024-09-13
 
 - Add support for Python 3.12
