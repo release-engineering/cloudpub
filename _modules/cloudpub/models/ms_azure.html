@@ -1104,6 +1104,19 @@
 <span class="sd">    `Schema definition for ProductSubmission &lt;https://schema.mp.microsoft.com/schema/submission/2022-03-01-preview2&gt;`_</span>
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
 
+    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">validator</span><span class="o">=</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="n">MS_SCHEMA</span><span class="p">,</span>
+            <span class="s2">&quot;const&quot;</span><span class="p">:</span> <span class="s2">&quot;https://schema.mp.microsoft.com/schema/submission/2022-03-01-preview2&quot;</span><span class="p">,</span>  <span class="c1"># noqa E501</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The `resource schema`_ for Graph API.</span>
+
+<span class="sd">    .. _resource schema: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference</span>
+<span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
+
     <span class="n">target</span><span class="p">:</span> <span class="n">PublishTarget</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">converter</span><span class="o">=</span><span class="n">PublishTarget</span><span class="o">.</span><span class="n">from_json</span><span class="p">,</span> <span class="n">on_setattr</span><span class="o">=</span><span class="n">NO_OP</span>  <span class="c1"># type: ignore</span>
     <span class="p">)</span>
