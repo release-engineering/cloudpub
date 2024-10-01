@@ -266,6 +266,38 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen1</span><span class="p">)]</span>
 
 
+<span class="k">def</span> <span class="nf">_build_skus</span><span class="p">(</span>
+    <span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">],</span>
+    <span class="n">default_gen</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">alt_gen</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">plan_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">security_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">]:</span>
+    <span class="n">sku_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Update the SKUs for each image in DiskVersions if needed</span>
+    <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
+        <span class="c1"># Each disk version may have multiple images (Gen1 / Gen2)</span>
+        <span class="k">for</span> <span class="n">vmid</span> <span class="ow">in</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
+            <span class="c1"># We&#39;ll name the main generation SKU as &quot;{plan_name}&quot; and</span>
+            <span class="c1"># the alternate generation SKU as &quot;{plan-name}-genX&quot;</span>
+            <span class="n">arch</span> <span class="o">=</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;Gen&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">new_img_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">default_gen</span><span class="p">)</span>
+            <span class="n">new_img_alt_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">alt_gen</span><span class="p">)</span>
+
+            <span class="c1"># we just want to add SKU whenever it&#39;s not set</span>
+            <span class="k">if</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_type</span><span class="p">:</span>
+                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_type</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_alt_type</span><span class="p">:</span>
+                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_alt_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2">-gen</span><span class="si">{</span><span class="n">alt_gen</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Return the expected SKUs list</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">VMISku</span><span class="o">.</span><span class="n">from_json</span><span class="p">({</span><span class="s2">&quot;image_type&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;security_type&quot;</span><span class="p">:</span> <span class="n">security_type</span><span class="p">})</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sku_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">))</span>
+
+
 <span class="k">def</span> <span class="nf">update_skus</span><span class="p">(</span>
     <span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">],</span>
     <span class="n">generation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -288,33 +320,33 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        The updated list with VMISkus.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">sku_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="c1"># All SKUs must have the same security_type thus picking the first one is OK</span>
-    <span class="n">security_type</span> <span class="o">=</span> <span class="n">old_skus</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">security_type</span> <span class="k">if</span> <span class="n">old_skus</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">old_skus</span><span class="p">:</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span> <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V1&quot;</span> <span class="k">else</span> <span class="s2">&quot;V1&quot;</span>
+        <span class="k">return</span> <span class="n">_build_skus</span><span class="p">(</span>
+            <span class="n">disk_versions</span><span class="p">,</span> <span class="n">default_gen</span><span class="o">=</span><span class="n">generation</span><span class="p">,</span> <span class="n">alt_gen</span><span class="o">=</span><span class="n">alt_gen</span><span class="p">,</span> <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span>
+        <span class="p">)</span>
 
-    <span class="c1"># Update the SKUs for each image in DiskVersions</span>
-    <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
-        <span class="c1"># Each disk version may have multiple images (Gen1 / Gen2)</span>
-        <span class="k">for</span> <span class="n">vmid</span> <span class="ow">in</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
-            <span class="c1"># We&#39;ll name the main generation SKU as &quot;{plan_name}&quot; and</span>
-            <span class="c1"># the alternate generation SKU as &quot;{plan-name}-genX&quot;</span>
-            <span class="n">alt_gen</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V1&quot;</span> <span class="k">else</span> <span class="mi">1</span>
-            <span class="n">arch</span> <span class="o">=</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;Gen&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">new_img_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">generation</span><span class="p">)</span>
-            <span class="n">new_img_alt_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;V</span><span class="si">{</span><span class="n">alt_gen</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># The security type may exist only for Gen2, so it iterates over all gens to find it</span>
+    <span class="n">security_type</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># The alternate plan name ends with the suffix &quot;-genX&quot; and we can&#39;t change that once</span>
+    <span class="c1"># the offer is live, otherwise it will raise &quot;BadRequest&quot; with the message:</span>
+    <span class="c1"># &quot;The property &#39;PlanId&#39; is locked by a previous submission&quot;.</span>
+    <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
+    <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+    <span class="k">for</span> <span class="n">osku</span> <span class="ow">in</span> <span class="n">old_skus</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">security_type</span> <span class="o">=</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span>
+        <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;-gen2&quot;</span><span class="p">):</span>  <span class="c1"># alternate is gen2 hence V1 is the default.</span>
+            <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+            <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
 
-            <span class="c1"># we just want to add SKU whenever it&#39;s not set</span>
-            <span class="k">if</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_type</span><span class="p">:</span>
-                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_type</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_alt_type</span><span class="p">:</span>
-                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_alt_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2">-gen</span><span class="si">{</span><span class="n">alt_gen</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Return the expected SKUs list</span>
-    <span class="n">res</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">VMISku</span><span class="o">.</span><span class="n">from_json</span><span class="p">({</span><span class="s2">&quot;image_type&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;security_type&quot;</span><span class="p">:</span> <span class="n">security_type</span><span class="p">})</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sku_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-    <span class="p">]</span>
-    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_build_skus</span><span class="p">(</span>
+        <span class="n">disk_versions</span><span class="p">,</span>
+        <span class="n">default_gen</span><span class="o">=</span><span class="n">default_gen</span><span class="p">,</span>
+        <span class="n">alt_gen</span><span class="o">=</span><span class="n">alt_gen</span><span class="p">,</span>
+        <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span><span class="p">,</span>
+        <span class="n">security_type</span><span class="o">=</span><span class="n">security_type</span><span class="p">,</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">create_disk_version_from_scratch</span><span class="p">(</span>
