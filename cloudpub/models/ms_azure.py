@@ -1073,6 +1073,19 @@ class ProductSubmission(AzureProductLinkedResource):
     `Schema definition for ProductSubmission <https://schema.mp.microsoft.com/schema/submission/2022-03-01-preview2>`_
     """  # noqa E501
 
+    schema: str = field(
+        validator=instance_of(str),
+        metadata={
+            "alias": MS_SCHEMA,
+            "const": "https://schema.mp.microsoft.com/schema/submission/2022-03-01-preview2",  # noqa E501
+        },
+    )
+    """
+    The `resource schema`_ for Graph API.
+
+    .. _resource schema: https://learn.microsoft.com/en-us/azure/marketplace/product-ingestion-api#resource-api-reference
+    """  # noqa E501
+
     target: PublishTarget = field(
         converter=PublishTarget.from_json, on_setattr=NO_OP  # type: ignore
     )

@@ -403,7 +403,7 @@ def publish_target() -> Dict[str, str]:
 @pytest.fixture
 def submission(publish_target: Dict[str, str]) -> Dict[str, Any]:
     return {
-        "$schema": "https://product-ingestion.azureedge.net/schema/submission/2022-03-01-preview2",
+        "$schema": "https://schema.mp.microsoft.com/schema/submission/2022-03-01-preview2",
         "id": "submission/ffffffff-ffff-ffff-ffff-ffffffffffff/0",
         "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
         "target": publish_target,
