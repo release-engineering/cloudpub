@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.1 - 2024-10-07
+
+- Azure Hotfix: Return original SKU if Gen1 & Gen2 are set
+
 ## 1.2.0 - 2024-10-01
 
 - Azure: Fix update_skus rountine for Gen1 default
