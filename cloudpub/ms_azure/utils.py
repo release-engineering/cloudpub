@@ -295,6 +295,12 @@ def update_skus(
             disk_versions, default_gen=generation, alt_gen=alt_gen, plan_name=plan_name
         )
 
+    # If we have SKUs for both genenerations we don't need to update them as they're already
+    # properly set.
+    if len(old_skus) == 2:
+        return old_skus
+
+    # Update SKUs to create the alternate gen.
     # The security type may exist only for Gen2, so it iterates over all gens to find it
     security_type = None
     # The alternate plan name ends with the suffix "-genX" and we can't change that once

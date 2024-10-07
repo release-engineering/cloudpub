@@ -232,6 +232,13 @@ class TestAzureUtils:
         self, technical_config_obj: VMIPlanTechConfig, metadata_azure_obj: AzurePublishingMetadata
     ) -> None:
         """Test for a "SKU update" from scratch."""
+        skus = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan-1-gen1"},
+            ]
+        ]
+        technical_config_obj.skus = skus
         res = update_skus(
             disk_versions=technical_config_obj.disk_versions,
             generation=metadata_azure_obj.generation,
@@ -252,7 +259,6 @@ class TestAzureUtils:
         skus = [
             VMISku.from_json(x)
             for x in [
-                {"imageType": "x64Gen1", "skuId": "plan1"},
                 {"imageType": "x64Gen2", "skuId": "plan1-gen2", "securityType": ["trusted"]},
             ]
         ]
