@@ -18,13 +18,13 @@ babel==2.16.0 \
     --hash=sha256:368b5b98b37c06b7daf6696391c3240c938b37767d4584413e8438c5c435fa8b \
     --hash=sha256:d1f3554ca26605fe173f3de0c65f750f5a42f924499bf134de6423582298e316
     # via sphinx
-boto3==1.35.29 \
-    --hash=sha256:2244044cdfa8ac345d7400536dc15a4824835e7ec5c55bc267e118af66bb27db \
-    --hash=sha256:7bbb1ee649e09e956952285782cfdebd7e81fc78384f48dfab3d66c6eaf3f63f
+boto3==1.35.34 \
+    --hash=sha256:291e7b97a34967ed93297e6171f1bebb8529e64633dd48426760e3fdef1cdea8 \
+    --hash=sha256:57e6ee8504e7929bc094bb2afc879943906064179a1e88c23b4812e2c6f61532
     # via cloudpub (setup.py)
-botocore==1.35.29 \
-    --hash=sha256:4ed28ab03675bb008a290c452c5ddd7aaa5d4e3fa1912aadbdf93057ee84362b \
-    --hash=sha256:f8e3ae0d84214eff3fb69cb4dc51cea6c43d3bde82027a94d00c52b941d6c3d5
+botocore==1.35.34 \
+    --hash=sha256:789b6501a3bb4a9591c1fe10da200cc315c1fa5df5ada19c720d8ef06439b3e3 \
+    --hash=sha256:ccb0fe397b11b81c9abc0c87029d17298e17bf658d8db5c0c5a551a12a207e7a
     # via
     #   boto3
     #   s3transfer
@@ -430,16 +430,16 @@ tenacity==9.0.0 \
     --hash=sha256:807f37ca97d62aa361264d497b0e31e92b8027044942bfa756160d908320d73b \
     --hash=sha256:93de0c98785b27fcf659856aa9f54bfbd399e29969b0621bc7f762bd441b4539
     # via cloudpub (setup.py)
-tomli==2.0.1 \
-    --hash=sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc \
-    --hash=sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f
+tomli==2.0.2 \
+    --hash=sha256:2ebe24485c53d303f690b0ec092806a085f07af5a5aa1464f3931eec36caaa38 \
+    --hash=sha256:d46d457a85337051c36524bc5349dd91b1877838e2979ac5ced3e710ed8a60ed
     # via
     #   coverage
     #   mypy
     #   pytest
-types-python-dateutil==2.9.0.20240906 \
-    --hash=sha256:27c8cc2d058ccb14946eebcaaa503088f4f6dbc4fb6093d3d456a49aef2753f6 \
-    --hash=sha256:9706c3b68284c25adffc47319ecc7947e5bb86b3773f843c73906fd598bc176e
+types-python-dateutil==2.9.0.20241003 \
+    --hash=sha256:250e1d8e80e7bbc3a6c99b907762711d1a1cdd00e978ad39cb5940f6f0a87f3d \
+    --hash=sha256:58cb85449b2a56d6684e41aeefb4c4280631246a0da1a719bdbe6f3fb0317446
     # via -r requirements-test.in
 types-requests==2.31.0.6 \
     --hash=sha256:a2db9cb228a81da8348b49ad6db3f5519452dd20a9c1e1a868c83c5fe88fd1a9 \
