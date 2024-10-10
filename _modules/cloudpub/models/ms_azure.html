@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>cloudpub.models.ms_azure &#8212; cloudpub 0.1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=039e1c02" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -102,7 +103,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List of errors when the ``job_result`` is ``failed``.&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="AzureResource"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.AzureResource">[docs]</a><span class="nd">@define</span>
+<div class="viewcode-block" id="AzureResource">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.AzureResource">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">AzureResource</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class for all Azure Resources.&quot;&quot;&quot;</span>
 
@@ -143,7 +146,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">durable_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="AzureProductLinkedResource"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.AzureProductLinkedResource">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="AzureProductLinkedResource">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.AzureProductLinkedResource">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">AzureProductLinkedResource</span><span class="p">(</span><span class="n">AzureResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a Resource linked to a product.&quot;&quot;&quot;</span>
 
@@ -168,7 +174,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_durable_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="AzurePlanLinkedResource"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.AzurePlanLinkedResource">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="AzurePlanLinkedResource">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.AzurePlanLinkedResource">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">AzurePlanLinkedResource</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a resource linked to a plan.&quot;&quot;&quot;</span>
 
@@ -193,7 +202,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">plan_durable_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="Identity"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Identity">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="Identity">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Identity">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">Identity</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the resource identity (name).&quot;&quot;&quot;</span>
 
@@ -205,7 +217,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span></div>
 
 
-<div class="viewcode-block" id="DeprecationAlternative"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DeprecationAlternative">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="DeprecationAlternative">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DeprecationAlternative">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">DeprecationAlternative</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define an alternative product or plan for a deprecated one.</span>
@@ -262,7 +277,10 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="DeprecationSchedule"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DeprecationSchedule">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="DeprecationSchedule">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DeprecationSchedule">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">DeprecationSchedule</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a deprecation schedule.</span>
@@ -310,7 +328,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The alternative product or plan for the deprecated one.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ProductSummary"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductSummary">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ProductSummary">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductSummary">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ProductSummary</span><span class="p">(</span><span class="n">AzureResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a product summary.</span>
@@ -375,7 +396,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The deprecation schedule for the product if going to be deprecated.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="LeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.LeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="LeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.LeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">LeadConfiguration</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the common fields for all lead configuration models.</span>
@@ -389,7 +413,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List of e-mails for a lead configuration.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="BlobLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.BlobLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="BlobLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.BlobLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">BlobLeadConfiguration</span><span class="p">(</span><span class="n">LeadConfiguration</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the blob lead configuration.</span>
@@ -410,7 +437,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The storage container name.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="DynamicsLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DynamicsLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="DynamicsLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DynamicsLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">DynamicsLeadConfiguration</span><span class="p">(</span><span class="n">LeadConfiguration</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the dynamics lead configuration.</span>
@@ -464,7 +494,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The dynamics directory UUID.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="EmailLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.EmailLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="EmailLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.EmailLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">EmailLeadConfiguration</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the e-mail lead configuration.</span>
@@ -476,7 +509,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List of e-mails for the e-mail lead configuration.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="HttpsEndpointLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.HttpsEndpointLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="HttpsEndpointLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.HttpsEndpointLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">HttpsEndpointLeadConfiguration</span><span class="p">(</span><span class="n">LeadConfiguration</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the https lead configuration.</span>
@@ -488,7 +524,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The HTTPS endpoint for the lead configuration.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="MarketoLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.MarketoLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="MarketoLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.MarketoLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">MarketoLeadConfiguration</span><span class="p">(</span><span class="n">LeadConfiguration</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the marketo lead configuration.</span>
@@ -506,7 +545,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The marketo form ID.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="SalesforceLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.SalesforceLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="SalesforceLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.SalesforceLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">SalesforceLeadConfiguration</span><span class="p">(</span><span class="n">LeadConfiguration</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the salesforce lead configuration.</span>
@@ -518,7 +560,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The salesforce object identifier.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="TableLeadConfiguration"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.TableLeadConfiguration">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="TableLeadConfiguration">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.TableLeadConfiguration">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">TableLeadConfiguration</span><span class="p">(</span><span class="n">LeadConfiguration</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the table lead configuration.</span>
@@ -536,7 +581,10 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="CustomerLeads"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.CustomerLeads">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="CustomerLeads">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.CustomerLeads">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">CustomerLeads</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the customer leads section.</span>
@@ -610,7 +658,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The lead configuration for ``table``.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="TestDrive"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.TestDrive">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="TestDrive">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.TestDrive">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">TestDrive</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the test drive section.</span>
@@ -639,7 +690,10 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="GovernmentCertification"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.GovernmentCertification">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="GovernmentCertification">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.GovernmentCertification">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">GovernmentCertification</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define a government certification.</span>
@@ -654,7 +708,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The URL for the certification web-page.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="PlanSummary"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PlanSummary">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="PlanSummary">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PlanSummary">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">PlanSummary</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a plan summary.</span>
@@ -734,7 +791,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The deprecation schedule for the plan if going to be deprecated.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ProductProperty"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductProperty">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ProductProperty">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductProperty">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ProductProperty</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a product property.</span>
@@ -765,7 +825,10 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="Contact"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Contact">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="Contact">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Contact">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">Contact</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a single contact.&quot;&quot;&quot;</span>
 
@@ -779,7 +842,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The contact phone.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ThumbnailURL"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ThumbnailURL">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ThumbnailURL">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ThumbnailURL">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ThumbnailURL</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define a video thumbnail URL.</span>
@@ -791,7 +857,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;URL of the thumbnail.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="VideoThumbnails"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VideoThumbnails">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="VideoThumbnails">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VideoThumbnails">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">VideoThumbnails</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define a group of thumbnails.</span>
@@ -809,7 +878,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Listing"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Listing">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="Listing">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Listing">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">Listing</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a product listing.</span>
@@ -897,7 +969,10 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ListingAsset"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ListingAsset">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ListingAsset">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ListingAsset">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ListingAsset</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent an asset listing.</span>
@@ -975,7 +1050,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listing_durable_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="ListingTrailer"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ListingTrailer">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ListingTrailer">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ListingTrailer">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ListingTrailer</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a video &quot;trailer&quot; asset for the given product.</span>
 
@@ -1018,7 +1096,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listing_durable_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="Audience"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Audience">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="Audience">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Audience">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">Audience</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent an audience.&quot;&quot;&quot;</span>
 
@@ -1042,7 +1123,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Optional label for the audience.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ProductReseller"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductReseller">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ProductReseller">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductReseller">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ProductReseller</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a reseller offer resource.</span>
@@ -1071,7 +1155,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;List of :class:`~cloudpub.models.ms_azure.Audience` for the reseller offer.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="PublishTarget"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PublishTarget">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="PublishTarget">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PublishTarget">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">PublishTarget</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the publishing status of an :class:`~cloudpub.models.ms_azure.AzureResource`.&quot;&quot;&quot;</span>
 
@@ -1096,7 +1183,10 @@
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ProductSubmission"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductSubmission">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="ProductSubmission">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.ProductSubmission">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">ProductSubmission</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the product submission state.</span>
@@ -1174,7 +1264,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The deprecation schedule for the VM submission if it&#39;s going to be deprecated.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="PlanListing"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PlanListing">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="PlanListing">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PlanListing">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">PlanListing</span><span class="p">(</span><span class="n">AzurePlanLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent a plan listing.</span>
@@ -1211,6 +1304,7 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
+
 <span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">CorePricing</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a price per core.&quot;&quot;&quot;</span>
@@ -1238,7 +1332,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A float representing the price per core size.&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="Pricing"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Pricing">[docs]</a><span class="nd">@define</span>
+<div class="viewcode-block" id="Pricing">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Pricing">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">Pricing</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the pricing.&quot;&quot;&quot;</span>
 
@@ -1260,7 +1356,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The related :class:`~cloudpub.models.ms_azure.CorePricing`.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="SoftwareReservation"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.SoftwareReservation">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="SoftwareReservation">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.SoftwareReservation">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">SoftwareReservation</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define the reservation prices for a plan.</span>
@@ -1287,7 +1386,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The percentual of discount to be applied for the reservation.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="SoftwareTrial"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.SoftwareTrial">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="SoftwareTrial">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.SoftwareTrial">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">SoftwareTrial</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the software free trial period definition.</span>
@@ -1313,7 +1415,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The amount of time for the trial.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="PriceAndAvailabilityPlan"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PriceAndAvailabilityPlan">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="PriceAndAvailabilityPlan">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PriceAndAvailabilityPlan">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">PriceAndAvailabilityPlan</span><span class="p">(</span><span class="n">AzurePlanLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the price and availability of a plan.</span>
@@ -1395,7 +1500,10 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="PriceAndAvailabilityOffer"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PriceAndAvailabilityOffer">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="PriceAndAvailabilityOffer">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.PriceAndAvailabilityOffer">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">PriceAndAvailabilityOffer</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the price and availability of an offer.</span>
@@ -1414,7 +1522,10 @@
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="OSDetails"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.OSDetails">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="OSDetails">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.OSDetails">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">OSDetails</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent an operating system details.&quot;&quot;&quot;</span>
 
@@ -1432,7 +1543,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The OS version or distribution name.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="VMIProperties"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMIProperties">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="VMIProperties">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMIProperties">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">VMIProperties</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the properties of a Virtual Machine Image.&quot;&quot;&quot;</span>
 
@@ -1523,7 +1637,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean indicating whether image supports SR-IOV.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="VMISku"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMISku">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="VMISku">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMISku">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">VMISku</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the SKU for a Virtual Machine Image.&quot;&quot;&quot;</span>
 
@@ -1543,7 +1660,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The security type for Gen2 images: trusted launch and/or confidential.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="OSDiskURI"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.OSDiskURI">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="OSDiskURI">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.OSDiskURI">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">OSDiskURI</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent an Operating System Disk URI.&quot;&quot;&quot;</span>
 
@@ -1551,7 +1671,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The full SAS URI for the Virtual Machine Image.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="DataDisk"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DataDisk">[docs]</a><span class="k">class</span> <span class="nc">DataDisk</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DataDisk">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DataDisk">[docs]</a>
+<span class="k">class</span> <span class="nc">DataDisk</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Define a data disk.</span>
 
@@ -1567,7 +1690,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The data disk URI.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="VMImageSource"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMImageSource">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="VMImageSource">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMImageSource">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">VMImageSource</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a Virtual Machine Image Source.&quot;&quot;&quot;</span>
 
@@ -1603,7 +1729,10 @@
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="VMImageDefinition"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMImageDefinition">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="VMImageDefinition">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMImageDefinition">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">VMImageDefinition</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a Virtual Machine Image Definition.&quot;&quot;&quot;</span>
 
@@ -1622,7 +1751,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The :class:`~cloudpub.models.ms_azure.VMImageSource` with the image.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="DiskVersion"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DiskVersion">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="DiskVersion">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.DiskVersion">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">DiskVersion</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a Disk Version.&quot;&quot;&quot;</span>
 
@@ -1662,7 +1794,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The deprecation schedule for the VM image if it&#39;s going to be deprecated.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="VMIPlanTechConfig"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMIPlanTechConfig">[docs]</a><span class="nd">@define</span>
+
+<div class="viewcode-block" id="VMIPlanTechConfig">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.VMIPlanTechConfig">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">VMIPlanTechConfig</span><span class="p">(</span><span class="n">AzurePlanLinkedResource</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the VM technical configuration of a Plan.</span>
@@ -1744,6 +1879,7 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
+
 <span class="k">class</span> <span class="nc">SoftwareType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Define the ``SoftwareType`` enum for :class:`~cloudpub.models.ms_azure.CoreVMIPlanTechConfig`.&quot;&quot;&quot;</span>  <span class="c1"># noqa: E501</span>
 
@@ -1800,7 +1936,9 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="Product"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Product">[docs]</a><span class="nd">@define</span>
+<div class="viewcode-block" id="Product">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Product">[docs]</a>
+<span class="nd">@define</span>
 <span class="k">class</span> <span class="nc">Product</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represent the entire product from resource-tree.</span>
@@ -1858,7 +1996,9 @@
         <span class="n">json</span><span class="p">[</span><span class="s2">&quot;resources&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
         <span class="k">return</span> <span class="n">json</span>
 
-<div class="viewcode-block" id="Product.to_json"><a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Product.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Product.to_json">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.Product.to_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert a Product instance into a dictionary.</span>
 
@@ -1870,14 +2010,16 @@
             <span class="s2">&quot;root&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="p">,</span>
             <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
             <span class="s2">&quot;resources&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">],</span>
-        <span class="p">}</span></div></div>
+        <span class="p">}</span></div>
+</div>
+
 </pre></div>
 
           </div>
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../../../index.html">cloudpub</a></h1>
 
@@ -1905,7 +2047,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -1913,7 +2055,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -1928,11 +2070,11 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2023, Red Hat.
+      &#169;2023, Red Hat.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>
 
