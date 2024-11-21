@@ -318,7 +318,7 @@
 <span class="sd">        disk_versions (list)</span>
 <span class="sd">            List of existing DiskVersion in the technical config</span>
 <span class="sd">        generation (str)</span>
-<span class="sd">            The main generation for publishing</span>
+<span class="sd">            The main generation for publishing when there are no old_skus</span>
 <span class="sd">        plan-name (str)</span>
 <span class="sd">            The destination plan name.</span>
 <span class="sd">        old_skus (list, optional)</span>
@@ -344,14 +344,26 @@
     <span class="c1"># The alternate plan name ends with the suffix &quot;-genX&quot; and we can&#39;t change that once</span>
     <span class="c1"># the offer is live, otherwise it will raise &quot;BadRequest&quot; with the message:</span>
     <span class="c1"># &quot;The property &#39;PlanId&#39; is locked by a previous submission&quot;.</span>
-    <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
-    <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
-    <span class="k">for</span> <span class="n">osku</span> <span class="ow">in</span> <span class="n">old_skus</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">security_type</span> <span class="o">=</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span>
-        <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;-gen2&quot;</span><span class="p">):</span>  <span class="c1"># alternate is gen2 hence V1 is the default.</span>
-            <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
-            <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
+    <span class="n">osku</span> <span class="o">=</span> <span class="n">old_skus</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Get the security type for all gens</span>
+    <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">security_type</span> <span class="o">=</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span>
+
+    <span class="c1"># Default Gen2 cases</span>
+    <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen1&quot;</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen2&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen2&quot;</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+
+    <span class="c1"># Default Gen1 cases</span>
+    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen1&quot;</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
+    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen2&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen2&quot;</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
 
     <span class="k">return</span> <span class="n">_build_skus</span><span class="p">(</span>
         <span class="n">disk_versions</span><span class="p">,</span>
