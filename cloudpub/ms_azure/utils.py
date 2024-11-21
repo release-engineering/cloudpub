@@ -280,7 +280,7 @@ def update_skus(
         disk_versions (list)
             List of existing DiskVersion in the technical config
         generation (str)
-            The main generation for publishing
+            The main generation for publishing when there are no old_skus
         plan-name (str)
             The destination plan name.
         old_skus (list, optional)
@@ -306,14 +306,26 @@ def update_skus(
     # The alternate plan name ends with the suffix "-genX" and we can't change that once
     # the offer is live, otherwise it will raise "BadRequest" with the message:
     # "The property 'PlanId' is locked by a previous submission".
-    default_gen = "V2"
-    alt_gen = "V1"
-    for osku in old_skus:
-        if osku.security_type is not None:
-            security_type = osku.security_type
-        if osku.id.endswith("-gen2"):  # alternate is gen2 hence V1 is the default.
-            default_gen = "V1"
-            alt_gen = "V2"
+    osku = old_skus[0]
+    # Get the security type for all gens
+    if osku.security_type is not None:
+        security_type = osku.security_type
+
+    # Default Gen2 cases
+    if osku.image_type.endswith("Gen1") and osku.id.endswith("gen1"):
+        default_gen = "V2"
+        alt_gen = "V1"
+    elif osku.image_type.endswith("Gen2") and not osku.id.endswith("gen2"):
+        default_gen = "V2"
+        alt_gen = "V1"
+
+    # Default Gen1 cases
+    elif osku.image_type.endswith("Gen1") and not osku.id.endswith("gen1"):
+        default_gen = "V1"
+        alt_gen = "V2"
+    elif osku.image_type.endswith("Gen2") and osku.id.endswith("gen2"):
+        default_gen = "V1"
+        alt_gen = "V2"
 
     return _build_skus(
         disk_versions,

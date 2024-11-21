@@ -277,6 +277,46 @@ class TestAzureUtils:
             ]
         ]
 
+    @pytest.mark.parametrize("generation", ["V1", "V2"])
+    def test_update_existing_skus_gen1_single(
+        self, generation: str, technical_config_obj: VMIPlanTechConfig
+    ) -> None:
+        skus = [VMISku.from_json({"imageType": "x64Gen1", "skuId": "plan1"})]
+        technical_config_obj.skus = skus
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation=generation,
+            plan_name="plan1",
+            old_skus=technical_config_obj.skus,
+        )
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan1", "securityType": None},
+                {"imageType": "x64Gen2", "skuId": "plan1-gen2", "securityType": None},
+            ]
+        ]
+
+    @pytest.mark.parametrize("generation", ["V1", "V2"])
+    def test_update_existing_skus_gen2_single(
+        self, generation: str, technical_config_obj: VMIPlanTechConfig
+    ) -> None:
+        skus = [VMISku.from_json({"imageType": "x64Gen2", "skuId": "plan1"})]
+        technical_config_obj.skus = skus
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation=generation,
+            plan_name="plan1",
+            old_skus=technical_config_obj.skus,
+        )
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "plan1", "securityType": None},
+                {"imageType": "x64Gen1", "skuId": "plan1-gen1", "securityType": None},
+            ]
+        ]
+
     def test_create_disk_version_from_scratch(
         self,
         disk_version_obj: DiskVersion,
