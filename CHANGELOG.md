@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.2 - 2024-11-21
+
+- Fix update_skus bug when a single gen is set
+- Drop support for Python 3.8
+- Add support for Python 3.13
+- Bump dependencies
+
 ## 1.2.1 - 2024-10-07
 
 - Azure Hotfix: Return original SKU if Gen1 & Gen2 are set
