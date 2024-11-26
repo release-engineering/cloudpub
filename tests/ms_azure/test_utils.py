@@ -199,10 +199,10 @@ class TestAzureUtils:
                 )
             assert expected_err in caplog.text
 
-    def test_update_new_skus_gen2_default(
+    def test_update_new_skus_x86_gen2_default(
         self, technical_config_obj: VMIPlanTechConfig, metadata_azure_obj: AzurePublishingMetadata
     ) -> None:
-        """Test for a "SKU update" from scratch."""
+        """Ensure the creation of 2 new SKUs for x86 from scratch, defaulting to Gen1."""
         expected = technical_config_obj.skus
 
         res = update_skus(
@@ -212,8 +212,10 @@ class TestAzureUtils:
         )
         assert res == expected
 
-    def test_update_new_skus_gen1_default(self, technical_config_obj: VMIPlanTechConfig) -> None:
-        """Test for a "SKU update" from scratch."""
+    def test_update_new_skus_x86_gen1_default(
+        self, technical_config_obj: VMIPlanTechConfig
+    ) -> None:
+        """Ensure the creation of 2 new SKUs for x86 from scratch, defaulting to Gen1."""
         expected = [
             VMISku.from_json(x)
             for x in [
@@ -228,10 +230,114 @@ class TestAzureUtils:
         )
         assert res == expected
 
-    def test_update_existing_skus_gen2_default(
+    def test_update_new_skus_arm64(
+        self,
+        disk_version_arm64_obj: DiskVersion,
+    ) -> None:
+        """Ensure the creation of 1 new SKU for ARM64 from scratch."""
+        expected = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64", "security_type": None},
+            ]
+        ]
+        res = update_skus(
+            disk_versions=[disk_version_arm64_obj],
+            generation="V2",
+            plan_name="plan1",
+        )
+        assert res == expected
+
+    def test_update_new_skus_mixed_x64_arm64_gen2_default(
+        self,
+        disk_version_arm64_obj: DiskVersion,
+        technical_config_obj: VMIPlanTechConfig,
+    ) -> None:
+        """Ensure the creation of 3 new SKUs: 2 for x64 (V2/V1) and 1 for ARM64 from scratch."""
+        expected = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "plan1", "security_type": None},
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64", "security_type": None},
+                {"imageType": "x64Gen1", "skuId": "plan1-gen1", "security_type": None},
+            ]
+        ]
+        res = update_skus(
+            disk_versions=[disk_version_arm64_obj] + technical_config_obj.disk_versions,
+            generation="V2",
+            plan_name="plan1",
+        )
+        assert res == expected
+
+    def test_update_new_skus_mixed_x64_arm64_gen1_default(
+        self,
+        disk_version_arm64_obj: DiskVersion,
+        technical_config_obj: VMIPlanTechConfig,
+    ) -> None:
+        """Ensure the creation of 3 new SKUs: 2 for x64 (V1/V2) and 1 for ARM64 from scratch."""
+        expected = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan1", "security_type": None},
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64-gen2", "security_type": None},
+                {"imageType": "x64Gen2", "skuId": "plan1-gen2", "security_type": None},
+            ]
+        ]
+        res = update_skus(
+            disk_versions=[disk_version_arm64_obj] + technical_config_obj.disk_versions,
+            generation="V1",
+            plan_name="plan1",
+        )
+        assert res == expected
+
+    def test_update_new_skus_mixed_arm64_x64_gen2_default(
+        self,
+        disk_version_arm64_obj: DiskVersion,
+        technical_config_obj: VMIPlanTechConfig,
+    ) -> None:
+        """Ensure the creation of 3 new SKUs: 2 for x64 (V2/V1) and 1 for ARM64 from scratch."""
+        expected = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "plan1", "security_type": None},
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64", "security_type": None},
+                {"imageType": "x64Gen1", "skuId": "plan1-gen1", "security_type": None},
+            ]
+        ]
+        technical_config_obj.disk_versions.append(disk_version_arm64_obj)
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation="V2",
+            plan_name="plan1",
+        )
+        assert res == expected
+
+    def test_update_new_skus_mixed_arm64_x64_gen1_default(
+        self,
+        disk_version_arm64_obj: DiskVersion,
+        technical_config_obj: VMIPlanTechConfig,
+    ) -> None:
+        """Ensure the creation of 3 new SKUs: 2 for x64 (V1/V2) and 1 for ARM64 from scratch."""
+        expected = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen1", "skuId": "plan1", "security_type": None},
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64-gen2", "security_type": None},
+                {"imageType": "x64Gen2", "skuId": "plan1-gen2", "security_type": None},
+            ]
+        ]
+        technical_config_obj.disk_versions.append(disk_version_arm64_obj)
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation="V1",
+            plan_name="plan1",
+        )
+        assert res == expected
+
+    def test_update_existing_skus_x86_gen2_default(
         self, technical_config_obj: VMIPlanTechConfig, metadata_azure_obj: AzurePublishingMetadata
     ) -> None:
-        """Test for a "SKU update" from scratch."""
+        """Ensure 2 x64 SKUS are properly created using Gen2 as default."""
         skus = [
             VMISku.from_json(x)
             for x in [
@@ -253,9 +359,10 @@ class TestAzureUtils:
             ]
         ]
 
-    def test_update_existing_skus_gen1_default(
+    def test_update_existing_skus_x86_gen1_default(
         self, technical_config_obj: VMIPlanTechConfig
     ) -> None:
+        """Ensure 2 x64 SKUS are properly created using Gen1 as default."""
         skus = [
             VMISku.from_json(x)
             for x in [
@@ -278,9 +385,10 @@ class TestAzureUtils:
         ]
 
     @pytest.mark.parametrize("generation", ["V1", "V2"])
-    def test_update_existing_skus_gen1_single(
+    def test_update_existing_skus_x86_gen1_single(
         self, generation: str, technical_config_obj: VMIPlanTechConfig
     ) -> None:
+        """Ensure the alternate x64 SKU is created while the default Gen1 is preserved."""
         skus = [VMISku.from_json({"imageType": "x64Gen1", "skuId": "plan1"})]
         technical_config_obj.skus = skus
         res = update_skus(
@@ -298,9 +406,10 @@ class TestAzureUtils:
         ]
 
     @pytest.mark.parametrize("generation", ["V1", "V2"])
-    def test_update_existing_skus_gen2_single(
+    def test_update_existing_skus_x86_gen2_single(
         self, generation: str, technical_config_obj: VMIPlanTechConfig
     ) -> None:
+        """Ensure the alternate x64 SKU is created while the default Gen2 is preserved."""
         skus = [VMISku.from_json({"imageType": "x64Gen2", "skuId": "plan1"})]
         technical_config_obj.skus = skus
         res = update_skus(
@@ -317,7 +426,31 @@ class TestAzureUtils:
             ]
         ]
 
-    def test_create_disk_version_from_scratch(
+    @pytest.mark.parametrize("generation", ["V1", "V2"])
+    def test_update_existing_skus_arm64_single(
+        self,
+        generation: str,
+        technical_config_obj: VMIPlanTechConfig,
+        disk_version_arm64_obj: DiskVersion,
+    ) -> None:
+        """Ensure a single Arm64 SKU is preserved."""
+        skus = [VMISku.from_json({"imageType": "arm64Gen2", "skuId": "plan1-arm64"})]
+        technical_config_obj.skus = skus
+
+        res = update_skus(
+            disk_versions=[disk_version_arm64_obj],
+            generation=generation,
+            plan_name="plan1",
+            old_skus=technical_config_obj.skus,
+        )
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64", "securityType": None},
+            ]
+        ]
+
+    def test_create_disk_version_from_scratch_x86(
         self,
         disk_version_obj: DiskVersion,
         vmimage_source_obj: VMImageSource,
@@ -333,3 +466,21 @@ class TestAzureUtils:
         res.vm_images = sorted(res.vm_images, key=attrgetter("image_type"))
 
         assert res == disk_version_obj
+
+    def test_create_disk_version_from_scratch_arm64(
+        self,
+        disk_version_arm64_obj: DiskVersion,
+        vmimage_source_obj: VMImageSource,
+        metadata_azure_obj: AzurePublishingMetadata,
+    ):
+        metadata_azure_obj.support_legacy = True
+        metadata_azure_obj.disk_version = "2.1.0"
+        metadata_azure_obj.image_path = "https://uri.test.com"
+        metadata_azure_obj.architecture = "arm64"
+
+        res = create_disk_version_from_scratch(
+            metadata=metadata_azure_obj, source=vmimage_source_obj
+        )
+        res.vm_images = sorted(res.vm_images, key=attrgetter("image_type"))
+
+        assert res == disk_version_arm64_obj
