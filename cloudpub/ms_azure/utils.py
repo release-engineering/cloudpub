@@ -307,6 +307,15 @@ def _build_skus(
     return sorted(res, key=attrgetter("id"))
 
 
+def _get_security_type(old_skus: List[VMISku]) -> Optional[List[str]]:
+    # The security type may exist only for x64 Gen2, so it iterates over all gens to find it
+    # Get the security type for all gens
+    for osku in old_skus:
+        if osku.security_type is not None:
+            return osku.security_type
+    return None
+
+
 def update_skus(
     disk_versions: List[DiskVersion],
     generation: str,
@@ -341,15 +350,12 @@ def update_skus(
         return old_skus
 
     # Update SKUs to create the alternate gen.
-    # The security type may exist only for Gen2, so it iterates over all gens to find it
-    security_type = None
-    # The alternate plan name ends with the suffix "-genX" and we can't change that once
+    security_type = _get_security_type(old_skus)
+
+    # The alternate plan for x64 name ends with the suffix "-genX" and we can't change that once
     # the offer is live, otherwise it will raise "BadRequest" with the message:
     # "The property 'PlanId' is locked by a previous submission".
     osku = old_skus[0]
-    # Get the security type for all gens
-    if osku.security_type is not None:
-        security_type = osku.security_type
 
     # Default Gen2 cases
     if osku.image_type.endswith("Gen1") and osku.id.endswith("gen1"):
