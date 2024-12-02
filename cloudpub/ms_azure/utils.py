@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from operator import attrgetter
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from deepdiff import DeepDiff
 
@@ -69,7 +69,22 @@ class AzurePublishingMetadata(PublishingMetadata):
         super(AzurePublishingMetadata, self).__init__(**kwargs)
         self.__validate()
         # Adjust the x86_64 architecture string for Azure
-        self.architecture = "x64" if self.architecture == "x86_64" else self.architecture
+        arch = self.__convert_arch(self.architecture)
+        self.architecture = arch
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "architecture":
+            arch = self.__convert_arch(value)
+            value = arch
+        return super().__setattr__(name, value)
+
+    @staticmethod
+    def __convert_arch(arch: str) -> str:
+        converter = {
+            "x86_64": "x64",
+            "aarch64": "arm64",
+        }
+        return converter.get(arch, "") or arch
 
     def __validate(self):
         mandatory = [
@@ -91,9 +106,10 @@ class AzurePublishingMetadata(PublishingMetadata):
 def get_image_type_mapping(architecture: str, generation: str) -> str:
     """Return the image type required by VMImageDefinition."""
     gen_map = {
-        "V1": f"{architecture}Gen1",
         "V2": f"{architecture}Gen2",
     }
+    if architecture == "x64":
+        gen_map.update({"V1": f"{architecture}Gen1"})
     return gen_map.get(generation, "")
 
 
@@ -185,6 +201,17 @@ def is_azure_job_not_complete(job_details: ConfigureStatus) -> bool:
     return False
 
 
+def is_legacy_gen_supported(metadata: AzurePublishingMetadata) -> bool:
+    """Return True when the legagy V1 SKU is supported, False otherwise.
+
+    Args:
+        metadata: The incoming publishing metadata.
+    Returns:
+        bool: True when V1 is supported, False otherwise.
+    """
+    return metadata.architecture == "x64" and metadata.support_legacy
+
+
 def prepare_vm_images(
     metadata: AzurePublishingMetadata,
     gen1: Optional[VMImageDefinition],
@@ -226,13 +253,20 @@ def prepare_vm_images(
     if metadata.generation == "V2":
         # In this case we need to set a V2 SAS URI
         gen2_new = VMImageDefinition.from_json(json_gen2)
-        if metadata.support_legacy:  # and in this case a V1 as well
+        if is_legacy_gen_supported(metadata):  # and in this case a V1 as well
             gen1_new = VMImageDefinition.from_json(json_gen1)
             return [gen2_new, gen1_new]
         return [gen2_new]
     else:
         # It's expected to be a Gen1 only, let's get rid of Gen2
         return [VMImageDefinition.from_json(json_gen1)]
+
+
+def _len_vm_images(disk_versions: List[DiskVersion]) -> int:
+    count = 0
+    for disk_version in disk_versions:
+        count = count + len(disk_version.vm_images)
+    return count
 
 
 def _build_skus(
@@ -242,6 +276,11 @@ def _build_skus(
     plan_name: str,
     security_type: Optional[List[str]] = None,
 ) -> List[VMISku]:
+    def get_skuid(arch):
+        if arch == "x64":
+            return plan_name
+        return f"{plan_name}-{arch.lower()}"
+
     sku_mapping: Dict[str, str] = {}
     # Update the SKUs for each image in DiskVersions if needed
     for disk_version in disk_versions:
@@ -254,10 +293,11 @@ def _build_skus(
             new_img_alt_type = get_image_type_mapping(arch, alt_gen)
 
             # we just want to add SKU whenever it's not set
+            skuid = get_skuid(arch)
             if vmid.image_type == new_img_type:
-                sku_mapping.setdefault(new_img_type, plan_name)
+                sku_mapping.setdefault(new_img_type, skuid)
             elif vmid.image_type == new_img_alt_type:
-                sku_mapping.setdefault(new_img_alt_type, f"{plan_name}-gen{alt_gen[1:]}")
+                sku_mapping.setdefault(new_img_alt_type, f"{skuid}-gen{alt_gen[1:]}")
 
     # Return the expected SKUs list
     res = [
@@ -265,6 +305,15 @@ def _build_skus(
         for k, v in sku_mapping.items()
     ]
     return sorted(res, key=attrgetter("id"))
+
+
+def _get_security_type(old_skus: List[VMISku]) -> Optional[List[str]]:
+    # The security type may exist only for x64 Gen2, so it iterates over all gens to find it
+    # Get the security type for all gens
+    for osku in old_skus:
+        if osku.security_type is not None:
+            return osku.security_type
+    return None
 
 
 def update_skus(
@@ -295,21 +344,18 @@ def update_skus(
             disk_versions, default_gen=generation, alt_gen=alt_gen, plan_name=plan_name
         )
 
-    # If we have SKUs for both genenerations we don't need to update them as they're already
+    # If we have SKUs for each image we don't need to update them as they're already
     # properly set.
-    if len(old_skus) == 2:
+    if len(old_skus) == _len_vm_images(disk_versions):
         return old_skus
 
     # Update SKUs to create the alternate gen.
-    # The security type may exist only for Gen2, so it iterates over all gens to find it
-    security_type = None
-    # The alternate plan name ends with the suffix "-genX" and we can't change that once
+    security_type = _get_security_type(old_skus)
+
+    # The alternate plan for x64 name ends with the suffix "-genX" and we can't change that once
     # the offer is live, otherwise it will raise "BadRequest" with the message:
     # "The property 'PlanId' is locked by a previous submission".
     osku = old_skus[0]
-    # Get the security type for all gens
-    if osku.security_type is not None:
-        security_type = osku.security_type
 
     # Default Gen2 cases
     if osku.image_type.endswith("Gen1") and osku.id.endswith("gen1"):
@@ -354,7 +400,7 @@ def create_disk_version_from_scratch(
             "source": source.to_json(),
         }
     ]
-    if metadata.support_legacy:
+    if is_legacy_gen_supported(metadata):
         vm_images.append(
             {
                 "imageType": get_image_type_mapping(metadata.architecture, "V1"),
@@ -463,7 +509,7 @@ def create_vm_image_definitions(
             source=source.to_json(),
         )
     )
-    if metadata.support_legacy:  # Only True when metadata.generation == V2
+    if is_legacy_gen_supported(metadata):
         vm_images.append(
             VMImageDefinition(
                 image_type=get_image_type_mapping(metadata.architecture, "V1"),
