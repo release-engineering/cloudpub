@@ -1327,7 +1327,7 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
     @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
-    def test_publish_live(
+    def test_publish_live_x64_only(
         self,
         mock_getprpl_name: mock.MagicMock,
         mock_filter: mock.MagicMock,
@@ -1394,6 +1394,96 @@ class TestAzureService:
             metadata=metadata_azure_obj,
             gen1=disk_version_obj.vm_images[0],
             gen2=disk_version_obj.vm_images[1],
+            source=expected_source,
+        )
+        mock_disk_scratch.assert_not_called()
+        mock_diff_offer.assert_called_once_with(product_obj)
+        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        submit_calls = [
+            mock.call(product_id=product_obj.id, status="preview"),
+            mock.call(product_id=product_obj.id, status="live"),
+        ]
+        mock_submit.assert_has_calls(submit_calls)
+        mock_ensure_publish.assert_called_once_with(product_obj.id)
+
+    @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
+    @mock.patch("cloudpub.ms_azure.service.is_sas_present")
+    @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
+    @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_product_plan_by_name")
+    def test_publish_live_arm64_only(
+        self,
+        mock_getprpl_name: mock.MagicMock,
+        mock_filter: mock.MagicMock,
+        mock_disk_scratch: mock.MagicMock,
+        mock_is_sas: mock.MagicMock,
+        mock_prep_img: mock.MagicMock,
+        mock_submit: mock.MagicMock,
+        mock_configure: mock.MagicMock,
+        mock_diff_offer: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        mock_ensure_publish: mock.MagicMock,
+        product_obj: Product,
+        plan_summary_obj: PlanSummary,
+        metadata_azure_obj: AzurePublishingMetadata,
+        technical_config_obj: VMIPlanTechConfig,
+        disk_version_arm64_obj: DiskVersion,
+        submission_obj: ProductSubmission,
+        azure_service: AzureService,
+    ) -> None:
+        metadata_azure_obj.overwrite = False
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.support_legacy = True
+        metadata_azure_obj.destination = "example-product/plan-1"
+        metadata_azure_obj.disk_version = "2.1.0"
+        metadata_azure_obj.architecture = "aarch64"
+        technical_config_obj.disk_versions = [disk_version_arm64_obj]
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_filter.side_effect = [
+            [technical_config_obj],
+            [submission_obj],
+        ]
+        mock_getsubst.side_effect = ["preview", "live"]
+        mock_res_preview = mock.MagicMock()
+        mock_res_live = mock.MagicMock()
+        mock_res_preview.job_result = mock_res_live.job_result = "succeeded"
+        mock_submit.side_effect = [mock_res_preview, mock_res_live]
+        mock_is_sas.return_value = False
+        expected_source = VMImageSource(
+            source_type="sasUri",
+            os_disk=OSDiskURI(uri=metadata_azure_obj.image_path).to_json(),
+            data_disks=[],
+        )
+        disk_version_arm64_obj.vm_images[0] = VMImageDefinition(
+            image_type=get_image_type_mapping(metadata_azure_obj.architecture, "V2"),
+            source=expected_source.to_json(),
+        )
+        mock_prep_img.return_value = deepcopy(
+            disk_version_arm64_obj.vm_images
+        )  # During submit it will pop the disk_versions
+        technical_config_obj.disk_versions = [disk_version_arm64_obj]
+
+        # Test
+        azure_service.publish(metadata_azure_obj)
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
+        filter_calls = [
+            mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
+            mock.call(product=product_obj, resource="submission"),
+        ]
+        mock_filter.assert_has_calls(filter_calls)
+        mock_is_sas.assert_called_once_with(
+            technical_config_obj,
+            metadata_azure_obj.image_path,
+        )
+        mock_prep_img.assert_called_once_with(
+            metadata=metadata_azure_obj,
+            gen1=None,
+            gen2=disk_version_arm64_obj.vm_images[0],
             source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
