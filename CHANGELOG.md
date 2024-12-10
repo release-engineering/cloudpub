@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.2.3 - 2024-12-10
+
+- Explicitly set packaging as a requirement
+- Bump dependencies
+
 ## 1.2.2 - 2024-11-21
 
 - Fix update_skus bug when a single gen is set
