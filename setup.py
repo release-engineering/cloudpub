@@ -24,6 +24,7 @@ setup(
         'deepdiff',
         'requests',
         'tenacity',
+        'packaging',
         "boto3>=1.34.117",
     ],
     zip_safe=False,
