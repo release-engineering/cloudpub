@@ -334,10 +334,27 @@ def gen2_image(vmimage_source) -> Dict[str, Any]:
 
 
 @pytest.fixture
+def arm_image(vmimage_source) -> Dict[str, Any]:
+    return {
+        "imageType": "arm64Gen2",
+        "source": vmimage_source,
+    }
+
+
+@pytest.fixture
 def disk_version(gen1_image: Dict[str, Any], gen2_image: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "versionNumber": "2.0.0",
         "vmImages": [gen1_image, gen2_image],
+        "lifecycleState": "generallyAvailable",
+    }
+
+
+@pytest.fixture
+def disk_version_arm64(arm_image):
+    return {
+        "versionNumber": "2.1.0",
+        "vmImages": [arm_image],
         "lifecycleState": "generallyAvailable",
     }
 
@@ -541,8 +558,18 @@ def gen2_image_obj(gen2_image: Dict[str, Any]) -> VMImageDefinition:
 
 
 @pytest.fixture
+def arm_image_obj(arm_image: Dict[str, Any]) -> VMImageDefinition:
+    return VMImageDefinition.from_json(arm_image)
+
+
+@pytest.fixture
 def disk_version_obj(disk_version: Dict[str, Any]) -> DiskVersion:
     return DiskVersion.from_json(disk_version)
+
+
+@pytest.fixture
+def disk_version_arm64_obj(disk_version_arm64: Dict[str, Any]) -> DiskVersion:
+    return DiskVersion.from_json(disk_version_arm64)
 
 
 @pytest.fixture
