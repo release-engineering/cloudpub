@@ -33,7 +33,7 @@
 <span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">attrgetter</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span> <span class="nn">deepdiff</span> <span class="kn">import</span> <span class="n">DeepDiff</span>
 
@@ -105,8 +105,23 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__validate</span><span class="p">()</span>
         <span class="c1"># Adjust the x86_64 architecture string for Azure</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="s2">&quot;x64&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;x86_64&quot;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span></div>
+        <span class="n">arch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__convert_arch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">architecture</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="n">arch</span></div>
 
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;architecture&quot;</span><span class="p">:</span>
+            <span class="n">arch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__convert_arch</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">arch</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">__convert_arch</span><span class="p">(</span><span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">converter</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;x86_64&quot;</span><span class="p">:</span> <span class="s2">&quot;x64&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aarch64&quot;</span><span class="p">:</span> <span class="s2">&quot;arm64&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">converter</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">arch</span>
 
     <span class="k">def</span> <span class="nf">__validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">mandatory</span> <span class="o">=</span> <span class="p">[</span>
@@ -129,9 +144,10 @@
 <span class="k">def</span> <span class="nf">get_image_type_mapping</span><span class="p">(</span><span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">generation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the image type required by VMImageDefinition.&quot;&quot;&quot;</span>
     <span class="n">gen_map</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;V1&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen1&quot;</span><span class="p">,</span>
         <span class="s2">&quot;V2&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen2&quot;</span><span class="p">,</span>
     <span class="p">}</span>
+    <span class="k">if</span> <span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span><span class="p">:</span>
+        <span class="n">gen_map</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;V1&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen1&quot;</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">gen_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
 
@@ -223,6 +239,17 @@
     <span class="k">return</span> <span class="kc">False</span>
 
 
+<span class="k">def</span> <span class="nf">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when the legagy V1 SKU is supported, False otherwise.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        metadata: The incoming publishing metadata.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True when V1 is supported, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span> <span class="ow">and</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span>
+
+
 <span class="k">def</span> <span class="nf">prepare_vm_images</span><span class="p">(</span>
     <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span>
     <span class="n">gen1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">],</span>
@@ -264,13 +291,20 @@
     <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V2&quot;</span><span class="p">:</span>
         <span class="c1"># In this case we need to set a V2 SAS URI</span>
         <span class="n">gen2_new</span> <span class="o">=</span> <span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>  <span class="c1"># and in this case a V1 as well</span>
+        <span class="k">if</span> <span class="n">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">):</span>  <span class="c1"># and in this case a V1 as well</span>
             <span class="n">gen1_new</span> <span class="o">=</span> <span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen1</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">gen2_new</span><span class="p">,</span> <span class="n">gen1_new</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">gen2_new</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># It&#39;s expected to be a Gen1 only, let&#39;s get rid of Gen2</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen1</span><span class="p">)]</span>
+
+
+<span class="k">def</span> <span class="nf">_len_vm_images</span><span class="p">(</span><span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">count</span>
 
 
 <span class="k">def</span> <span class="nf">_build_skus</span><span class="p">(</span>
@@ -280,6 +314,11 @@
     <span class="n">plan_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">security_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">get_skuid</span><span class="p">(</span><span class="n">arch</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">arch</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">plan_name</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+
     <span class="n">sku_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="c1"># Update the SKUs for each image in DiskVersions if needed</span>
     <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
@@ -292,10 +331,11 @@
             <span class="n">new_img_alt_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">alt_gen</span><span class="p">)</span>
 
             <span class="c1"># we just want to add SKU whenever it&#39;s not set</span>
+            <span class="n">skuid</span> <span class="o">=</span> <span class="n">get_skuid</span><span class="p">(</span><span class="n">arch</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_type</span><span class="p">:</span>
-                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_type</span><span class="p">,</span> <span class="n">plan_name</span><span class="p">)</span>
+                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_type</span><span class="p">,</span> <span class="n">skuid</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_alt_type</span><span class="p">:</span>
-                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_alt_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2">-gen</span><span class="si">{</span><span class="n">alt_gen</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_alt_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">skuid</span><span class="si">}</span><span class="s2">-gen</span><span class="si">{</span><span class="n">alt_gen</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># Return the expected SKUs list</span>
     <span class="n">res</span> <span class="o">=</span> <span class="p">[</span>
@@ -303,6 +343,15 @@
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sku_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">]</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_get_security_type</span><span class="p">(</span><span class="n">old_skus</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+    <span class="c1"># The security type may exist only for x64 Gen2, so it iterates over all gens to find it</span>
+    <span class="c1"># Get the security type for all gens</span>
+    <span class="k">for</span> <span class="n">osku</span> <span class="ow">in</span> <span class="n">old_skus</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span>
+    <span class="k">return</span> <span class="kc">None</span>
 
 
 <span class="k">def</span> <span class="nf">update_skus</span><span class="p">(</span>
@@ -333,21 +382,18 @@
             <span class="n">disk_versions</span><span class="p">,</span> <span class="n">default_gen</span><span class="o">=</span><span class="n">generation</span><span class="p">,</span> <span class="n">alt_gen</span><span class="o">=</span><span class="n">alt_gen</span><span class="p">,</span> <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span>
         <span class="p">)</span>
 
-    <span class="c1"># If we have SKUs for both genenerations we don&#39;t need to update them as they&#39;re already</span>
+    <span class="c1"># If we have SKUs for each image we don&#39;t need to update them as they&#39;re already</span>
     <span class="c1"># properly set.</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_skus</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_skus</span><span class="p">)</span> <span class="o">==</span> <span class="n">_len_vm_images</span><span class="p">(</span><span class="n">disk_versions</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">old_skus</span>
 
     <span class="c1"># Update SKUs to create the alternate gen.</span>
-    <span class="c1"># The security type may exist only for Gen2, so it iterates over all gens to find it</span>
-    <span class="n">security_type</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="c1"># The alternate plan name ends with the suffix &quot;-genX&quot; and we can&#39;t change that once</span>
+    <span class="n">security_type</span> <span class="o">=</span> <span class="n">_get_security_type</span><span class="p">(</span><span class="n">old_skus</span><span class="p">)</span>
+
+    <span class="c1"># The alternate plan for x64 name ends with the suffix &quot;-genX&quot; and we can&#39;t change that once</span>
     <span class="c1"># the offer is live, otherwise it will raise &quot;BadRequest&quot; with the message:</span>
     <span class="c1"># &quot;The property &#39;PlanId&#39; is locked by a previous submission&quot;.</span>
     <span class="n">osku</span> <span class="o">=</span> <span class="n">old_skus</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="c1"># Get the security type for all gens</span>
-    <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">security_type</span> <span class="o">=</span> <span class="n">osku</span><span class="o">.</span><span class="n">security_type</span>
 
     <span class="c1"># Default Gen2 cases</span>
     <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen1&quot;</span><span class="p">):</span>
@@ -392,7 +438,7 @@
             <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
         <span class="p">}</span>
     <span class="p">]</span>
-    <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">):</span>
         <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
                 <span class="s2">&quot;imageType&quot;</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
@@ -501,7 +547,7 @@
             <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
         <span class="p">)</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>  <span class="c1"># Only True when metadata.generation == V2</span>
+    <span class="k">if</span> <span class="n">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">):</span>
         <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">VMImageDefinition</span><span class="p">(</span>
                 <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
