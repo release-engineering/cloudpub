@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.0 - 2024-12-13
+
+- Azure: Add support for ARM64 Images
+- Azure: Parse all SKUs to find the security type
+
 ## 1.2.3 - 2024-12-10
 
 - Explicitly set packaging as a requirement
