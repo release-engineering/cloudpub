@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.1 - 2024-12-20
+
+- Azure: Add missing alias for dateOffset
+
 ## 1.3.0 - 2024-12-13
 
 - Azure: Add support for ARM64 Images
