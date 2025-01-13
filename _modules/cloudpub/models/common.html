@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>cloudpub.models.common &#8212; cloudpub 0.1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
     <script src="../../../_static/documentation_options.js?v=01f34227"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
@@ -31,11 +31,11 @@
             
   <h1>Source code for cloudpub.models.common</h1><div class="highlight"><pre>
 <span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">from</span> <span class="nn">attrs</span> <span class="kn">import</span> <span class="n">Attribute</span><span class="p">,</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">define</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">attrs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Attribute</span><span class="p">,</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">define</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -43,11 +43,11 @@
 <div class="viewcode-block" id="AttrsJSONDecodeMixin">
 <a class="viewcode-back" href="../../../cloud_providers/models/base.html#cloudpub.models.common.AttrsJSONDecodeMixin">[docs]</a>
 <span class="nd">@define</span>
-<span class="k">class</span> <span class="nc">AttrsJSONDecodeMixin</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AttrsJSONDecodeMixin</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Implement the default JSON (de)serialization for attrs decorated classes.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_assert_json_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_assert_json_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Ensure the given JSON is an instance of `dict`.</span>
 
@@ -61,7 +61,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_preprocess_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_preprocess_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Preprocess the JSON before converting it to class object.</span>
 
@@ -78,7 +78,7 @@
 <div class="viewcode-block" id="AttrsJSONDecodeMixin.from_json">
 <a class="viewcode-back" href="../../../cloud_providers/models/base.html#cloudpub.models.common.AttrsJSONDecodeMixin.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert a JSON dictionary into class object.</span>
 
@@ -130,7 +130,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_serialize_value</span><span class="p">(</span><span class="n">attribute</span><span class="p">:</span> <span class="n">Attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_serialize_value</span><span class="p">(</span><span class="n">attribute</span><span class="p">:</span> <span class="n">Attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iteractively parse and serialize the received value to a Python builtin.</span>
 
 <span class="sd">        Args:</span>
@@ -150,7 +150,7 @@
 
 <div class="viewcode-block" id="AttrsJSONDecodeMixin.to_json">
 <a class="viewcode-back" href="../../../cloud_providers/models/base.html#cloudpub.models.common.AttrsJSONDecodeMixin.to_json">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert a class object mapped by attrs into a dictionary.</span>
 

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>cloudpub.aws.service &#8212; cloudpub 0.1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
     <script src="../../../_static/documentation_options.js?v=01f34227"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
@@ -31,18 +31,18 @@
             
   <h1>Source code for cloudpub.aws.service</h1><div class="highlight"><pre>
 <span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">boto3.session</span> <span class="kn">import</span> <span class="n">Session</span>
-<span class="kn">from</span> <span class="nn">tenacity</span> <span class="kn">import</span> <span class="n">RetryError</span><span class="p">,</span> <span class="n">Retrying</span>
-<span class="kn">from</span> <span class="nn">tenacity.retry</span> <span class="kn">import</span> <span class="n">retry_if_result</span>
-<span class="kn">from</span> <span class="nn">tenacity.stop</span> <span class="kn">import</span> <span class="n">stop_after_attempt</span>
-<span class="kn">from</span> <span class="nn">tenacity.wait</span> <span class="kn">import</span> <span class="n">wait_fixed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">boto3.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tenacity</span><span class="w"> </span><span class="kn">import</span> <span class="n">RetryError</span><span class="p">,</span> <span class="n">Retrying</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tenacity.retry</span><span class="w"> </span><span class="kn">import</span> <span class="n">retry_if_result</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tenacity.stop</span><span class="w"> </span><span class="kn">import</span> <span class="n">stop_after_attempt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tenacity.wait</span><span class="w"> </span><span class="kn">import</span> <span class="n">wait_fixed</span>
 
-<span class="kn">from</span> <span class="nn">cloudpub.aws.utils</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.aws.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">convert_error_list_str</span><span class="p">,</span>
     <span class="n">create_version_tree</span><span class="p">,</span>
     <span class="n">get_restricted_major_versions</span><span class="p">,</span>
@@ -52,9 +52,9 @@
     <span class="n">is_str_url</span><span class="p">,</span>
     <span class="n">pprint_debug_logging</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">cloudpub.common</span> <span class="kn">import</span> <span class="n">BaseService</span><span class="p">,</span> <span class="n">PublishingMetadata</span>
-<span class="kn">from</span> <span class="nn">cloudpub.error</span> <span class="kn">import</span> <span class="n">InvalidStateError</span><span class="p">,</span> <span class="n">NotFoundError</span><span class="p">,</span> <span class="n">Timeout</span>
-<span class="kn">from</span> <span class="nn">cloudpub.models.aws</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseService</span><span class="p">,</span> <span class="n">PublishingMetadata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.error</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidStateError</span><span class="p">,</span> <span class="n">NotFoundError</span><span class="p">,</span> <span class="n">Timeout</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.models.aws</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ChangeSetResponse</span><span class="p">,</span>
     <span class="n">DeliveryOption</span><span class="p">,</span>
     <span class="n">DescribeChangeSetReponse</span><span class="p">,</span>
@@ -74,12 +74,12 @@
 
 <div class="viewcode-block" id="AWSVersionMetadata">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSVersionMetadata">[docs]</a>
-<span class="k">class</span> <span class="nc">AWSVersionMetadata</span><span class="p">(</span><span class="n">PublishingMetadata</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AWSVersionMetadata</span><span class="p">(</span><span class="n">PublishingMetadata</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A collection of metadata necessary for publishing a AMI into a product.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="AWSVersionMetadata.__init__">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSVersionMetadata.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_mapping</span><span class="p">:</span> <span class="n">VersionMapping</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_mapping</span><span class="p">:</span> <span class="n">VersionMapping</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new AWS Version Metadata object.</span>
 
@@ -100,7 +100,7 @@
 
 <div class="viewcode-block" id="AWSProductService">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService">[docs]</a>
-<span class="k">class</span> <span class="nc">AWSProductService</span><span class="p">(</span><span class="n">BaseService</span><span class="p">[</span><span class="n">AWSVersionMetadata</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AWSProductService</span><span class="p">(</span><span class="n">BaseService</span><span class="p">[</span><span class="n">AWSVersionMetadata</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new service provider for AWS using Boto3.&quot;&quot;&quot;</span>
 
     <span class="c1"># Boto3 docs</span>
@@ -108,7 +108,7 @@
 
 <div class="viewcode-block" id="AWSProductService.__init__">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">access_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">secret_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -149,14 +149,14 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">AWSProductService</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_check_product_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">ProductDetailResponse</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_product_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">ProductDetailResponse</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">details</span><span class="o">.</span><span class="n">versions</span><span class="p">:</span>
             <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">details</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="s2">&quot;The details from the response are: &quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="s2">&quot;This product has no versions&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AWSProductService.get_product_by_id">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_by_id">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_product_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductDetailResponse</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_product_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductDetailResponse</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a product detail by it&#39;s id.</span>
 
@@ -182,7 +182,7 @@
 
 <div class="viewcode-block" id="AWSProductService.get_product_by_name">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_by_name">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_product_by_name</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_product_by_name</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductDetailResponse</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -227,7 +227,7 @@
 
 <div class="viewcode-block" id="AWSProductService.get_product_version_details">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_version_details">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_product_version_details</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_product_version_details</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version_id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductVersionsResponse</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -256,7 +256,7 @@
 
 <div class="viewcode-block" id="AWSProductService.get_product_versions">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_versions">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_product_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GroupedVersions</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_product_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GroupedVersions</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the titles, ids, and date created of all the versions of a product.</span>
 
@@ -292,7 +292,7 @@
 
 <div class="viewcode-block" id="AWSProductService.get_product_version_by_name">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_version_by_name">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_product_version_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeliveryOption</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_product_version_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeliveryOption</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a version detail by it&#39;s name.</span>
 
@@ -320,7 +320,7 @@
 
 <div class="viewcode-block" id="AWSProductService.get_product_active_changesets">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_active_changesets">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_product_active_changesets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListChangeSet</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_product_active_changesets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListChangeSet</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the active changesets for a product.</span>
 
@@ -343,7 +343,7 @@
 
 <div class="viewcode-block" id="AWSProductService.wait_active_changesets">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.wait_active_changesets">[docs]</a>
-    <span class="k">def</span> <span class="nf">wait_active_changesets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wait_active_changesets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the first active changeset, if there is one, and wait for it to finish.</span>
 
@@ -352,7 +352,7 @@
 <span class="sd">                The Id of the entity to wait for active changesets</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">changeset_not_complete</span><span class="p">(</span><span class="n">change_set_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ListChangeSet</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">changeset_not_complete</span><span class="p">(</span><span class="n">change_set_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ListChangeSet</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">change_set_list</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_changeset</span><span class="p">(</span><span class="n">change_set_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
                 <span class="k">return</span> <span class="kc">True</span>
@@ -372,7 +372,7 @@
 
 <div class="viewcode-block" id="AWSProductService.set_restrict_versions">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.set_restrict_versions">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_restrict_versions</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_restrict_versions</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delivery_option_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -412,7 +412,7 @@
 
 <div class="viewcode-block" id="AWSProductService.cancel_change_set">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.cancel_change_set">[docs]</a>
-    <span class="k">def</span> <span class="nf">cancel_change_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel_change_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Cancel the publish of a new version in progress.</span>
 
@@ -433,7 +433,7 @@
 
 <div class="viewcode-block" id="AWSProductService.check_publish_status">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.check_publish_status">[docs]</a>
-    <span class="k">def</span> <span class="nf">check_publish_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_publish_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check the status of a change set.</span>
 
@@ -478,7 +478,7 @@
 
 <div class="viewcode-block" id="AWSProductService.wait_for_changeset">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.wait_for_changeset">[docs]</a>
-    <span class="k">def</span> <span class="nf">wait_for_changeset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_changeset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Wait until ChangeSet is complete.</span>
 
@@ -490,7 +490,7 @@
 <span class="sd">            &#39;Succeeded&#39; or &#39;Failed&#39; within the set retry time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">changeset_not_complete</span><span class="p">(</span><span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">changeset_not_complete</span><span class="p">(</span><span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;succeeded&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
@@ -510,7 +510,7 @@
 
 <div class="viewcode-block" id="AWSProductService.restrict_versions">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.restrict_versions">[docs]</a>
-    <span class="k">def</span> <span class="nf">restrict_versions</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">restrict_versions</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -571,7 +571,7 @@
 
 <div class="viewcode-block" id="AWSProductService.publish">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.publish">[docs]</a>
-    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AWSVersionMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AWSVersionMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add new version to an existing product.</span>
 
