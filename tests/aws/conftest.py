@@ -330,7 +330,7 @@ def delivery_options_details_obj(delivery_options_details: Dict[str, Any]) -> De
 
 @pytest.fixture
 def ami_delivery_options_details_obj(
-    ami_delivery_options_details: Dict[str, Any]
+    ami_delivery_options_details: Dict[str, Any],
 ) -> DeliveryOption:
     return AmiDeliveryOptionsDetails.from_json(ami_delivery_options_details)
 

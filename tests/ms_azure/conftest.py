@@ -589,13 +589,13 @@ def job_details_running_obj(job_details_running: Dict[str, Any]) -> ConfigureSta
 
 @pytest.fixture
 def job_details_completed_successfully_obj(
-    job_details_completed_successfully: Dict[str, Any]
+    job_details_completed_successfully: Dict[str, Any],
 ) -> ConfigureStatus:
     return ConfigureStatus.from_json(job_details_completed_successfully)
 
 
 @pytest.fixture
 def job_details_completed_failure_obj(
-    job_details_completed_failure: Dict[str, Any]
+    job_details_completed_failure: Dict[str, Any],
 ) -> ConfigureStatus:
     return ConfigureStatus.from_json(job_details_completed_failure)
