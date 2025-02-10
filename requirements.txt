@@ -8,13 +8,13 @@ attrs==25.1.0 \
     --hash=sha256:1c97078a80c814273a76b2a298a932eb681c87415c11dee0a6921de7f1b02c3e \
     --hash=sha256:c75a69e28a550a7e93789579c22aa26b0f5b83b75dc4e08fe092980051e1090a
     # via cloudpub (setup.py)
-boto3==1.36.11 \
-    --hash=sha256:641dd772eac111d9443258f0f5491c57c2af47bddae94a8d32de19edb5bf7b1c \
-    --hash=sha256:b40fbf2c0f22e55b67df95475a68bb72be5169097180a875726b6b884339ac8b
+boto3==1.36.16 \
+    --hash=sha256:0cf92ca0538ab115447e1c58050d43e1273e88c58ddfea2b6f133fdc508b400a \
+    --hash=sha256:b10583bf8bd35be1b4027ee7e26b7cdf2078c79eab18357fd602cecb6d39400b
     # via cloudpub (setup.py)
-botocore==1.36.11 \
-    --hash=sha256:82c5660027f696608d0e55feb08c146c11c7ebeba7615961c7765dcf6009a00d \
-    --hash=sha256:c919be883f95b9e0c3021429a365d40cd7944b8345a07af30dc8d891ceefe07a
+botocore==1.36.16 \
+    --hash=sha256:10c6aa386ba1a9a0faef6bb5dbfc58fc2563a3c6b95352e86a583cd5f14b11f3 \
+    --hash=sha256:aca0348ccd730332082489b6817fdf89e1526049adcf6e9c8c11c96dd9f42c03
     # via
     #   boto3
     #   s3transfer
@@ -116,9 +116,9 @@ charset-normalizer==3.4.1 \
     --hash=sha256:fd4ec41f914fa74ad1b8304bbc634b3de73d2a0889bd32076342a573e0779e00 \
     --hash=sha256:ffc9202a29ab3920fa812879e95a9e78b2465fd10be7fcbd042899695d75e616
     # via requests
-deepdiff==8.1.1 \
-    --hash=sha256:b0231fa3afb0f7184e82535f2b4a36636442ed21e94a0cf3aaa7982157e7ebca \
-    --hash=sha256:dd7bc7d5c8b51b5b90f01b0e2fe23c801fd8b4c6a7ee7e31c5a3c3663fcc7ceb
+deepdiff==8.2.0 \
+    --hash=sha256:5091f2cdfd372b1b9f6bfd8065ba323ae31118dc4e42594371b38c8bea3fd0a4 \
+    --hash=sha256:6ec78f65031485735545ffbe7a61e716c3c2d12ca6416886d5e9291fc76c46c3
     # via cloudpub (setup.py)
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
@@ -130,9 +130,9 @@ jmespath==1.0.1 \
     # via
     #   boto3
     #   botocore
-orderly-set==5.2.3 \
-    --hash=sha256:571ed97c5a5fca7ddeb6b2d26c19aca896b0ed91f334d9c109edd2f265fb3017 \
-    --hash=sha256:d357cedcf67f4ebff0d4cbd5b0997e98eeb65dd24fdf5c990a501ae9e82c7d34
+orderly-set==5.3.0 \
+    --hash=sha256:80b3d8fdd3d39004d9aad389eaa0eab02c71f0a0511ba3a6d54a935a6c6a0acc \
+    --hash=sha256:c2c0bfe604f5d3d9b24e8262a06feb612594f37aa3845650548befd7772945d1
     # via deepdiff
 packaging==24.2 \
     --hash=sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759 \
