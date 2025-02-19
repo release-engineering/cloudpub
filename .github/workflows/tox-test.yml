@@ -108,8 +108,8 @@ jobs:
           restore-keys: ${{ runner.os }}-build-owasp-
       - name: OWASP check
         run: |
-          VERSION=$(curl -s https://jeremylong.github.io/DependencyCheck/current.txt)
-          curl -L "https://github.com/jeremylong/DependencyCheck/releases/download/v$VERSION/dependency-check-$VERSION-release.zip" --output dependency-check.zip
+          VERSION=$(curl -s https://dependency-check.github.io/DependencyCheck/current.txt)
+          curl -Ls "https://github.com/dependency-check/DependencyCheck/releases/download/v$VERSION/dependency-check-$VERSION-release.zip" --output dependency-check.zip
           unzip -o dependency-check.zip
           rm -f dependency-check.zip
           ./dependency-check/bin/dependency-check.sh \
