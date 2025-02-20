@@ -116,6 +116,7 @@ jobs:
           --project "starmap-client" \
           --out "dependency-check" \
           --format "ALL" \
+          --nvdApiKey ${{ secrets.OWASP_API_KEY }} \
           --enableExperimental \
           --scan . \
           --data .code_scanning/dependency-check/data \
