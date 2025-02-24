@@ -109,7 +109,7 @@ jobs:
       - name: OWASP check
         run: |
           VERSION=$(curl -s https://dependency-check.github.io/DependencyCheck/current.txt)
-          curl -Ls "https://github.com/dependency-check/DependencyCheck/releases/download/v$VERSION/dependency-check-$VERSION-release.zip" --output dependency-check.zip
+          curl -Ls --fail "https://github.com/dependency-check/DependencyCheck/releases/download/v$VERSION/dependency-check-$VERSION-release.zip" --output dependency-check.zip
           unzip -o dependency-check.zip
           rm -f dependency-check.zip
           ./dependency-check/bin/dependency-check.sh \
