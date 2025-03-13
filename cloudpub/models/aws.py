@@ -940,7 +940,7 @@ class ListEntitiesResponse(AttrsJSONDecodeMixin):
     """  # noqa: E501
 
     entity_summary_list: List[EntitySummary] = field(
-        converter=lambda x: [EntitySummary.from_json(a) for a in x] if x else [],  # type: ignore
+        converter=lambda x: [EntitySummary.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
         metadata={"alias": "EntitySummaryList"},
     )
@@ -995,7 +995,7 @@ class ChangeSummary(AttrsJSONDecodeMixin):
     """This object contains details specific to the change type of the requested change."""
 
     error_details: List[ErrorDetail] = field(
-        converter=lambda x: [ErrorDetail.from_json(a) for a in x] if x else [],  # type: ignore
+        converter=lambda x: [ErrorDetail.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
         metadata={"alias": "ErrorDetailList"},
     )
@@ -1066,7 +1066,7 @@ class DescribeChangeSetReponse(AttrsJSONDecodeMixin):
     """Returned if there is a failure on the change set, but that failure is not related to any of the changes in the request."""  # noqa: E501
 
     change_set: List[ChangeSummary] = field(
-        converter=lambda x: [ChangeSummary.from_json(a) for a in x] if x else [],  # type: ignore
+        converter=lambda x: [ChangeSummary.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
         metadata={"alias": "ChangeSet"},
     )
@@ -1148,7 +1148,7 @@ class ListChangeSetsResponse(AttrsJSONDecodeMixin):
     """The describe_entity response's metadata."""
 
     change_set_list: List[ListChangeSet] = field(
-        converter=lambda x: [ListChangeSet.from_json(a) for a in x] if x else [],  # type: ignore
+        converter=lambda x: [ListChangeSet.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
         metadata={"alias": "ChangeSetSummaryList"},
     )

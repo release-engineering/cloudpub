@@ -82,7 +82,7 @@ class AttrsJSONDecodeMixin:
         json_copy = cls._preprocess_json(json_copy)
 
         args = {}
-        cls_attr = [a.name for a in cls.__attrs_attrs__ if isinstance(a, Attribute)]  # type: ignore
+        cls_attr = [a.name for a in cls.__attrs_attrs__ if isinstance(a, Attribute)]
         for a in cls_attr:
             args[a] = json_copy.pop(a, None)
 
