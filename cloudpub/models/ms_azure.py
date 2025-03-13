@@ -662,7 +662,7 @@ class PlanSummary(AzureProductLinkedResource):
 
     gov_certifications: Optional[List[GovernmentCertification]] = field(
         metadata={"alias": "azureGovernmentCertifications", "hide_unset": True},
-        converter=lambda x: [GovernmentCertification.from_json(a) for a in x] if x else None,  # type: ignore  # noqa: E501
+        converter=lambda x: [GovernmentCertification.from_json(a) for a in x] if x else None,
         on_setattr=NO_OP,
     )
     """Certifications for government plans."""
@@ -773,7 +773,7 @@ class VideoThumbnails(AttrsJSONDecodeMixin):
 
     image_list: List[ThumbnailURL] = field(
         metadata={"alias": "imageList"},
-        converter=lambda x: [ThumbnailURL.from_json(a) for a in x] if x else [],  # type: ignore
+        converter=lambda x: [ThumbnailURL.from_json(a) for a in x] if x else [],
         on_setattr=NO_OP,
     )
 
@@ -1035,7 +1035,7 @@ class ProductReseller(AzureProductLinkedResource):
     """
 
     audiences: List[Audience] = field(
-        converter=lambda x: [Audience.from_json(a) for a in x] if x else [], on_setattr=NO_OP  # type: ignore  # noqa: E501
+        converter=lambda x: [Audience.from_json(a) for a in x] if x else [], on_setattr=NO_OP
     )
     """List of :class:`~cloudpub.models.ms_azure.Audience` for the reseller offer."""
 
