@@ -599,7 +599,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         product, plan = self.get_product_plan_by_name(product_name, plan_name)
         log.info(
             "Preparing to associate the image with the plan \"%s\" from product \"%s\""
-            % (product_name, plan_name)
+            % (plan_name, product_name)
         )
 
         # 2. Retrieve the VM Technical configuration for the given plan
