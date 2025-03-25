@@ -281,6 +281,12 @@ def _build_skus(
             return plan_name
         return f"{plan_name}-{arch.lower()}"
 
+    def get_safe_security_type(image_type):
+        # Arches which aren't x86Gen2 (like ARM64) doesn't work well with security type
+        if image_type != "x64Gen2":
+            return None
+        return security_type
+
     sku_mapping: Dict[str, str] = {}
     # Update the SKUs for each image in DiskVersions if needed
     for disk_version in disk_versions:
@@ -301,7 +307,7 @@ def _build_skus(
 
     # Return the expected SKUs list
     res = [
-        VMISku.from_json({"image_type": k, "id": v, "security_type": security_type})
+        VMISku.from_json({"image_type": k, "id": v, "security_type": get_safe_security_type(k)})
         for k, v in sku_mapping.items()
     ]
     return sorted(res, key=attrgetter("id"))
