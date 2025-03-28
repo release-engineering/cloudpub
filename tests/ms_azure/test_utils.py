@@ -379,7 +379,7 @@ class TestAzureUtils:
         assert res == [
             VMISku.from_json(x)
             for x in [
-                {"imageType": "x64Gen1", "skuId": "plan1", "securityType": ["trusted"]},
+                {"imageType": "x64Gen1", "skuId": "plan1"},
                 {"imageType": "x64Gen2", "skuId": "plan1-gen2", "securityType": ["trusted"]},
             ]
         ]
@@ -423,6 +423,40 @@ class TestAzureUtils:
             for x in [
                 {"imageType": "x64Gen2", "skuId": "plan1", "securityType": None},
                 {"imageType": "x64Gen1", "skuId": "plan1-gen1", "securityType": None},
+            ]
+        ]
+
+    def test_update_existing_skus_mixed_arches(
+        self, gen1_image: Dict[str, Any], gen2_image: Dict[str, Any], arm_image: Dict[str, Any]
+    ) -> None:
+        """Ensure the SKUs are properly made for disk versions using x86 and ARM arches."""
+        disk_versions = [
+            DiskVersion.from_json(
+                {
+                    "versionNumber": "2.0.0",
+                    "vmImages": [gen1_image, gen2_image, arm_image],
+                    "lifecycleState": "generallyAvailable",
+                }
+            )
+        ]
+        skus = [
+            VMISku.from_json(
+                {"imageType": "x64Gen2", "skuId": "plan1", "securityType": ["trusted"]}
+            )
+        ]
+        res = update_skus(
+            disk_versions=disk_versions,
+            generation="V2",
+            plan_name="plan1",
+            old_skus=skus,
+        )
+
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "plan1", "securityType": ["trusted"]},
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64"},
+                {"imageType": "x64Gen1", "skuId": "plan1-gen1"},
             ]
         ]
 
