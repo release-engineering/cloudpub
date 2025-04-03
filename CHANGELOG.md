@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.3.2 - 2025-04-04
+
+- Improve code formatting
+- Remove unused "type: ignore" comments
+- Fix log message for plan and offer
+- Azure: Fix bug with security_type on ARM64
+- Bump dependencies
+
 ## 1.3.1 - 2024-12-20
 
 - Azure: Add missing alias for dateOffset
