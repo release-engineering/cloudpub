@@ -262,11 +262,16 @@ def prepare_vm_images(
         return [VMImageDefinition.from_json(json_gen1)]
 
 
-def _len_vm_images(disk_versions: List[DiskVersion]) -> int:
-    count = 0
-    for disk_version in disk_versions:
-        count = count + len(disk_version.vm_images)
-    return count
+def _all_skus_present(old_skus: List[VMISku], disk_versions: List[DiskVersion]) -> bool:
+    image_types = set()
+    for sku in old_skus:
+        image_types.add(sku.image_type)
+
+    for dv in disk_versions:
+        for img in dv.vm_images:
+            if img.image_type not in image_types:
+                return False
+    return True
 
 
 def _build_skus(
@@ -352,7 +357,7 @@ def update_skus(
 
     # If we have SKUs for each image we don't need to update them as they're already
     # properly set.
-    if len(old_skus) == _len_vm_images(disk_versions):
+    if _all_skus_present(old_skus, disk_versions):
         return old_skus
 
     # Update SKUs to create the alternate gen.
