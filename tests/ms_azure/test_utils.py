@@ -484,6 +484,34 @@ class TestAzureUtils:
             ]
         ]
 
+    @pytest.mark.parametrize("generation", ["V1", "V2"])
+    def test_update_skus_return_existing_unconventional_naming(
+        self,
+        generation: str,
+        technical_config_obj: VMIPlanTechConfig,
+    ) -> None:
+        """Ensure the existing SKUs are returned even if they doesn't present expected namings."""
+        skus = [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "differentNaming"},
+                {"imageType": "x64Gen1", "skuId": "gen1GotDifferentNaming"},
+            ]
+        ]
+        res = update_skus(
+            disk_versions=technical_config_obj.disk_versions,
+            generation=generation,
+            plan_name="plan1",
+            old_skus=skus,
+        )
+        assert res == [
+            VMISku.from_json(x)
+            for x in [
+                {"imageType": "x64Gen2", "skuId": "differentNaming", "securityType": None},
+                {"imageType": "x64Gen1", "skuId": "gen1GotDifferentNaming"},
+            ]
+        ]
+
     def test_create_disk_version_from_scratch_x86(
         self,
         disk_version_obj: DiskVersion,
