@@ -300,11 +300,16 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen1</span><span class="p">)]</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_len_vm_images</span><span class="p">(</span><span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">count</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_all_skus_present</span><span class="p">(</span><span class="n">old_skus</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">],</span> <span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">image_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">sku</span> <span class="ow">in</span> <span class="n">old_skus</span><span class="p">:</span>
+        <span class="n">image_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sku</span><span class="o">.</span><span class="n">image_type</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">dv</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">dv</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">image_types</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_skus</span><span class="p">(</span>
@@ -390,7 +395,7 @@
 
     <span class="c1"># If we have SKUs for each image we don&#39;t need to update them as they&#39;re already</span>
     <span class="c1"># properly set.</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_skus</span><span class="p">)</span> <span class="o">==</span> <span class="n">_len_vm_images</span><span class="p">(</span><span class="n">disk_versions</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">_all_skus_present</span><span class="p">(</span><span class="n">old_skus</span><span class="p">,</span> <span class="n">disk_versions</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">old_skus</span>
 
     <span class="c1"># Update SKUs to create the alternate gen.</span>
