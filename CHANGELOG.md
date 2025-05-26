@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.4.0 - 2025-05-26
+
+- Azure: Allow partial SAS comparison 
+
 ## 1.3.3 - 2025-05-15
 
 - Azure: Fix bug on update_skus
