@@ -23,7 +23,7 @@ jobs:
        run: pip install tox
 
      - name: pip-compile
-       uses: technote-space/create-pr-action@v2
+       uses: technote-space/create-pr-action@v2.1.4
        with:
          EXECUTE_COMMANDS: tox -e pip-compile
          COMMIT_MESSAGE: 'chore: scheduled pip-compile'
