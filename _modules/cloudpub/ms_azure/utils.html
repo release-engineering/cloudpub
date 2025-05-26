@@ -87,6 +87,9 @@
 <span class="sd">            legacy_sku_id (str, optional):</span>
 <span class="sd">                Only required when ``support_legacy == True``. The SKU ID for Gen1.</span>
 <span class="sd">                Defaults to ``{sku_id}-gen1``</span>
+<span class="sd">            check_base_sas_only (bool, optional):</span>
+<span class="sd">                Indicates to skip checking SAS parameters when set as ``True``.</span>
+<span class="sd">                Default to ``False``</span>
 <span class="sd">            **kwargs</span>
 <span class="sd">                Arguments for :class:`~cloudpub.common.PublishingMetadata`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -96,6 +99,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">support_legacy</span> <span class="o">=</span> <span class="n">support_legacy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recommended_sizes</span> <span class="o">=</span> <span class="n">recommended_sizes</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;legacy_sku_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_base_sas_only</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;check_base_sas_only&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V1&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">support_legacy</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="kc">None</span>
@@ -151,7 +155,7 @@
     <span class="k">return</span> <span class="n">gen_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">is_sas_eq</span><span class="p">(</span><span class="n">sas1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sas2</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_sas_eq</span><span class="p">(</span><span class="n">sas1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sas2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">base_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compare 2 SAS URI and determine where they&#39;re equivalent.</span>
 
@@ -165,10 +169,12 @@
 <span class="sd">    This comparison is necessary as each time a SAS URI is generated it returns a different value.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sas1:</span>
+<span class="sd">        sas1 (str):</span>
 <span class="sd">            The left SAS to compare the equivalency</span>
-<span class="sd">        sas2:</span>
+<span class="sd">        sas2 (str):</span>
 <span class="sd">            The right SAS to compare the equivalency</span>
+<span class="sd">        base_only (bool):</span>
+<span class="sd">            When True it will only compare the base SAS and not its arguments. Defaults to False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        True when both SAS URIs are equivalent, False otherwise.</span>
@@ -185,25 +191,26 @@
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Got different base SAS: </span><span class="si">%s</span><span class="s2"> - Expected: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">base_sas1</span><span class="p">,</span> <span class="n">base_sas2</span><span class="p">))</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="c1"># Parameters lengh differs</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas2</span><span class="p">):</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Got different lengh of SAS parameters: len(</span><span class="si">%s</span><span class="s2">) - Expected len(</span><span class="si">%s</span><span class="s2">)&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">params_sas1</span><span class="p">,</span> <span class="n">params_sas2</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span>
-
-    <span class="c1"># Parameters values differs</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params_sas1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The SAS parameter </span><span class="si">%s</span><span class="s2"> doesn&#39;t match </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">base_only</span><span class="p">:</span>
+        <span class="c1"># Parameters lengh differs</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas2</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Got different lengh of SAS parameters: len(</span><span class="si">%s</span><span class="s2">) - Expected len(</span><span class="si">%s</span><span class="s2">)&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">params_sas1</span><span class="p">,</span> <span class="n">params_sas2</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Parameters values differs</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params_sas1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The SAS parameter </span><span class="si">%s</span><span class="s2"> doesn&#39;t match </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span>
+                <span class="k">return</span> <span class="kc">False</span>
 
     <span class="c1"># Equivalent SAS</span>
     <span class="k">return</span> <span class="kc">True</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">is_sas_present</span><span class="p">(</span><span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span> <span class="n">sas_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_sas_present</span><span class="p">(</span><span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span> <span class="n">sas_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">base_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check whether the given SAS URI is already present in the disk_version.</span>
 
@@ -212,12 +219,14 @@
 <span class="sd">            The plan&#39;s technical configuraion to seek the SAS_URI.</span>
 <span class="sd">        sas_uri (str)</span>
 <span class="sd">            The SAS URI to check whether it&#39;s present or not in disk version.</span>
+<span class="sd">        base_only (bool):</span>
+<span class="sd">            When True it will only compare the base SAS and not its arguments. Defaults to False.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True when the SAS is present in the plan, False otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">is_sas_eq</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">sas_uri</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">is_sas_eq</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">sas_uri</span><span class="p">,</span> <span class="n">base_only</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 

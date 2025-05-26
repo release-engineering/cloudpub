@@ -75,6 +75,8 @@ the version <code class="docutils literal notranslate"><span class="pre">2022-07
 <li><p><strong>recommended_sizes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>, </em><em>optional</em>) – The recommended sizes for the virtual machine.</p></li>
 <li><p><strong>legacy_sku_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Only required when <code class="docutils literal notranslate"><span class="pre">support_legacy</span> <span class="pre">==</span> <span class="pre">True</span></code>. The SKU ID for Gen1.
 Defaults to <code class="docutils literal notranslate"><span class="pre">{sku_id}-gen1</span></code></p></li>
+<li><p><strong>check_base_sas_only</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Indicates to skip checking SAS parameters when set as <code class="docutils literal notranslate"><span class="pre">True</span></code>.
+Default to <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
 <li><p><strong>**kwargs</strong> – Arguments for <a class="reference internal" href="base.html#cloudpub.common.PublishingMetadata" title="cloudpub.common.PublishingMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublishingMetadata</span></code></a>.</p></li>
 </ul>
 </dd>
