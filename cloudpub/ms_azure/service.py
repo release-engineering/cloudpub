@@ -620,7 +620,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             tech_config.disk_versions = [disk_version]
 
         # We just want to append a new image if the SAS is not already present.
-        elif not is_sas_present(tech_config, metadata.image_path):
+        elif not is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
             # Here we can have the metadata.disk_version set or empty.
             # When set we want to get the existing disk_version which matches its value.
             log.debug("Scanning the disk versions from %s" % metadata.destination)

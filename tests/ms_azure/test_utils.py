@@ -102,31 +102,65 @@ class TestAzureUtils:
         assert res == "x64Gen2"
 
     @pytest.mark.parametrize(
-        "sas1,sas2,expected",
+        "sas1,sas2,base_only,expected",
         [
-            ("https://foo.com/bar", "https://foo.com/bar?foo=bar", False),
-            ("https://foo.com/bar?foo=bar&st=aaaaa", "https://foo.com/bar?foo=bar&st=bbb", True),
+            ("https://foo.com/bar", "https://foo.com/bar?foo=bar", False, False),
+            (
+                "https://foo.com/bar?foo=bar&st=aaaaa",
+                "https://foo.com/bar?foo=bar&st=bbb",
+                False,
+                True,
+            ),
             (
                 "https://foo.com/bar?foo=bar&st=a&se=b&sig=c&bar=foo",
                 "https://foo.com/bar?foo=bar&st=d&se=e&sig=f&bar=foo",
+                False,
                 True,
             ),
             (
                 "https://foo.com/bar?foo=bar&st=a&se=b&sig=c&bar=foo",
                 "https://foo.com/bar?foo=foo&st=d&se=e&sig=f",
                 False,
+                False,
             ),
-            ("https://foo.com/bar?foo=bar&st=aaaaa", "https://bar.com/foo?foo=bar&st=bbb", False),
-            ("https://foo.com/bar?bar=foo&st=aaaaa", "https://foo.com/bar?foo=bar&st=bbb", False),
+            (
+                "https://foo.com/bar?foo=bar&st=aaaaa",
+                "https://bar.com/foo?foo=bar&st=bbb",
+                False,
+                False,
+            ),
+            (
+                "https://foo.com/bar?bar=foo&st=aaaaa",
+                "https://foo.com/bar?foo=bar&st=bbb",
+                False,
+                False,
+            ),
+            (
+                "https://foo.com/bar?foo=bar&st=aaaaa",
+                "https://bar.com/foo?foo=bar&st=bbb",
+                True,
+                False,
+            ),
+            (
+                "https://foo.com/bar?bar=foo&st=aaaaa",
+                "https://foo.com/bar?foo=bar&st=bbb",
+                True,
+                True,
+            ),
         ],
     )
     def test_is_sas_present(
-        self, sas1: str, sas2: str, expected: bool, technical_config_obj: VMIPlanTechConfig
+        self,
+        sas1: str,
+        sas2: str,
+        base_only: bool,
+        expected: bool,
+        technical_config_obj: VMIPlanTechConfig,
     ) -> None:
         # Test positive
         technical_config_obj.disk_versions[0].vm_images[0].source.os_disk.uri = sas1
 
-        res = is_sas_present(tech_config=technical_config_obj, sas_uri=sas2)
+        res = is_sas_present(tech_config=technical_config_obj, sas_uri=sas2, base_only=base_only)
         assert res is expected
 
     def test_prepare_vm_images_gen1(

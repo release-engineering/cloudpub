@@ -51,6 +51,9 @@ class AzurePublishingMetadata(PublishingMetadata):
             legacy_sku_id (str, optional):
                 Only required when ``support_legacy == True``. The SKU ID for Gen1.
                 Defaults to ``{sku_id}-gen1``
+            check_base_sas_only (bool, optional):
+                Indicates to skip checking SAS parameters when set as ``True``.
+                Default to ``False``
             **kwargs
                 Arguments for :class:`~cloudpub.common.PublishingMetadata`.
         """
@@ -60,6 +63,7 @@ class AzurePublishingMetadata(PublishingMetadata):
         self.support_legacy = support_legacy
         self.recommended_sizes = recommended_sizes or []
         self.legacy_sku_id = kwargs.pop("legacy_sku_id", None)
+        self.check_base_sas_only = kwargs.pop("check_base_sas_only", False)
 
         if generation == "V1" or not support_legacy:
             self.legacy_sku_id = None
@@ -113,7 +117,7 @@ def get_image_type_mapping(architecture: str, generation: str) -> str:
     return gen_map.get(generation, "")
 
 
-def is_sas_eq(sas1: str, sas2: str) -> bool:
+def is_sas_eq(sas1: str, sas2: str, base_only=False) -> bool:
     """
     Compare 2 SAS URI and determine where they're equivalent.
 
@@ -127,10 +131,12 @@ def is_sas_eq(sas1: str, sas2: str) -> bool:
     This comparison is necessary as each time a SAS URI is generated it returns a different value.
 
     Args:
-        sas1:
+        sas1 (str):
             The left SAS to compare the equivalency
-        sas2:
+        sas2 (str):
             The right SAS to compare the equivalency
+        base_only (bool):
+            When True it will only compare the base SAS and not its arguments. Defaults to False.
 
     Returns:
         True when both SAS URIs are equivalent, False otherwise.
@@ -147,25 +153,26 @@ def is_sas_eq(sas1: str, sas2: str) -> bool:
         log.debug("Got different base SAS: %s - Expected: %s" % (base_sas1, base_sas2))
         return False
 
-    # Parameters lengh differs
-    if len(params_sas1) != len(params_sas2):
-        log.debug(
-            "Got different lengh of SAS parameters: len(%s) - Expected len(%s)"
-            % (params_sas1, params_sas2)
-        )
-        return False
-
-    # Parameters values differs
-    for k, v in params_sas1.items():
-        if v != params_sas2.get(k, None):
-            log.debug("The SAS parameter %s doesn't match %s." % (v, params_sas2.get(k, None)))
+    if not base_only:
+        # Parameters lengh differs
+        if len(params_sas1) != len(params_sas2):
+            log.debug(
+                "Got different lengh of SAS parameters: len(%s) - Expected len(%s)"
+                % (params_sas1, params_sas2)
+            )
             return False
+
+        # Parameters values differs
+        for k, v in params_sas1.items():
+            if v != params_sas2.get(k, None):
+                log.debug("The SAS parameter %s doesn't match %s." % (v, params_sas2.get(k, None)))
+                return False
 
     # Equivalent SAS
     return True
 
 
-def is_sas_present(tech_config: VMIPlanTechConfig, sas_uri: str) -> bool:
+def is_sas_present(tech_config: VMIPlanTechConfig, sas_uri: str, base_only: bool = False) -> bool:
     """
     Check whether the given SAS URI is already present in the disk_version.
 
@@ -174,12 +181,14 @@ def is_sas_present(tech_config: VMIPlanTechConfig, sas_uri: str) -> bool:
             The plan's technical configuraion to seek the SAS_URI.
         sas_uri (str)
             The SAS URI to check whether it's present or not in disk version.
+        base_only (bool):
+            When True it will only compare the base SAS and not its arguments. Defaults to False.
     Returns:
         bool: True when the SAS is present in the plan, False otherwise.
     """
     for disk_version in tech_config.disk_versions:
         for img in disk_version.vm_images:
-            if is_sas_eq(img.source.os_disk.uri, sas_uri):
+            if is_sas_eq(img.source.os_disk.uri, sas_uri, base_only):
                 return True
     return False
 

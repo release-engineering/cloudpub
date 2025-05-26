@@ -1076,7 +1076,9 @@ class TestAzureService:
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
-        mock_is_sas.assert_called_once_with(technical_config_obj, metadata_azure_obj.image_path)
+        mock_is_sas.assert_called_once_with(
+            technical_config_obj, metadata_azure_obj.image_path, False
+        )
         mock_prep_img.assert_not_called()
         mock_upd_sku.assert_called_once_with(
             disk_versions=expected_tech_config.disk_versions,
@@ -1134,6 +1136,7 @@ class TestAzureService:
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
             metadata_azure_obj.image_path,
+            False,
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
@@ -1202,6 +1205,7 @@ class TestAzureService:
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
             metadata_azure_obj.image_path,
+            False,
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
@@ -1267,6 +1271,7 @@ class TestAzureService:
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
             metadata_azure_obj.image_path,
+            False,
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
@@ -1389,6 +1394,7 @@ class TestAzureService:
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
             metadata_azure_obj.image_path,
+            False,
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
@@ -1479,6 +1485,7 @@ class TestAzureService:
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
             metadata_azure_obj.image_path,
+            False,
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
