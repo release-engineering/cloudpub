@@ -6,5 +6,5 @@ httmock
 mypy
 sphinx
 sphinx-autodoc-typehints
-types-requests
+types-requests<=2.31.0.6
 types-python-dateutil
