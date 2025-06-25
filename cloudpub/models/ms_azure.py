@@ -29,6 +29,20 @@ def _mask_secret(value: str) -> str:
 
 
 @define
+class ConfigureError(AttrsJSONDecodeMixin):
+    """Represent an error from a :meth:`~AzureService.configure` request."""
+
+    code: str
+    """The error code."""
+
+    message: str
+    """The error message."""
+
+    resource_id: str = field(metadata={"alias": "resourceId"})
+    """The resource ID."""
+
+
+@define
 class ConfigureStatus(AttrsJSONDecodeMixin):
     """Represent a response from a :meth:`~AzureService.configure` request."""
 
@@ -67,7 +81,10 @@ class ConfigureStatus(AttrsJSONDecodeMixin):
     resource_uri: Optional[str] = field(metadata={"alias": "resourceUri", "hide_unset": True})
     """The resource URI related to the configure job."""
 
-    errors: List[str]
+    errors: List[ConfigureError] = field(
+        converter=lambda x: [ConfigureError.from_json(r) for r in x] if x else [],
+        on_setattr=NO_OP,
+    )
     """List of errors when the ``job_result`` is ``failed``."""
 
 
