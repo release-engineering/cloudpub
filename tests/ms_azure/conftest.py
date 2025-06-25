@@ -92,11 +92,48 @@ def job_details_completed_failure(errors: List[Dict[str, Any]]) -> Dict[str, Any
 
 
 @pytest.fixture
+def job_details_completed_conflict(errors_conflict: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return job_details(status="completed", result="failed", errors=errors_conflict)
+
+
+@pytest.fixture
+def job_details_completed_running_submission(
+    errors_running_submission: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    return job_details(status="completed", result="failed", errors=errors_running_submission)
+
+
+@pytest.fixture
 def errors() -> List[Dict[str, Any]]:
     return [
         {
+            "resourceId": "resource-id",
+            "code": "internalServerError",
+            "message": "A catastrophic error occurred.",
+            "details": [{"code": "invalidResource", "message": "Failure for resource"}],
+        }
+    ]
+
+
+@pytest.fixture
+def errors_running_submission() -> List[Dict[str, Any]]:
+    return [
+        {
+            "resourceId": "resource-id",
+            "code": "internalServerError",
+            "message": "An In Progress submission 1234567890 already exists.",
+            "details": [{"code": "invalidResource", "message": "Failure for resource"}],
+        }
+    ]
+
+
+@pytest.fixture
+def errors_conflict() -> List[Dict[str, Any]]:
+    return [
+        {
+            "resourceId": "resource-id",
             "code": "conflict",
-            "message": "Error message",
+            "message": "The submission cannot be pushed to live as its not the latest submission.",
             "details": [{"code": "invalidResource", "message": "Failure for resource"}],
         }
     ]
@@ -132,6 +169,7 @@ def configure_success_response() -> Dict[str, Any]:
 def configure_failure_response() -> Dict[str, Any]:
     return {
         "error": {
+            "resourceId": "resource-id",
             "code": "badRequest",
             "message": "Invalid configuration: schema validation failed",
             "details": [
@@ -617,3 +655,17 @@ def job_details_completed_failure_obj(
     job_details_completed_failure: Dict[str, Any],
 ) -> ConfigureStatus:
     return ConfigureStatus.from_json(job_details_completed_failure)
+
+
+@pytest.fixture
+def job_details_completed_conflict_obj(
+    job_details_completed_conflict: Dict[str, Any],
+) -> ConfigureStatus:
+    return ConfigureStatus.from_json(job_details_completed_conflict)
+
+
+@pytest.fixture
+def job_details_completed_running_submission_obj(
+    job_details_completed_running_submission: Dict[str, Any],
+) -> ConfigureStatus:
+    return ConfigureStatus.from_json(job_details_completed_running_submission)
