@@ -17,6 +17,14 @@ class InvalidStateError(RuntimeError):
     """Report invalid state which should not happen in code."""
 
 
+class ConflictError(Exception):
+    """Report a submission conflict error."""
+
+
+class RunningSubmissionError(Exception):
+    """Report a running submission error."""
+
+
 class NotFoundError(ValueError):
     """Represent a missing resource."""
 
