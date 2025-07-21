@@ -15,6 +15,8 @@ from cloudpub.models.ms_azure import (
 )
 from cloudpub.ms_azure.utils import (
     AzurePublishingMetadata,
+    check_for_conflict,
+    check_for_running_submission,
     create_disk_version_from_scratch,
     get_image_type_mapping,
     is_azure_job_not_complete,
@@ -580,3 +582,76 @@ class TestAzureUtils:
         res.vm_images = sorted(res.vm_images, key=attrgetter("image_type"))
 
         assert res == disk_version_arm64_obj
+
+    @pytest.mark.parametrize(
+        "error,expected_result",
+        [
+            (
+                {
+                    "code": "conflict",
+                    "message": "The submission cannot be pushed to live as its not the latest submission.",  # noqa: E501
+                },
+                True,
+            ),
+            (
+                {
+                    "code": "internalServerError",
+                    "message": "An In Progress submission 1234567890 already exists.",
+                },
+                False,
+            ),
+            (
+                {
+                    "code": "unknownError",
+                    "message": "An In Progress submission 1234567890 already exists.",
+                },
+                False,
+            ),
+            ({"code": "conflict", "message": "Something else happened"}, False),
+        ],
+    )
+    def test_check_for_conflict(self, error: Dict[str, Any], expected_result: bool) -> None:
+        err_obj = ConfigureStatus.from_json(
+            {
+                "jobId": "1",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": [error],
+            }
+        )
+        assert err_obj
+        assert check_for_conflict(err_obj) == expected_result
+
+    @pytest.mark.parametrize(
+        "error,expected_result",
+        [
+            (
+                {
+                    "code": "internalServerError",
+                    "message": "An In Progress submission 1234567890 already exists.",
+                },
+                True,
+            ),
+            (
+                {
+                    "code": "unknownError",
+                    "message": "An In Progress submission 1234567890 already exists.",
+                },
+                False,
+            ),
+            ({"code": "conflict", "message": "Something else happened"}, False),
+        ],
+    )
+    def test_check_for_running_submission(
+        self, error: Dict[str, Any], expected_result: bool
+    ) -> None:
+        err_obj = ConfigureStatus.from_json(
+            {
+                "jobId": "1",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": [error],
+            }
+        )
+        assert err_obj
+        assert check_for_running_submission(err_obj) == expected_result
