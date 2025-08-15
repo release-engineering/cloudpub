@@ -194,7 +194,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             "$schema": self.CONFIGURE_SCHEMA.format(AZURE_API_VERSION=self.AZURE_API_VERSION),
             "resources": [resource.to_json()],
         }
-        log.info("Data to configure: %s", json.dumps(data, indent=2))
+        log.debug("Data to configure: %s", json.dumps(data, indent=2))
         res = self._configure(data=data)
         return self._wait_for_job_completion(job_id=res.job_id)
 
@@ -205,7 +205,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         params: Dict[str, str] = {}
 
         while has_next:
-            log.debug("Requesting the products list.")
+            log.info("Requesting the products list.")
             resp = self.session.get(path="/product", params=params)
             data = self._assert_dict(resp)
 
@@ -230,6 +230,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             list: A list with ProductSummary for all products in Azure.
         """
+        log.info("Listing the products on Azure server.")
         if not self._products:
             self._products = [p for p in self.products]
         return self._products
@@ -257,7 +258,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 targets.append(tgt)
 
         for t in targets:
-            log.debug("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
+            log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
             try:
                 resp = self.session.get(
                     path=f"/resource-tree/product/{product_id}", params={"targetType": t}
@@ -314,6 +315,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             Optional[ProductSubmission]: The requested submission when found.
         """
+        log.info("Looking up for submission in state \"%s\" for \"%s\"", state, product_id)
         submissions = self.get_submissions(product_id)
         for sub in submissions:
             if sub.target.targetType == state:
@@ -421,6 +423,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The response from configure request.
         """
+        log.info("Submitting the status of \"%s\" to \"%s\"", product_id, status)
         # We need to get the previous state of the given one to request the submission
         prev_state_mapping = {
             "preview": "draft",
@@ -459,6 +462,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Raises:
             RuntimeError: whenever a publishing is already in progress.
         """
+        log.info("Ensuring no other publishing jobs are in progress for \"%s\"", product_id)
         submission_targets = ["preview", "live"]
 
         for target in submission_targets:
@@ -539,21 +543,21 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             List[ProductSubmission],
             self.filter_product_resources(product=product, resource="submission"),
         )[0]
-        if not self._is_submission_in_preview(submission):
-            log.info(
-                "Submitting the product \"%s (%s)\" to \"preview\"." % (product_name, product.id)
-            )
-            res = self.submit_to_status(product_id=product.id, status='preview')
+        if self._is_submission_in_preview(submission):
+            log.info("The product \"%s\" is already set to preview", product_name)
+            return
 
-            if res.job_result != 'succeeded' or not self.get_submission_state(
-                product.id, state="preview"
-            ):
-                errors = "\n".join(res.errors)
-                failure_msg = (
-                    f"Failed to submit the product {product.id} to preview. "
-                    f"Status: {res.job_result} Errors: {errors}"
-                )
-                raise RuntimeError(failure_msg)
+        res = self.submit_to_status(product_id=product.id, status='preview')
+
+        if res.job_result != 'succeeded' or not self.get_submission_state(
+            product.id, state="preview"
+        ):
+            errors = "\n".join(res.errors)
+            failure_msg = (
+                f"Failed to submit the product {product.id} to preview. "
+                f"Status: {res.job_result} Errors: {errors}"
+            )
+            raise RuntimeError(failure_msg)
 
     @retry(
         wait=wait_fixed(wait=60),
@@ -572,7 +576,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """
         # Note: the offer can only go `live` after successfully being changed to `preview`
         # which takes up to 4 days.
-        log.info("Submitting the product \"%s (%s)\" to \"live\"." % (product_name, product.id))
         res = self.submit_to_status(product_id=product.id, status='live')
 
         if res.job_result != 'succeeded' or not self.get_submission_state(product.id, state="live"):
@@ -598,16 +601,16 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         plan_name = metadata.destination.split("/")[-1]
         product, plan = self.get_product_plan_by_name(product_name, plan_name)
         log.info(
-            "Preparing to associate the image with the plan \"%s\" from product \"%s\""
-            % (plan_name, product_name)
+            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\""
+            % (metadata.image_path, plan_name, product_name)
         )
 
         # 2. Retrieve the VM Technical configuration for the given plan
-        log.debug("Retrieving the technical config for \"%s\"." % metadata.destination)
+        log.info("Retrieving the technical config for \"%s\"." % metadata.destination)
         tech_config = self.get_plan_tech_config(product, plan)
 
         # 3. Prepare the Disk Version
-        log.debug("Creating the VMImageResource with SAS: \"%s\"" % metadata.image_path)
+        log.info("Creating the VMImageResource with SAS for image: \"%s\"" % metadata.image_path)
         sas = OSDiskURI(uri=metadata.image_path)
         source = VMImageSource(source_type="sasUri", os_disk=sas.to_json(), data_disks=[])
 
@@ -615,7 +618,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # plan's technical config and discard all other VM images which may've been present.
         disk_version = None  # just to make mypy happy
         if metadata.overwrite is True:
-            log.warning("Overwriting the plan %s with the given image.", plan_name)
+            log.warning(
+                "Overwriting the plan \"%s\" with the given image: \"%s\".",
+                plan_name,
+                metadata.image_path,
+            )
             disk_version = create_disk_version_from_scratch(metadata, source)
             tech_config.disk_versions = [disk_version]
 
@@ -623,19 +630,23 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         elif not is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
             # Here we can have the metadata.disk_version set or empty.
             # When set we want to get the existing disk_version which matches its value.
-            log.debug("Scanning the disk versions from %s" % metadata.destination)
+            log.info(
+                "Scanning the disk versions from \"%s\" for the image \"%s\"",
+                metadata.destination,
+                metadata.image_path,
+            )
             disk_version = seek_disk_version(tech_config, metadata.disk_version)
 
             # Check the images of the selected DiskVersion if it exists
             if disk_version:
-                log.debug(
-                    "DiskVersion \"%s\" exists in \"%s\"."
-                    % (disk_version.version_number, metadata.destination)
+                log.info(
+                    "DiskVersion \"%s\" exists in \"%s\" for the image \"%s\"."
+                    % (disk_version.version_number, metadata.destination, metadata.image_path)
                 )
                 disk_version = set_new_sas_disk_version(disk_version, metadata, source)
 
             else:  # The disk version doesn't exist, we need to create one from scratch
-                log.debug("The DiskVersion doesn't exist, creating one from scratch.")
+                log.info("The DiskVersion doesn't exist, creating one from scratch.")
                 disk_version = create_disk_version_from_scratch(metadata, source)
                 tech_config.disk_versions.append(disk_version)
         else:
@@ -646,21 +657,30 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
-            log.debug("Updating SKUs for \"%s\"." % metadata.destination)
+            log.info("Updating SKUs for \"%s\"." % metadata.destination)
             tech_config.skus = update_skus(
                 disk_versions=tech_config.disk_versions,
                 generation=metadata.generation,
                 plan_name=plan_name,
                 old_skus=tech_config.skus,
             )
-            log.debug("Updating the technical configuration for \"%s\"." % metadata.destination)
+            log.info("Updating the technical configuration for \"%s\"." % metadata.destination)
             self.configure(resource=tech_config)
 
         # 5. Proceed to publishing if it was requested.
         # Note: The publishing will only occur if it made changes in disk_version.
         if disk_version and not metadata.keepdraft:
+            log.info(
+                "Publishing the new changes for \"%s\" on plan \"%s\"", product_name, plan_name
+            )
             logdiff(self.diff_offer(product))
             self.ensure_can_publish(product.id)
 
             self._publish_preview(product, product_name)
             self._publish_live(product, product_name)
+
+        log.info(
+            "Finished publishing the image \"%s\" to \"%s\"",
+            metadata.image_path,
+            metadata.destination,
+        )

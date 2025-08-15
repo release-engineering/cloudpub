@@ -556,13 +556,14 @@ def set_new_sas_disk_version(
     Returns:
         The changed disk version with the given source.
     """
+    log.info("Setting up a new SAS disk version for \"%s\"", metadata.image_path)
     # If we already have a VMImageDefinition let's use it
     if disk_version.vm_images:
         log.debug("The DiskVersion \"%s\" contains inner images." % disk_version.version_number)
         img, img_legacy = vm_images_by_generation(disk_version, metadata.architecture)
 
         # Now we replace the SAS URI for the vm_images
-        log.debug(
+        log.info(
             "Adjusting the VMImages from existing DiskVersion \"%s\""
             "to fit the new image with SAS \"%s\"."
             % (disk_version.version_number, metadata.image_path)
@@ -579,7 +580,7 @@ def set_new_sas_disk_version(
         log.debug(
             "The DiskVersion \"%s\" does not contain inner images." % disk_version.version_number
         )
-        log.debug(
+        log.info(
             "Setting the new image \"%s\" on DiskVersion \"%s\"."
             % (metadata.image_path, disk_version.version_number)
         )

@@ -117,7 +117,7 @@ class PartnerPortalSession:
 
     def _login(self) -> AccessToken:
         """Retrieve the authentication token from Microsoft."""
-        log.info("Retrieving the bearer token from Microsoft")
+        log.debug("Retrieving the bearer token from Microsoft")
         url = self.LOGIN_URL_TMPL.format(**self.auth_keys)
 
         headers = {
@@ -156,7 +156,7 @@ class PartnerPortalSession:
                 params = {}
             params.update(self._mandatory_params)
 
-        log.info(f"Sending a {method} request to {path}")
+        log.debug(f"Sending a {method} request to {path}")
         formatted_url = self._prefix_url.format(**self.auth_keys)
         url = join_url(formatted_url, path)
         return self.session.request(method, url=url, params=params, headers=headers, **kwargs)
