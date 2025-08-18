@@ -4,6 +4,7 @@ pytest
 pytest-cov
 httmock
 mypy
+requests-mock
 sphinx
 sphinx-autodoc-typehints
 types-requests<=2.31.0.6
