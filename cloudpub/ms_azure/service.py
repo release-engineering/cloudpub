@@ -669,15 +669,24 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 5. Proceed to publishing if it was requested.
         # Note: The publishing will only occur if it made changes in disk_version.
-        if disk_version and not metadata.keepdraft:
-            log.info(
-                "Publishing the new changes for \"%s\" on plan \"%s\"", product_name, plan_name
-            )
-            logdiff(self.diff_offer(product))
-            self.ensure_can_publish(product.id)
+        if not metadata.keepdraft:
+            # Get the submission state
+            submission: ProductSubmission = cast(
+                List[ProductSubmission],
+                self.filter_product_resources(product=product, resource="submission"),
+            )[0]
 
-            self._publish_preview(product, product_name)
-            self._publish_live(product, product_name)
+            # We should only publish if there are new changes OR
+            # the existing offer was already in preview
+            if disk_version or self._is_submission_in_preview(submission):
+                log.info(
+                    "Publishing the new changes for \"%s\" on plan \"%s\"", product_name, plan_name
+                )
+                logdiff(self.diff_offer(product))
+                self.ensure_can_publish(product.id)
+
+                self._publish_preview(product, product_name)
+                self._publish_live(product, product_name)
 
         log.info(
             "Finished publishing the image \"%s\" to \"%s\"",
