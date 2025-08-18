@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from unittest import mock
 
 import pytest
+import requests_mock
 from _pytest.logging import LogCaptureFixture
 from httmock import response
 from requests import Response
@@ -1502,3 +1503,122 @@ class TestAzureService:
         ]
         mock_submit.assert_has_calls(submit_calls)
         mock_ensure_publish.assert_called_once_with(product_obj.id)
+
+    def test_publish_live_when_state_is_preview(
+        self,
+        token: Dict[str, Any],
+        auth_dict: Dict[str, Any],
+        configure_running_response: Dict[str, Any],
+        configure_success_response: Dict[str, Any],
+        product: Dict[str, Any],
+        products_list: Dict[str, Any],
+        product_summary: Dict[str, Any],
+        submission: Dict[str, Any],
+        vmimage_source: Dict[str, Any],
+        metadata_azure_obj: mock.MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # Prepare testing data
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.destination = "example-product/plan-1"
+        # SAS URI should be already present during preview
+        metadata_azure_obj.image_path = vmimage_source["osDisk"]["uri"]
+        # Set the submission state to preview and create one for live after publishing
+        submission_preview = deepcopy(submission)
+        submission_preview.update({"target": {"targetType": "preview"}})
+        submission_live = deepcopy(submission)
+        submission_live.update({"target": {"targetType": "live"}})
+        # We want to have 2 kind of responses: one for the product still in preview
+        # and a final one when it gets live
+        submissions_inprog = {"value": [submission_preview]}
+        submissions_final = {"value": [submission_preview, submission_live]}
+        # We need to replace the existing "draft" submission of product's resources
+        # with the "preview" one to cause the test to run in an offer already in preview
+        filtered_resources = [
+            x for x in product.get("resources", []) if "submission" not in x.get("id", "")
+        ]
+        filtered_resources.append(submission_preview)
+        product["resources"] = filtered_resources
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        # Test
+        with caplog.at_level(logging.INFO):
+            with requests_mock.Mocker() as m:
+                m.post(login_url, json=token)
+                m.get(f"{base_url}/product", json=products_list)
+                m.get(f"{base_url}/resource-tree/product/{product_id}", json=product)
+                m.post(f"{base_url}/configure", json=configure_running_response)
+                m.get(
+                    f"{base_url}/configure/{configure_success_response['jobId']}/status",
+                    json=configure_success_response,
+                )
+                m.get(
+                    f"{base_url}/submission/{product_id}",
+                    [
+                        {"json": submissions_inprog},  # ensure_can_publish call "preview"
+                        {"json": submissions_inprog},  # ensure_can_publish call "live"
+                        {"json": submissions_inprog},  # _is_submission_in_preview call
+                        {"json": submissions_inprog},  # submit_to_status check prev_state call
+                        {"json": submissions_final},  # submit_to_status validation after configure
+                    ],
+                )
+                azure_svc = AzureService(auth_dict)
+                azure_svc.publish(metadata=metadata_azure_obj)
+        # Present messages
+        assert 'Requesting the products list.' in caplog.text
+        assert (
+            'Requesting the product ID "ffffffff-ffff-ffff-ffff-ffffffffffff" with state "preview".'
+            in caplog.text
+        )
+        assert (
+            'Preparing to associate the image "https://uri.test.com" with the plan "plan-1" from product "example-product"'  # noqa: E501
+            in caplog.text
+        )
+        assert 'Retrieving the technical config for "example-product/plan-1".' in caplog.text
+        assert (
+            'Creating the VMImageResource with SAS for image: "https://uri.test.com"' in caplog.text
+        )
+        assert (
+            'The destination "example-product/plan-1" already contains the SAS URI: "https://uri.test.com".'  # noqa: E501
+            in caplog.text
+        )
+        assert 'Publishing the new changes for "example-product" on plan "plan-1"' in caplog.text
+        assert (
+            'Requesting the product ID "ffffffff-ffff-ffff-ffff-ffffffffffff" with state "preview".'
+            in caplog.text
+        )
+        assert (
+            'Ensuring no other publishing jobs are in progress for "ffffffff-ffff-ffff-ffff-ffffffffffff"'  # noqa: E501
+            in caplog.text
+        )
+        assert (
+            'Looking up for submission in state "preview" for "ffffffff-ffff-ffff-ffff-ffffffffffff"'  # noqa: E501
+            in caplog.text
+        )
+        assert (
+            'Looking up for submission in state "live" for "ffffffff-ffff-ffff-ffff-ffffffffffff"'
+            in caplog.text
+        )
+        assert 'The product "example-product" is already set to preview' in caplog.text
+        assert (
+            'Submitting the status of "ffffffff-ffff-ffff-ffff-ffffffffffff" to "live"'
+            in caplog.text
+        )
+        assert (
+            'Finished publishing the image "https://uri.test.com" to "example-product/plan-1"\n'
+            in caplog.text
+        )
+
+        # Absent messages
+        assert (
+            'Scanning the disk versions from "example-product/plan-1" for the image "https://uri.test.com"'  # noqa: E501
+            not in caplog.text
+        )
+        assert 'The DiskVersion doesn\'t exist, creating one from scratch.' not in caplog.text
+        assert 'Updating SKUs for "example-product/plan-1".' not in caplog.text
+        assert (
+            'Updating the technical configuration for "example-product/plan-1".' not in caplog.text
+        )
