@@ -1093,6 +1093,7 @@ class TestAzureService:
 
     @pytest.mark.parametrize("keepdraft", [True, False], ids=["nochannel", "push"])
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.AzureService._is_submission_in_preview")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
     @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
@@ -1109,6 +1110,7 @@ class TestAzureService:
         mock_prep_img: mock.MagicMock,
         mock_upd_sku: mock.MagicMock,
         mock_submit: mock.MagicMock,
+        mock_is_preview: mock.MagicMock,
         mock_configure: mock.MagicMock,
         keepdraft: bool,
         product_obj: Product,
@@ -1127,12 +1129,17 @@ class TestAzureService:
         mock_is_sas.return_value = True
         mock_disk_scratch.return_value = disk_version_obj
         mock_upd_sku.return_value = technical_config_obj
+        mock_is_preview.return_value = False
 
         azure_service.publish(metadata_azure_obj)
 
         mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
-        mock_filter.assert_called_once_with(
-            product=product_obj, resource="virtual-machine-plan-technical-configuration"
+        mock_filter.assert_has_calls(
+            [
+                mock.call(
+                    product=product_obj, resource="virtual-machine-plan-technical-configuration"
+                )
+            ]
         )
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
@@ -1362,6 +1369,7 @@ class TestAzureService:
         mock_filter.side_effect = [
             [technical_config_obj],
             [submission_obj],
+            [submission_obj],
         ]
         mock_getsubst.side_effect = ["preview", "live"]
         mock_res_preview = mock.MagicMock()
@@ -1453,6 +1461,7 @@ class TestAzureService:
         mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.side_effect = [
             [technical_config_obj],
+            [submission_obj],
             [submission_obj],
         ]
         mock_getsubst.side_effect = ["preview", "live"]
