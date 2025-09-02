@@ -103,7 +103,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The job ID to track its status alongside the initial status.
         """
-        log.debug("Received the following data to create/modify: %s" % json.dumps(data, indent=2))
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug(
+                "Received the following data to create/modify: %s", json.dumps(data, indent=2)
+            )
         resp = self.session.post(path="configure", json=data)
         self._raise_for_status(response=resp)
         rsp_data = resp.json()
@@ -121,7 +124,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             The updated job status.
         """
-        log.debug(f"Query job details for \"{job_id}\"")
+        log.debug("Query job details for \"%s\"", job_id)
         resp = self.session.get(path=f"configure/{job_id}/status")
 
         # We don't want to fail if there's a server error thus we make a fake
@@ -129,9 +132,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         if resp.status_code >= 500:
             log.warning(
                 (
-                    f"Got HTTP {resp.status_code} from server when querying job {job_id} status."
-                    " Considering the job_status as \"pending\"."
-                )
+                    "Got HTTP %s from server when querying job %s status."
+                    " Considering the job_status as \"pending\".",
+                ),
+                resp.status_code,
+                job_id,
             )
             return ConfigureStatus.from_json(
                 {
@@ -177,7 +182,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             error_message = f"Job {job_id} failed: \n{job_details.errors}"
             self._raise_error(InvalidStateError, error_message)
         elif job_details.job_result == "succeeded":
-            log.debug(f"Job {job_id} succeeded")
+            log.debug("Job %s succeeded", job_id)
         return job_details
 
     def configure(self, resource: AzureResource) -> ConfigureStatus:
@@ -194,7 +199,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             "$schema": self.CONFIGURE_SCHEMA.format(AZURE_API_VERSION=self.AZURE_API_VERSION),
             "resources": [resource.to_json()],
         }
-        log.debug("Data to configure: %s", json.dumps(data, indent=2))
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug("Data to configure: %s", json.dumps(data, indent=2))
         res = self._configure(data=data)
         return self._wait_for_job_completion(job_id=res.job_id)
 
@@ -601,16 +607,18 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         plan_name = metadata.destination.split("/")[-1]
         product, plan = self.get_product_plan_by_name(product_name, plan_name)
         log.info(
-            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\""
-            % (metadata.image_path, plan_name, product_name)
+            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
+            metadata.image_path,
+            plan_name,
+            product_name,
         )
 
         # 2. Retrieve the VM Technical configuration for the given plan
-        log.info("Retrieving the technical config for \"%s\"." % metadata.destination)
+        log.info("Retrieving the technical config for \"%s\".", metadata.destination)
         tech_config = self.get_plan_tech_config(product, plan)
 
         # 3. Prepare the Disk Version
-        log.info("Creating the VMImageResource with SAS for image: \"%s\"" % metadata.image_path)
+        log.info("Creating the VMImageResource with SAS for image: \"%s\"", metadata.image_path)
         sas = OSDiskURI(uri=metadata.image_path)
         source = VMImageSource(source_type="sasUri", os_disk=sas.to_json(), data_disks=[])
 
@@ -640,8 +648,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             # Check the images of the selected DiskVersion if it exists
             if disk_version:
                 log.info(
-                    "DiskVersion \"%s\" exists in \"%s\" for the image \"%s\"."
-                    % (disk_version.version_number, metadata.destination, metadata.image_path)
+                    "DiskVersion \"%s\" exists in \"%s\" for the image \"%s\".",
+                    disk_version.version_number,
+                    metadata.destination,
+                    metadata.image_path,
                 )
                 disk_version = set_new_sas_disk_version(disk_version, metadata, source)
 
@@ -651,20 +661,21 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 tech_config.disk_versions.append(disk_version)
         else:
             log.info(
-                "The destination \"%s\" already contains the SAS URI: \"%s\"."
-                % (metadata.destination, metadata.image_path)
+                "The destination \"%s\" already contains the SAS URI: \"%s\".",
+                metadata.destination,
+                metadata.image_path,
             )
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
-            log.info("Updating SKUs for \"%s\"." % metadata.destination)
+            log.info("Updating SKUs for \"%s\".", metadata.destination)
             tech_config.skus = update_skus(
                 disk_versions=tech_config.disk_versions,
                 generation=metadata.generation,
                 plan_name=plan_name,
                 old_skus=tech_config.skus,
             )
-            log.info("Updating the technical configuration for \"%s\"." % metadata.destination)
+            log.info("Updating the technical configuration for \"%s\".", metadata.destination)
             self.configure(resource=tech_config)
 
         # 5. Proceed to publishing if it was requested.

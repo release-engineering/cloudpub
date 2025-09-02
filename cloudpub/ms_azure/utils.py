@@ -150,22 +150,23 @@ def is_sas_eq(sas1: str, sas2: str, base_only=False) -> bool:
 
     # Base URL differs
     if base_sas1 != base_sas2:
-        log.debug("Got different base SAS: %s - Expected: %s" % (base_sas1, base_sas2))
+        log.debug("Got different base SAS: %s - Expected: %s", base_sas1, base_sas2)
         return False
 
     if not base_only:
         # Parameters lengh differs
         if len(params_sas1) != len(params_sas2):
             log.debug(
-                "Got different lengh of SAS parameters: len(%s) - Expected len(%s)"
-                % (params_sas1, params_sas2)
+                "Got different lengh of SAS parameters: len(%s) - Expected len(%s)",
+                params_sas1,
+                params_sas2,
             )
             return False
 
         # Parameters values differs
         for k, v in params_sas1.items():
             if v != params_sas2.get(k, None):
-                log.debug("The SAS parameter %s doesn't match %s." % (v, params_sas2.get(k, None)))
+                log.debug("The SAS parameter %s doesn't match %s.", v, params_sas2.get(k, None))
                 return False
 
     # Equivalent SAS
@@ -203,8 +204,8 @@ def is_azure_job_not_complete(job_details: ConfigureStatus) -> bool:
     Returns:
         bool: False if job completed, True otherwise
     """
-    log.debug(f"Checking if the job \"{job_details.job_id}\" is still running")
-    log.debug(f"job {job_details.job_id} is in {job_details.job_status} state")
+    log.debug("Checking if the job \"%s\" is still running", job_details.job_id)
+    log.debug("job %s is in %s state", job_details.job_id, job_details.job_status)
     if job_details.job_status != "completed":
         return True
     return False
@@ -559,14 +560,15 @@ def set_new_sas_disk_version(
     log.info("Setting up a new SAS disk version for \"%s\"", metadata.image_path)
     # If we already have a VMImageDefinition let's use it
     if disk_version.vm_images:
-        log.debug("The DiskVersion \"%s\" contains inner images." % disk_version.version_number)
+        log.debug("The DiskVersion \"%s\" contains inner images.", disk_version.version_number)
         img, img_legacy = vm_images_by_generation(disk_version, metadata.architecture)
 
         # Now we replace the SAS URI for the vm_images
         log.info(
             "Adjusting the VMImages from existing DiskVersion \"%s\""
-            "to fit the new image with SAS \"%s\"."
-            % (disk_version.version_number, metadata.image_path)
+            "to fit the new image with SAS \"%s\".",
+            disk_version.version_number,
+            metadata.image_path,
         )
         disk_version.vm_images = prepare_vm_images(
             metadata=metadata,
@@ -578,11 +580,12 @@ def set_new_sas_disk_version(
     # If no VMImages, we need to create them from scratch
     else:
         log.debug(
-            "The DiskVersion \"%s\" does not contain inner images." % disk_version.version_number
+            "The DiskVersion \"%s\" does not contain inner images.", disk_version.version_number
         )
         log.info(
-            "Setting the new image \"%s\" on DiskVersion \"%s\"."
-            % (metadata.image_path, disk_version.version_number)
+            "Setting the new image \"%s\" on DiskVersion \"%s\".",
+            metadata.image_path,
+            disk_version.version_number,
         )
         disk_version.vm_images = create_vm_image_definitions(metadata, source)
 
@@ -592,4 +595,4 @@ def set_new_sas_disk_version(
 def logdiff(diff: DeepDiff) -> None:
     """Log the offer diff if it exists."""
     if diff:
-        log.warning(f"Found the following offer diff before publishing:\n{diff.pretty()}")
+        log.warning("Found the following offer diff before publishing:\n%s", diff.pretty())
