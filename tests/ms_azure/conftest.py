@@ -31,12 +31,12 @@ from cloudpub.ms_azure import AzurePublishingMetadata, AzureService
 def token() -> Dict[str, str]:
     return {
         "token_type": "Bearer",
-        "expires_in": "3599",
-        "ext_expires_in": "3599",
-        "expires_on": "1646935200",  # 2022-03-10 15:00:00
-        "not_before": "1646931600",  # 2022-03-10 14:00:00
-        "resource": "https://graph.microsoft.com/rp/product-ingestion",
-        "access_token": "aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+        "expires_in": "9999",
+        "ext_expires_in": "9999",
+        "expires_on": "0",
+        "not_before": "9999999999",
+        "resource": "https://graph.microsoft.com/",
+        "access_token": "faketoken",
     }
 
 
@@ -103,13 +103,26 @@ def errors() -> List[Dict[str, Any]]:
 
 
 @pytest.fixture
-def configure_success_response() -> Dict[str, Any]:
+def configure_running_response() -> Dict[str, Any]:
     return {
         "$schema": "https://schema",
         "jobId": "0a0a00aa-00a0-0a00-0a0a-00000a000a00",
         "jobStatus": "running",
         "jobResult": "pending",
         "jobStart": "2022-06-13T08:43:47.5235Z",
+        "jobEnd": "0001-01-01T00:00:00",
+        "errors": [],
+    }
+
+
+@pytest.fixture
+def configure_success_response() -> Dict[str, Any]:
+    return {
+        "$schema": "https://schema",
+        "jobId": "0a0a00aa-00a0-0a00-0a0a-00000a000a00",
+        "jobStatus": "completed",
+        "jobResult": "succeeded",
+        "jobStart": "2022-06-13T08:44:47.5235Z",
         "jobEnd": "0001-01-01T00:00:00",
         "errors": [],
     }
@@ -153,6 +166,11 @@ def product_summary() -> Dict[str, Any]:
         "type": "azureVirtualMachine",
         "alias": "Example Product",
     }
+
+
+@pytest.fixture
+def products_list(product_summary) -> Dict[str, Any]:
+    return {"value": [product_summary]}
 
 
 @pytest.fixture

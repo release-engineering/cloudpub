@@ -24,7 +24,7 @@ class AccessToken:
         """
         self.expires_on = datetime.fromtimestamp(int(json["expires_on"]))
         self.access_token = json["access_token"]
-        log.debug(f"Obtained token with expiration date on {self.expires_on}")
+        log.debug("Obtained token with expiration date on %s", self.expires_on)
 
     def is_expired(self) -> bool:
         """Return True if the token is expired and False otherwise."""
@@ -108,7 +108,7 @@ class PartnerPortalSession:
             "AZURE_API_SECRET",
         ]
         for key in mandatory_keys:
-            log.debug(f"Validating mandatory key \"{key}\"")
+            log.debug("Validating mandatory key \"%s\"", key)
             if key not in auth_keys.keys() or not auth_keys.get(key):
                 err_msg = f'The key/value for "{key}" must be set.'
                 log.error(err_msg)
@@ -117,7 +117,7 @@ class PartnerPortalSession:
 
     def _login(self) -> AccessToken:
         """Retrieve the authentication token from Microsoft."""
-        log.info("Retrieving the bearer token from Microsoft")
+        log.debug("Retrieving the bearer token from Microsoft")
         url = self.LOGIN_URL_TMPL.format(**self.auth_keys)
 
         headers = {
@@ -156,7 +156,7 @@ class PartnerPortalSession:
                 params = {}
             params.update(self._mandatory_params)
 
-        log.info(f"Sending a {method} request to {path}")
+        log.debug("Sending a %s request to %s", method, path)
         formatted_url = self._prefix_url.format(**self.auth_keys)
         url = join_url(formatted_url, path)
         return self.session.request(method, url=url, params=params, headers=headers, **kwargs)

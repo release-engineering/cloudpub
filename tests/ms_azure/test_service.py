@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from unittest import mock
 
 import pytest
+import requests_mock
 from _pytest.logging import LogCaptureFixture
 from httmock import response
 from requests import Response
@@ -462,10 +463,11 @@ class TestAzureService:
         mock_getpr.return_value = product_obj
         mock_getpl.return_value = plan_summary_obj
 
-        product, plan = azure_service.get_product_plan_by_name("product", "plan")
+        product, plan, tgt = azure_service.get_product_plan_by_name("product", "plan")
 
         assert product == product_obj
         assert plan == plan_summary_obj
+        assert tgt == "preview"
         mock_getpr.assert_called_once_with("product", first_target="preview")
         mock_getpl.assert_called_once_with(product_obj, "plan")
 
@@ -483,10 +485,11 @@ class TestAzureService:
         mock_getpr.return_value = product_obj
         mock_getpl.side_effect = [NotFoundError("Not found"), plan_summary_obj]
 
-        product, plan = azure_service.get_product_plan_by_name("product", "plan")
+        product, plan, tgt = azure_service.get_product_plan_by_name("product", "plan")
 
         assert product == product_obj
         assert plan == plan_summary_obj
+        assert tgt == "draft"
         mock_getpr.assert_has_calls(
             [
                 mock.call("product", first_target="preview"),
@@ -993,7 +996,7 @@ class TestAzureService:
         metadata_azure_obj.overwrite = True
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_disk_scratch.return_value = disk_version_obj
         mock_upd_sku.return_value = technical_config_obj
@@ -1052,7 +1055,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.disk_version = "1.0.0"
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         technical_config_obj.disk_versions = []
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
@@ -1092,6 +1095,7 @@ class TestAzureService:
 
     @pytest.mark.parametrize("keepdraft", [True, False], ids=["nochannel", "push"])
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    @mock.patch("cloudpub.ms_azure.AzureService._is_submission_in_preview")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
     @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
@@ -1108,6 +1112,7 @@ class TestAzureService:
         mock_prep_img: mock.MagicMock,
         mock_upd_sku: mock.MagicMock,
         mock_submit: mock.MagicMock,
+        mock_is_preview: mock.MagicMock,
         mock_configure: mock.MagicMock,
         keepdraft: bool,
         product_obj: Product,
@@ -1121,17 +1126,22 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = keepdraft
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = True
         mock_disk_scratch.return_value = disk_version_obj
         mock_upd_sku.return_value = technical_config_obj
+        mock_is_preview.return_value = False
 
         azure_service.publish(metadata_azure_obj)
 
         mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
-        mock_filter.assert_called_once_with(
-            product=product_obj, resource="virtual-machine-plan-technical-configuration"
+        mock_filter.assert_has_calls(
+            [
+                mock.call(
+                    product=product_obj, resource="virtual-machine-plan-technical-configuration"
+                )
+            ]
         )
         mock_is_sas.assert_called_once_with(
             technical_config_obj,
@@ -1173,7 +1183,7 @@ class TestAzureService:
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
         technical_config_obj.disk_versions[0].vm_images = []
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         mock_disk_scratch.return_value = disk_version_obj
@@ -1240,7 +1250,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         expected_source = VMImageSource(
@@ -1357,9 +1367,10 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.side_effect = [
             [technical_config_obj],
+            [submission_obj],
             [submission_obj],
         ]
         mock_getsubst.side_effect = ["preview", "live"]
@@ -1449,9 +1460,10 @@ class TestAzureService:
         metadata_azure_obj.disk_version = "2.1.0"
         metadata_azure_obj.architecture = "aarch64"
         technical_config_obj.disk_versions = [disk_version_arm64_obj]
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.side_effect = [
             [technical_config_obj],
+            [submission_obj],
             [submission_obj],
         ]
         mock_getsubst.side_effect = ["preview", "live"]
@@ -1502,3 +1514,126 @@ class TestAzureService:
         ]
         mock_submit.assert_has_calls(submit_calls)
         mock_ensure_publish.assert_called_once_with(product_obj.id)
+
+    def test_publish_live_when_state_is_preview(
+        self,
+        token: Dict[str, Any],
+        auth_dict: Dict[str, Any],
+        configure_running_response: Dict[str, Any],
+        configure_success_response: Dict[str, Any],
+        product: Dict[str, Any],
+        products_list: Dict[str, Any],
+        product_summary: Dict[str, Any],
+        submission: Dict[str, Any],
+        vmimage_source: Dict[str, Any],
+        metadata_azure_obj: mock.MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # Prepare testing data
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.destination = "example-product/plan-1"
+        # SAS URI should be already present during preview
+        metadata_azure_obj.image_path = vmimage_source["osDisk"]["uri"]
+        # Set the submission state to preview and create one for live after publishing
+        submission_preview = deepcopy(submission)
+        submission_preview.update({"target": {"targetType": "preview"}})
+        submission_live = deepcopy(submission)
+        submission_live.update({"target": {"targetType": "live"}})
+        # We want to have 2 kind of responses: one for the product still in preview
+        # and a final one when it gets live
+        submissions_inprog = {"value": [submission_preview]}
+        submissions_final = {"value": [submission_preview, submission_live]}
+        # We need to replace the existing "draft" submission of product's resources
+        # with the "preview" one to cause the test to run in an offer already in preview
+        filtered_resources = [
+            x for x in product.get("resources", []) if "submission" not in x.get("id", "")
+        ]
+        filtered_resources.append(submission_preview)
+        product["resources"] = filtered_resources
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        # Test
+        with caplog.at_level(logging.INFO):
+            with requests_mock.Mocker() as m:
+                m.post(login_url, json=token)
+                m.get(f"{base_url}/product", json=products_list)
+                m.get(f"{base_url}/resource-tree/product/{product_id}", json=product)
+                m.post(f"{base_url}/configure", json=configure_running_response)
+                m.get(
+                    f"{base_url}/configure/{configure_success_response['jobId']}/status",
+                    json=configure_success_response,
+                )
+                m.get(
+                    f"{base_url}/submission/{product_id}",
+                    [
+                        {"json": submissions_inprog},  # ensure_can_publish call "preview"
+                        {"json": submissions_inprog},  # ensure_can_publish call "live"
+                        {"json": submissions_inprog},  # _is_submission_in_preview call
+                        {"json": submissions_inprog},  # submit_to_status check prev_state call
+                        {"json": submissions_final},  # submit_to_status validation after configure
+                    ],
+                )
+                azure_svc = AzureService(auth_dict)
+                azure_svc.publish(metadata=metadata_azure_obj)
+        # Present messages
+        assert 'Requesting the products list.' in caplog.text
+        assert (
+            'Requesting the product ID "ffffffff-ffff-ffff-ffff-ffffffffffff" with state "preview".'
+            in caplog.text
+        )
+        assert (
+            'Preparing to associate the image "https://uri.test.com" with the plan "plan-1" from product "example-product" on "preview"'  # noqa: E501
+            in caplog.text
+        )
+        assert (
+            'Retrieving the technical config for "example-product/plan-1" on "preview".'
+            in caplog.text
+        )
+        assert (
+            'Creating the VMImageResource with SAS for image: "https://uri.test.com"' in caplog.text
+        )
+        assert (
+            'The destination "example-product/plan-1" on "preview" already contains the SAS URI: "https://uri.test.com".'  # noqa: E501
+            in caplog.text
+        )
+        assert 'Publishing the new changes for "example-product" on plan "plan-1"' in caplog.text
+        assert (
+            'Requesting the product ID "ffffffff-ffff-ffff-ffff-ffffffffffff" with state "preview".'
+            in caplog.text
+        )
+        assert (
+            'Ensuring no other publishing jobs are in progress for "ffffffff-ffff-ffff-ffff-ffffffffffff"'  # noqa: E501
+            in caplog.text
+        )
+        assert (
+            'Looking up for submission in state "preview" for "ffffffff-ffff-ffff-ffff-ffffffffffff"'  # noqa: E501
+            in caplog.text
+        )
+        assert (
+            'Looking up for submission in state "live" for "ffffffff-ffff-ffff-ffff-ffffffffffff"'
+            in caplog.text
+        )
+        assert 'The product "example-product" is already set to preview' in caplog.text
+        assert (
+            'Submitting the status of "ffffffff-ffff-ffff-ffff-ffffffffffff" to "live"'
+            in caplog.text
+        )
+        assert (
+            'Finished publishing the image "https://uri.test.com" to "example-product/plan-1"\n'
+            in caplog.text
+        )
+
+        # Absent messages
+        assert (
+            'Scanning the disk versions from "example-product/plan-1" on "preview" for the image "https://uri.test.com"'  # noqa: E501
+            not in caplog.text
+        )
+        assert 'The DiskVersion doesn\'t exist, creating one from scratch.' not in caplog.text
+        assert 'Updating SKUs for "example-product/plan-1" on "preview".' not in caplog.text
+        assert (
+            'Updating the technical configuration for "example-product/plan-1" on "preview".'
+            not in caplog.text
+        )
