@@ -189,22 +189,23 @@
 
     <span class="c1"># Base URL differs</span>
     <span class="k">if</span> <span class="n">base_sas1</span> <span class="o">!=</span> <span class="n">base_sas2</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Got different base SAS: </span><span class="si">%s</span><span class="s2"> - Expected: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">base_sas1</span><span class="p">,</span> <span class="n">base_sas2</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Got different base SAS: </span><span class="si">%s</span><span class="s2"> - Expected: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">base_sas1</span><span class="p">,</span> <span class="n">base_sas2</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">base_only</span><span class="p">:</span>
         <span class="c1"># Parameters lengh differs</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas2</span><span class="p">):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;Got different lengh of SAS parameters: len(</span><span class="si">%s</span><span class="s2">) - Expected len(</span><span class="si">%s</span><span class="s2">)&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="n">params_sas1</span><span class="p">,</span> <span class="n">params_sas2</span><span class="p">)</span>
+                <span class="s2">&quot;Got different lengh of SAS parameters: len(</span><span class="si">%s</span><span class="s2">) - Expected len(</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">params_sas1</span><span class="p">,</span>
+                <span class="n">params_sas2</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="c1"># Parameters values differs</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params_sas1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The SAS parameter </span><span class="si">%s</span><span class="s2"> doesn&#39;t match </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The SAS parameter </span><span class="si">%s</span><span class="s2"> doesn&#39;t match </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
                 <span class="k">return</span> <span class="kc">False</span>
 
     <span class="c1"># Equivalent SAS</span>
@@ -242,8 +243,8 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: False if job completed, True otherwise</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Checking if the job </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2"> is still running&quot;</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;job </span><span class="si">{</span><span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="si">}</span><span class="s2"> is in </span><span class="si">{</span><span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span><span class="si">}</span><span class="s2"> state&quot;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Checking if the job </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> is still running&quot;</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;job </span><span class="si">%s</span><span class="s2"> is in </span><span class="si">%s</span><span class="s2"> state&quot;</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span> <span class="o">!=</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
@@ -595,16 +596,18 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        The changed disk version with the given source.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up a new SAS disk version for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
     <span class="c1"># If we already have a VMImageDefinition let&#39;s use it</span>
     <span class="k">if</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> contains inner images.&quot;</span> <span class="o">%</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> contains inner images.&quot;</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
         <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">vm_images_by_generation</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">)</span>
 
         <span class="c1"># Now we replace the SAS URI for the vm_images</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s2">&quot;Adjusting the VMImages from existing DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
+            <span class="s2">&quot;to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="n">prepare_vm_images</span><span class="p">(</span>
             <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
@@ -616,11 +619,12 @@
     <span class="c1"># If no VMImages, we need to create them from scratch</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> does not contain inner images.&quot;</span> <span class="o">%</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span>
+            <span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> does not contain inner images.&quot;</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span>
         <span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Setting the new image </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> on DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Setting the new image </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> on DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span>
+            <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="n">create_vm_image_definitions</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
 
@@ -630,7 +634,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">logdiff</span><span class="p">(</span><span class="n">diff</span><span class="p">:</span> <span class="n">DeepDiff</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Log the offer diff if it exists.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">diff</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">{</span><span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">())</span>
 </pre></div>
 
           </div>
