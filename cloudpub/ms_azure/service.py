@@ -378,7 +378,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
     def get_product_plan_by_name(
         self, product_name: str, plan_name: str
-    ) -> Tuple[Product, PlanSummary]:
+    ) -> Tuple[Product, PlanSummary, str]:
         """Return a tuple with the desired Product and Plan after iterating over all targets.
 
         Args:
@@ -386,7 +386,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             plan_name (str): The name of the plan to search for
 
         Returns:
-            Tuple[Product, PlanSummary]: The Product and PlanSummary when fonud
+            Tuple[Product, PlanSummary, str]: The Product, PlanSummary and target when fonud
         Raises:
             NotFoundError whenever all targets are exhausted and no information was found
         """
@@ -396,7 +396,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             try:
                 product = self.get_product_by_name(product_name, first_target=tgt)
                 plan = self.get_plan_by_name(product, plan_name)
-                return product, plan
+                return product, plan, tgt
             except NotFoundError:
                 continue
         self._raise_error(
@@ -605,16 +605,17 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
-        product, plan = self.get_product_plan_by_name(product_name, plan_name)
+        product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
         log.info(
-            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
+            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\" on \"%s\"",  # noqa: E501
             metadata.image_path,
             plan_name,
             product_name,
+            tgt,
         )
 
         # 2. Retrieve the VM Technical configuration for the given plan
-        log.info("Retrieving the technical config for \"%s\".", metadata.destination)
+        log.info("Retrieving the technical config for \"%s\" on \"%s\".", metadata.destination, tgt)
         tech_config = self.get_plan_tech_config(product, plan)
 
         # 3. Prepare the Disk Version
@@ -627,8 +628,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         disk_version = None  # just to make mypy happy
         if metadata.overwrite is True:
             log.warning(
-                "Overwriting the plan \"%s\" with the given image: \"%s\".",
+                "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
                 plan_name,
+                tgt,
                 metadata.image_path,
             )
             disk_version = create_disk_version_from_scratch(metadata, source)
@@ -639,8 +641,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             # Here we can have the metadata.disk_version set or empty.
             # When set we want to get the existing disk_version which matches its value.
             log.info(
-                "Scanning the disk versions from \"%s\" for the image \"%s\"",
+                "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
                 metadata.destination,
+                tgt,
                 metadata.image_path,
             )
             disk_version = seek_disk_version(tech_config, metadata.disk_version)
@@ -648,9 +651,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             # Check the images of the selected DiskVersion if it exists
             if disk_version:
                 log.info(
-                    "DiskVersion \"%s\" exists in \"%s\" for the image \"%s\".",
+                    "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
                     disk_version.version_number,
                     metadata.destination,
+                    tgt,
                     metadata.image_path,
                 )
                 disk_version = set_new_sas_disk_version(disk_version, metadata, source)
@@ -661,21 +665,26 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 tech_config.disk_versions.append(disk_version)
         else:
             log.info(
-                "The destination \"%s\" already contains the SAS URI: \"%s\".",
+                "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
                 metadata.destination,
+                tgt,
                 metadata.image_path,
             )
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
-            log.info("Updating SKUs for \"%s\".", metadata.destination)
+            log.info("Updating SKUs for \"%s\" on \"%s\".", metadata.destination, tgt)
             tech_config.skus = update_skus(
                 disk_versions=tech_config.disk_versions,
                 generation=metadata.generation,
                 plan_name=plan_name,
                 old_skus=tech_config.skus,
             )
-            log.info("Updating the technical configuration for \"%s\".", metadata.destination)
+            log.info(
+                "Updating the technical configuration for \"%s\" on \"%s\".",
+                metadata.destination,
+                tgt,
+            )
             self.configure(resource=tech_config)
 
         # 5. Proceed to publishing if it was requested.

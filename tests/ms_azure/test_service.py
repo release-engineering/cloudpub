@@ -463,10 +463,11 @@ class TestAzureService:
         mock_getpr.return_value = product_obj
         mock_getpl.return_value = plan_summary_obj
 
-        product, plan = azure_service.get_product_plan_by_name("product", "plan")
+        product, plan, tgt = azure_service.get_product_plan_by_name("product", "plan")
 
         assert product == product_obj
         assert plan == plan_summary_obj
+        assert tgt == "preview"
         mock_getpr.assert_called_once_with("product", first_target="preview")
         mock_getpl.assert_called_once_with(product_obj, "plan")
 
@@ -484,10 +485,11 @@ class TestAzureService:
         mock_getpr.return_value = product_obj
         mock_getpl.side_effect = [NotFoundError("Not found"), plan_summary_obj]
 
-        product, plan = azure_service.get_product_plan_by_name("product", "plan")
+        product, plan, tgt = azure_service.get_product_plan_by_name("product", "plan")
 
         assert product == product_obj
         assert plan == plan_summary_obj
+        assert tgt == "draft"
         mock_getpr.assert_has_calls(
             [
                 mock.call("product", first_target="preview"),
@@ -994,7 +996,7 @@ class TestAzureService:
         metadata_azure_obj.overwrite = True
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_disk_scratch.return_value = disk_version_obj
         mock_upd_sku.return_value = technical_config_obj
@@ -1053,7 +1055,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.disk_version = "1.0.0"
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         technical_config_obj.disk_versions = []
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
@@ -1124,7 +1126,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = keepdraft
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = True
         mock_disk_scratch.return_value = disk_version_obj
@@ -1181,7 +1183,7 @@ class TestAzureService:
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
         technical_config_obj.disk_versions[0].vm_images = []
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         mock_disk_scratch.return_value = disk_version_obj
@@ -1248,7 +1250,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         expected_source = VMImageSource(
@@ -1365,7 +1367,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.side_effect = [
             [technical_config_obj],
             [submission_obj],
@@ -1458,7 +1460,7 @@ class TestAzureService:
         metadata_azure_obj.disk_version = "2.1.0"
         metadata_azure_obj.architecture = "aarch64"
         technical_config_obj.disk_versions = [disk_version_arm64_obj]
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.side_effect = [
             [technical_config_obj],
             [submission_obj],
@@ -1583,15 +1585,18 @@ class TestAzureService:
             in caplog.text
         )
         assert (
-            'Preparing to associate the image "https://uri.test.com" with the plan "plan-1" from product "example-product"'  # noqa: E501
+            'Preparing to associate the image "https://uri.test.com" with the plan "plan-1" from product "example-product" on "preview"'  # noqa: E501
             in caplog.text
         )
-        assert 'Retrieving the technical config for "example-product/plan-1".' in caplog.text
+        assert (
+            'Retrieving the technical config for "example-product/plan-1" on "preview".'
+            in caplog.text
+        )
         assert (
             'Creating the VMImageResource with SAS for image: "https://uri.test.com"' in caplog.text
         )
         assert (
-            'The destination "example-product/plan-1" already contains the SAS URI: "https://uri.test.com".'  # noqa: E501
+            'The destination "example-product/plan-1" on "preview" already contains the SAS URI: "https://uri.test.com".'  # noqa: E501
             in caplog.text
         )
         assert 'Publishing the new changes for "example-product" on plan "plan-1"' in caplog.text
@@ -1623,11 +1628,12 @@ class TestAzureService:
 
         # Absent messages
         assert (
-            'Scanning the disk versions from "example-product/plan-1" for the image "https://uri.test.com"'  # noqa: E501
+            'Scanning the disk versions from "example-product/plan-1" on "preview" for the image "https://uri.test.com"'  # noqa: E501
             not in caplog.text
         )
         assert 'The DiskVersion doesn\'t exist, creating one from scratch.' not in caplog.text
-        assert 'Updating SKUs for "example-product/plan-1".' not in caplog.text
+        assert 'Updating SKUs for "example-product/plan-1" on "preview".' not in caplog.text
         assert (
-            'Updating the technical configuration for "example-product/plan-1".' not in caplog.text
+            'Updating the technical configuration for "example-product/plan-1" on "preview".'
+            not in caplog.text
         )
