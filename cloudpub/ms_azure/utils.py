@@ -54,6 +54,11 @@ class AzurePublishingMetadata(PublishingMetadata):
             check_base_sas_only (bool, optional):
                 Indicates to skip checking SAS parameters when set as ``True``.
                 Default to ``False``
+            modular_push (bool, optional):
+                Indicate whether to perform a modular push or not.
+                The modular push causes the effect to only publish
+                the changed plan instead of the whole offer to preview/live.
+                Default to ``False``.
             **kwargs
                 Arguments for :class:`~cloudpub.common.PublishingMetadata`.
         """
@@ -64,6 +69,7 @@ class AzurePublishingMetadata(PublishingMetadata):
         self.recommended_sizes = recommended_sizes or []
         self.legacy_sku_id = kwargs.pop("legacy_sku_id", None)
         self.check_base_sas_only = kwargs.pop("check_base_sas_only", False)
+        self.modular_push = kwargs.pop("modular_push", None) or False
 
         if generation == "V1" or not support_legacy:
             self.legacy_sku_id = None
