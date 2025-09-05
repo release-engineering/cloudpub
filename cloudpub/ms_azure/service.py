@@ -185,19 +185,19 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.debug("Job %s succeeded", job_id)
         return job_details
 
-    def configure(self, resource: AzureResource) -> ConfigureStatus:
+    def configure(self, resources: List[AzureResource]) -> ConfigureStatus:
         """
         Create or update a resource and wait until it's done.
 
         Args:
-            resource (AzureResource):
-                The resource to create/modify in Azure.
+            resources (List[AzureResource]):
+                The list of resources to create/modify in Azure.
         Returns:
             dict: The result of job execution
         """
         data = {
             "$schema": self.CONFIGURE_SCHEMA.format(AZURE_API_VERSION=self.AZURE_API_VERSION),
-            "resources": [resource.to_json()],
+            "resources": [x.to_json() for x in resources],
         }
         if log.isEnabledFor(logging.DEBUG):
             log.debug("Data to configure: %s", json.dumps(data, indent=2))
@@ -448,7 +448,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         submission.target.targetType = status
         log.debug("Set the status \"%s\" to submission.", status)
 
-        return self.configure(resource=submission)
+        return self.configure(resources=[submission])
 
     @retry(
         wait=wait_fixed(300),
@@ -685,7 +685,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 metadata.destination,
                 tgt,
             )
-            self.configure(resource=tech_config)
+            self.configure(resources=[tech_config])
 
         # 5. Proceed to publishing if it was requested.
         # Note: The publishing will only occur if it made changes in disk_version.

@@ -263,7 +263,7 @@ class TestAzureService:
         }
 
         with caplog.at_level(logging.DEBUG):
-            azure_service.configure(submission_obj)
+            azure_service.configure([submission_obj])
 
         mock_configure.assert_called_once_with(data=expected_data)
         mock_wait_completion.assert_called_once_with(job_id=job_id)
@@ -700,7 +700,7 @@ class TestAzureService:
         azure_service.submit_to_status(product_obj.id, final_status)
 
         mock_getsubst.assert_called_once_with(product_id=product_obj.id, state=prev_status)
-        mock_configure.assert_called_once_with(resource=submission_obj)
+        mock_configure.assert_called_once_with(resources=[submission_obj])
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
@@ -1023,7 +1023,7 @@ class TestAzureService:
             plan_name="plan-1",
             old_skus=expected_tech_config.skus,
         )
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         mock_submit.assert_not_called()
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
@@ -1090,7 +1090,7 @@ class TestAzureService:
             old_skus=expected_tech_config.skus,
         )
         mock_disk_scratch.assert_called_once_with(metadata_azure_obj, expected_source)
-        mock_configure.assert_called_once_with(resource=expected_tech_config)
+        mock_configure.assert_called_once_with(resources=[expected_tech_config])
         mock_submit.assert_not_called()
 
     @pytest.mark.parametrize("keepdraft", [True, False], ids=["nochannel", "push"])
@@ -1219,7 +1219,7 @@ class TestAzureService:
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
-        mock_configure.assert_called_once_with(resource=expected_tech_config)
+        mock_configure.assert_called_once_with(resources=[expected_tech_config])
         mock_submit.assert_not_called()
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
@@ -1290,7 +1290,7 @@ class TestAzureService:
             source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         mock_submit.assert_not_called()
 
     def test_is_submission_in_preview(
@@ -1415,7 +1415,7 @@ class TestAzureService:
         )
         mock_disk_scratch.assert_not_called()
         mock_diff_offer.assert_called_once_with(product_obj)
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         submit_calls = [
             mock.call(product_id=product_obj.id, status="preview"),
             mock.call(product_id=product_obj.id, status="live"),
@@ -1507,7 +1507,7 @@ class TestAzureService:
         )
         mock_disk_scratch.assert_not_called()
         mock_diff_offer.assert_called_once_with(product_obj)
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         submit_calls = [
             mock.call(product_id=product_obj.id, status="preview"),
             mock.call(product_id=product_obj.id, status="live"),
