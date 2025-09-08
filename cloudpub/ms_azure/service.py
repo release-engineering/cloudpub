@@ -185,19 +185,19 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.debug("Job %s succeeded", job_id)
         return job_details
 
-    def configure(self, resource: AzureResource) -> ConfigureStatus:
+    def configure(self, resources: List[AzureResource]) -> ConfigureStatus:
         """
         Create or update a resource and wait until it's done.
 
         Args:
-            resource (AzureResource):
-                The resource to create/modify in Azure.
+            resources (List[AzureResource]):
+                The list of resources to create/modify in Azure.
         Returns:
             dict: The result of job execution
         """
         data = {
             "$schema": self.CONFIGURE_SCHEMA.format(AZURE_API_VERSION=self.AZURE_API_VERSION),
-            "resources": [resource.to_json()],
+            "resources": [x.to_json() for x in resources],
         }
         if log.isEnabledFor(logging.DEBUG):
             log.debug("Data to configure: %s", json.dumps(data, indent=2))
@@ -417,7 +417,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         remote = self.get_product(product.id, first_target=first_target)
         return DeepDiff(remote.to_json(), product.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES)
 
-    def submit_to_status(self, product_id: str, status: str) -> ConfigureStatus:
+    def submit_to_status(
+        self, product_id: str, status: str, resources: Optional[List[AzureResource]] = None
+    ) -> ConfigureStatus:
         """
         Send a submission request to Microsoft with a new Product status.
 
@@ -426,6 +428,8 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 The product ID to submit the new status.
             status (str)
                 The new status: 'preview' or 'live'
+            resources (optional(list(AzureRerouce)))
+                Additional resources for modular push.
         Returns:
             The response from configure request.
         """
@@ -446,9 +450,12 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # Update the status with the expected one
         submission.target.targetType = status
+        cfg_res: List[AzureResource] = [submission]
+        if resources:
+            log.info("Performing a modular push to \"%s\" for \"%s\"", status, product_id)
+            cfg_res = resources + cfg_res
         log.debug("Set the status \"%s\" to submission.", status)
-
-        return self.configure(resource=submission)
+        return self.configure(resources=cfg_res)
 
     @retry(
         wait=wait_fixed(300),
@@ -501,6 +508,54 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         )
         return tconfigs[0]  # It should have only one VMIPlanTechConfig per plan.
 
+    def get_modular_resources_to_publish(
+        self, product: Product, tech_config: VMIPlanTechConfig
+    ) -> List[AzureResource]:
+        """Return the required resources for a modular publishing.
+
+        According to Microsoft docs:
+        "For a modular publish, all resources are required except for the product level details
+        (for example, listing, availability, packages, reseller) as applicable to your
+        product type."
+
+        Args:
+            product (Product): The original product to filter the resources from
+            tech_config (VMIPlanTechConfig): The updated tech config to publish
+
+        Returns:
+            List[AzureResource]: _description_
+        """
+        # The following resources shouldn't be required:
+        # -> customer-leads
+        # -> test-drive
+        # -> property
+        # -> *listing*
+        # -> reseller
+        # -> price-and-availability-*
+        # NOTE: The "submission" resource will be already added by the "submit_to_status" method
+        #
+        # With that it needs only the related "product" and "plan" resources alongisde the
+        # updated tech_config
+        product_id = tech_config.product_id
+        plan_id = tech_config.plan_id
+        prod_res = cast(
+            List[ProductSummary],
+            [
+                prd
+                for prd in self.filter_product_resources(product=product, resource="product")
+                if prd.id == product_id
+            ],
+        )[0]
+        plan_res = cast(
+            List[PlanSummary],
+            [
+                pln
+                for pln in self.filter_product_resources(product=product, resource="plan")
+                if pln.id == plan_id
+            ],
+        )[0]
+        return [prod_res, plan_res, tech_config]
+
     def _is_submission_in_preview(self, current: ProductSubmission) -> bool:
         """Return True if the latest submission state is "preview", False otherwise.
 
@@ -528,7 +583,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         stop=stop_after_attempt(3),
         reraise=True,
     )
-    def _publish_preview(self, product: Product, product_name: str) -> None:
+    def _publish_preview(
+        self, product: Product, product_name: str, resources: Optional[List[AzureResource]] = None
+    ) -> None:
         """
         Submit the product to 'preview'  if it's not already in this state.
 
@@ -536,9 +593,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         Args:
             product
-                The product with changes to publish live
+                The product with changes to publish to preview
             product_name
                 The product name to display in logs.
+            resources:
+                Additional resources for modular push.
         """
         # We just want to set the ProductSubmission to 'preview' if it's not in this status.
         #
@@ -553,14 +612,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.info("The product \"%s\" is already set to preview", product_name)
             return
 
-        res = self.submit_to_status(product_id=product.id, status='preview')
+        res = self.submit_to_status(product_id=product.id, status='preview', resources=resources)
 
         if res.job_result != 'succeeded' or not self.get_submission_state(
             product.id, state="preview"
         ):
             errors = "\n".join(res.errors)
             failure_msg = (
-                f"Failed to submit the product {product.id} to preview. "
+                f"Failed to submit the product {product_name} ({product.id}) to preview. "
                 f"Status: {res.job_result} Errors: {errors}"
             )
             raise RuntimeError(failure_msg)
@@ -587,7 +646,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         if res.job_result != 'succeeded' or not self.get_submission_state(product.id, state="live"):
             errors = "\n".join(res.errors)
             failure_msg = (
-                f"Failed to submit the product {product.id} to live. "
+                f"Failed to submit the product {product_name} ({product.id}) to live. "
                 f"Status: {res.job_result} Errors: {errors}"
             )
             raise RuntimeError(failure_msg)
@@ -685,7 +744,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 metadata.destination,
                 tgt,
             )
-            self.configure(resource=tech_config)
+            self.configure(resources=[tech_config])
 
         # 5. Proceed to publishing if it was requested.
         # Note: The publishing will only occur if it made changes in disk_version.
@@ -705,7 +764,13 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 logdiff(self.diff_offer(product))
                 self.ensure_can_publish(product.id)
 
-                self._publish_preview(product, product_name)
+                # According to the documentation we only need to pass the
+                # required resources for modular publish on "preview"
+                # https://learn.microsoft.com/en-us/partner-center/marketplace-offers/product-ingestion-api#method-2-publish-specific-draft-resources-also-known-as-modular-publish  # noqa: E501
+                modular_resources = None
+                if metadata.modular_push:
+                    modular_resources = self.get_modular_resources_to_publish(product, tech_config)
+                self._publish_preview(product, product_name, resources=modular_resources)
                 self._publish_live(product, product_name)
 
         log.info(

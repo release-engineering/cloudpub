@@ -263,7 +263,7 @@ class TestAzureService:
         }
 
         with caplog.at_level(logging.DEBUG):
-            azure_service.configure(submission_obj)
+            azure_service.configure([submission_obj])
 
         mock_configure.assert_called_once_with(data=expected_data)
         mock_wait_completion.assert_called_once_with(job_id=job_id)
@@ -700,7 +700,7 @@ class TestAzureService:
         azure_service.submit_to_status(product_obj.id, final_status)
 
         mock_getsubst.assert_called_once_with(product_id=product_obj.id, state=prev_status)
-        mock_configure.assert_called_once_with(resource=submission_obj)
+        mock_configure.assert_called_once_with(resources=[submission_obj])
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
@@ -868,7 +868,10 @@ class TestAzureService:
         azure_service._publish_preview(product_obj, "test-product")
 
         mock_subst.assert_has_calls(
-            [mock.call(product_id=product_obj.id, status="preview") for _ in range(3)]
+            [
+                mock.call(product_id=product_obj.id, status="preview", resources=None)
+                for _ in range(3)
+            ]
         )
         mock_getsubst.assert_has_calls(
             [mock.call(product_obj.id, state="preview") for _ in range(3)]
@@ -900,7 +903,7 @@ class TestAzureService:
         # Remove the retry sleep
         azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
         expected_err = (
-            f"Failed to submit the product {product_obj.id} to preview. "
+            f"Failed to submit the product test-product \\({product_obj.id}\\) to preview. "
             "Status: failed Errors: failure1\nfailure2"
         )
 
@@ -960,7 +963,7 @@ class TestAzureService:
         # Remove the retry sleep
         azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
         expected_err = (
-            f"Failed to submit the product {product_obj.id} to live. "
+            f"Failed to submit the product test-product \\({product_obj.id}\\) to live. "
             "Status: failed Errors: failure1\nfailure2"
         )
 
@@ -1023,7 +1026,7 @@ class TestAzureService:
             plan_name="plan-1",
             old_skus=expected_tech_config.skus,
         )
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         mock_submit.assert_not_called()
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
@@ -1090,7 +1093,7 @@ class TestAzureService:
             old_skus=expected_tech_config.skus,
         )
         mock_disk_scratch.assert_called_once_with(metadata_azure_obj, expected_source)
-        mock_configure.assert_called_once_with(resource=expected_tech_config)
+        mock_configure.assert_called_once_with(resources=[expected_tech_config])
         mock_submit.assert_not_called()
 
     @pytest.mark.parametrize("keepdraft", [True, False], ids=["nochannel", "push"])
@@ -1219,7 +1222,7 @@ class TestAzureService:
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
-        mock_configure.assert_called_once_with(resource=expected_tech_config)
+        mock_configure.assert_called_once_with(resources=[expected_tech_config])
         mock_submit.assert_not_called()
 
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
@@ -1290,7 +1293,7 @@ class TestAzureService:
             source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         mock_submit.assert_not_called()
 
     def test_is_submission_in_preview(
@@ -1415,9 +1418,9 @@ class TestAzureService:
         )
         mock_disk_scratch.assert_not_called()
         mock_diff_offer.assert_called_once_with(product_obj)
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         submit_calls = [
-            mock.call(product_id=product_obj.id, status="preview"),
+            mock.call(product_id=product_obj.id, status="preview", resources=None),
             mock.call(product_id=product_obj.id, status="live"),
         ]
         mock_submit.assert_has_calls(submit_calls)
@@ -1507,9 +1510,9 @@ class TestAzureService:
         )
         mock_disk_scratch.assert_not_called()
         mock_diff_offer.assert_called_once_with(product_obj)
-        mock_configure.assert_called_once_with(resource=technical_config_obj)
+        mock_configure.assert_called_once_with(resources=[technical_config_obj])
         submit_calls = [
-            mock.call(product_id=product_obj.id, status="preview"),
+            mock.call(product_id=product_obj.id, status="preview", resources=None),
             mock.call(product_id=product_obj.id, status="live"),
         ]
         mock_submit.assert_has_calls(submit_calls)
@@ -1636,4 +1639,106 @@ class TestAzureService:
         assert (
             'Updating the technical configuration for "example-product/plan-1" on "preview".'
             not in caplog.text
+        )
+
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    def test_publish_live_modular_push(
+        self,
+        mock_configure: mock.MagicMock,
+        token: Dict[str, Any],
+        auth_dict: Dict[str, Any],
+        configure_success_response: Dict[str, Any],
+        product: Dict[str, Any],
+        products_list: Dict[str, Any],
+        product_summary: Dict[str, Any],
+        technical_config: Dict[str, Any],
+        submission: Dict[str, Any],
+        product_summary_obj: ProductSummary,
+        plan_summary_obj: PlanSummary,
+        metadata_azure_obj: mock.MagicMock,
+        gen2_image: Dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Ensure a modular publish works as intended."""
+        # Prepare testing data
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.destination = "example-product/plan-1"
+        metadata_azure_obj.modular_push = True
+
+        # Set the complementary submission states
+        submission_preview = deepcopy(submission)
+        submission_preview.update({"target": {"targetType": "preview"}})
+        submission_live = deepcopy(submission)
+        submission_live.update({"target": {"targetType": "live"}})
+        mock_configure.return_value = ConfigureStatus.from_json(configure_success_response)
+
+        # Expected results
+        new_dv = {
+            "version_number": metadata_azure_obj.disk_version,
+            "vm_images": [
+                {
+                    "imageType": "x64Gen2",
+                    "source": {
+                        "sourceType": "sasUri",
+                        "osDisk": {"uri": "https://foo.com/bar/image.vhd"},
+                        "dataDisks": [],
+                    },
+                }
+            ],
+            "lifecycle_state": "generallyAvailable",
+        }
+        dvs = technical_config["vmImageVersions"] + [new_dv]
+        new_tc = deepcopy(technical_config)
+        new_tc["vmImageVersions"] = dvs
+        expected_tc = VMIPlanTechConfig.from_json(new_tc)
+        expected_modular_resources = [
+            product_summary_obj,
+            plan_summary_obj,
+            expected_tc,
+            ProductSubmission.from_json(submission_preview),
+        ]
+
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        # Test
+        with caplog.at_level(logging.INFO):
+            with requests_mock.Mocker() as m:
+                m.post(login_url, json=token)
+                m.get(f"{base_url}/product", json=products_list)
+                m.get(f"{base_url}/resource-tree/product/{product_id}", json=product)
+                m.get(
+                    f"{base_url}/submission/{product_id}",
+                    [
+                        {"json": {"value": [submission]}},  # ensure_can_publish call "preview"
+                        {"json": {"value": [submission]}},  # ensure_can_publish call "live"
+                        {"json": {"value": [submission]}},  # push_preview: call submit_status
+                        {"json": {"value": [submission_preview]}},  # push_preview: check result
+                        {"json": {"value": [submission_preview]}},  # push_live: call submit_status
+                        {"json": {"value": [submission_live]}},  # push_live: check result
+                    ],
+                )
+                azure_svc = AzureService(auth_dict)
+                azure_svc.publish(metadata=metadata_azure_obj)
+
+        # Present messages
+        assert "The DiskVersion doesn't exist, creating one from scratch." in caplog.text
+        assert (
+            "Found the following offer diff before publishing:\n"
+            "Item root['resources'][1]['vmImageVersions'][1] added to iterable."
+        ) in caplog.text
+        assert (
+            'Updating the technical configuration for "example-product/plan-1" on "preview".'
+            in caplog.text
+        )
+        assert (
+            'Performing a modular push to "preview" for "ffffffff-ffff-ffff-ffff-ffffffffffff"'
+            in caplog.text
+        )
+
+        # Configure request
+        mock_configure.assert_has_calls(
+            [mock.call(resources=[expected_tc]), mock.call(resources=expected_modular_resources)]
         )
