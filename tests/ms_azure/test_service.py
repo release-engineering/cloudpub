@@ -1,7 +1,7 @@
 import json
 import logging
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, Dict
 from unittest import mock
 
 import pytest
@@ -13,7 +13,7 @@ from requests.exceptions import HTTPError
 from tenacity.stop import stop_after_attempt
 
 from cloudpub.common import BaseService
-from cloudpub.error import InvalidStateError, NotFoundError
+from cloudpub.error import ConflictError, InvalidStateError, NotFoundError, RunningSubmissionError
 from cloudpub.models.ms_azure import (
     ConfigureStatus,
     CustomerLeads,
@@ -214,6 +214,14 @@ class TestAzureService:
             assert f"Job {job_id} failed" not in caplog.text
             assert f"Job {job_id} succeeded" in caplog.text
 
+    @pytest.mark.parametrize(
+        "error_name",
+        [
+            "job_details_completed_failure_obj",
+            "job_details_completed_conflict_obj",
+            "job_details_completed_running_submission_obj",
+        ],
+    )
     @mock.patch("cloudpub.ms_azure.utils.is_azure_job_not_complete")
     @mock.patch("cloudpub.ms_azure.AzureService._query_job_details")
     def test_get_job_details_after_failed_completion(
@@ -224,20 +232,26 @@ class TestAzureService:
         caplog: LogCaptureFixture,
         job_details_running_obj: ConfigureStatus,
         job_details_completed_failure_obj: ConfigureStatus,
-        errors: List[Dict[str, Any]],
+        job_details_completed_conflict_obj: ConfigureStatus,
+        job_details_completed_running_submission_obj: ConfigureStatus,
+        error_name: str,
+        request: pytest.FixtureRequest,
     ) -> None:
+
         mock_job_details.side_effect = [
             job_details_running_obj,
             job_details_running_obj,
             job_details_running_obj,
-            job_details_completed_failure_obj,
+            request.getfixturevalue(error_name),
             job_details_running_obj,
         ]
 
         azure_service._wait_for_job_completion.retry.sleep = mock.Mock()  # type: ignore
         job_id = "job_id_111"
         with caplog.at_level(logging.ERROR):
-            with pytest.raises(InvalidStateError) as e_info:
+            with pytest.raises(
+                (InvalidStateError, RunningSubmissionError, ConflictError)
+            ) as e_info:
                 azure_service._wait_for_job_completion(job_id=job_id)
                 assert f"Job {job_id} failed: \n" in str(e_info.value)
             assert mock_job_details.call_count == 4
@@ -861,7 +875,7 @@ class TestAzureService:
             None,
             mock.MagicMock(),  # Success on 3rd call
         ]
-        # Remove the retry sleep
+        # Remove the retry sleeptest_publish_preview_fail_on_retry
         azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
 
         # Test
@@ -891,7 +905,18 @@ class TestAzureService:
                 "jobId": "1",
                 "jobStatus": "completed",
                 "jobResult": "failed",
-                "errors": ["failure1", "failure2"],
+                "errors": [
+                    {
+                        "resourceId": "resource-id",
+                        "code": "internalServerError",
+                        "message": "failure1",
+                    },
+                    {
+                        "resourceId": "resource-id",
+                        "code": "internalServerError",
+                        "message": "failure2",
+                    },
+                ],
             }
         )
         mock_is_sbpreview.return_value = False
@@ -901,7 +926,7 @@ class TestAzureService:
         azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
         expected_err = (
             f"Failed to submit the product {product_obj.id} to preview. "
-            "Status: failed Errors: failure1\nfailure2"
+            "Status: failed Errors: internalServerError: failure1\ninternalServerError: failure2"
         )
 
         # Test
@@ -952,7 +977,18 @@ class TestAzureService:
                 "jobId": "1",
                 "jobStatus": "completed",
                 "jobResult": "failed",
-                "errors": ["failure1", "failure2"],
+                "errors": [
+                    {
+                        "resourceId": "resource-id",
+                        "code": "internalServerError",
+                        "message": "failure1",
+                    },
+                    {
+                        "resourceId": "resource-id",
+                        "code": "internalServerError",
+                        "message": "failure2",
+                    },
+                ],
             }
         )
         mock_subst.side_effect = [err_resp for _ in range(3)]
@@ -961,7 +997,7 @@ class TestAzureService:
         azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
         expected_err = (
             f"Failed to submit the product {product_obj.id} to live. "
-            "Status: failed Errors: failure1\nfailure2"
+            "Status: failed Errors: internalServerError: failure1\ninternalServerError: failure2"
         )
 
         # Test

@@ -6,13 +6,13 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from deepdiff import DeepDiff
 from requests import HTTPError
-from tenacity import retry
-from tenacity.retry import retry_if_result
+from tenacity import retry, wait_exponential
+from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_chain, wait_fixed
 
 from cloudpub.common import BaseService
-from cloudpub.error import InvalidStateError, NotFoundError
+from cloudpub.error import ConflictError, InvalidStateError, NotFoundError, RunningSubmissionError
 from cloudpub.models.ms_azure import (
     RESOURCE_MAPING,
     AzureResource,
@@ -38,6 +38,8 @@ from cloudpub.models.ms_azure import (
 from cloudpub.ms_azure.session import PartnerPortalSession
 from cloudpub.ms_azure.utils import (
     AzurePublishingMetadata,
+    check_for_conflict,
+    check_for_running_submission,
     create_disk_version_from_scratch,
     is_azure_job_not_complete,
     is_sas_present,
@@ -180,6 +182,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         job_details = self._query_job_details(job_id=job_id)
         if job_details.job_result == "failed":
             error_message = f"Job {job_id} failed: \n{job_details.errors}"
+            if check_for_conflict(job_details):
+                self._raise_error(ConflictError, error_message)
+            elif check_for_running_submission(job_details):
+                self._raise_error(RunningSubmissionError, error_message)
             self._raise_error(InvalidStateError, error_message)
         elif job_details.job_result == "succeeded":
             log.debug("Job %s succeeded", job_id)
@@ -558,7 +564,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         if res.job_result != 'succeeded' or not self.get_submission_state(
             product.id, state="preview"
         ):
-            errors = "\n".join(res.errors)
+            errors = "\n".join(["%s: %s" % (error.code, error.message) for error in res.errors])
             failure_msg = (
                 f"Failed to submit the product {product.id} to preview. "
                 f"Status: {res.job_result} Errors: {errors}"
@@ -585,13 +591,19 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         res = self.submit_to_status(product_id=product.id, status='live')
 
         if res.job_result != 'succeeded' or not self.get_submission_state(product.id, state="live"):
-            errors = "\n".join(res.errors)
+            errors = "\n".join(["%s: %s" % (error.code, error.message) for error in res.errors])
             failure_msg = (
                 f"Failed to submit the product {product.id} to live. "
                 f"Status: {res.job_result} Errors: {errors}"
             )
             raise RuntimeError(failure_msg)
 
+    @retry(
+        retry=retry_if_exception_type((ConflictError, RunningSubmissionError)),
+        wait=wait_exponential(multiplier=1, min=60, max=60 * 60 * 24 * 7),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it if required.

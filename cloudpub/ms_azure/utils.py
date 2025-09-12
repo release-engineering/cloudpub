@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
+import re
 from operator import attrgetter
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -596,3 +597,22 @@ def logdiff(diff: DeepDiff) -> None:
     """Log the offer diff if it exists."""
     if diff:
         log.warning("Found the following offer diff before publishing:\n%s", diff.pretty())
+
+
+def check_for_conflict(job_details: ConfigureStatus) -> bool:
+    """Check if the job details contain a conflict error."""
+    err_lookup = r"The submission cannot be pushed to \w+ as its not the latest .*"
+    for error in job_details.errors:
+        if error.code == "conflict" and re.match(err_lookup, error.message):
+            return True
+    return False
+
+
+def check_for_running_submission(job_details: ConfigureStatus) -> bool:
+    """Check if the job details contain a running submission error."""
+    err_lookup = r"An In Progress submission [0-9]+ already exists."
+    for error in job_details.errors:
+        err_msg = error.message
+        if error.code == "internalServerError" and re.match(err_lookup, err_msg):
+            return True
+    return False
