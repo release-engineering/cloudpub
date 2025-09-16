@@ -37,7 +37,7 @@ from cloudpub.models.ms_azure import (
     VMISku,
 )
 from cloudpub.ms_azure import AzurePublishingMetadata, AzureService
-from cloudpub.ms_azure.utils import get_image_type_mapping
+from cloudpub.ms_azure.utils import get_image_type_mapping, list_all_targets
 
 
 class TestAzureService:
@@ -489,11 +489,11 @@ class TestAzureService:
 
         assert product == product_obj
         assert plan == plan_summary_obj
-        assert tgt == "draft"
+        assert tgt == "live"
         mock_getpr.assert_has_calls(
             [
                 mock.call("product", first_target="preview"),
-                mock.call("product", first_target="draft"),
+                mock.call("product", first_target="live"),
             ]
         )
         mock_getpl.assert_has_calls([mock.call(product_obj, "plan") for _ in range(2)])
@@ -1077,13 +1077,24 @@ class TestAzureService:
         ]
 
         azure_service.publish(metadata_azure_obj)
+        targets = list_all_targets()
 
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
-        mock_filter.assert_called_once_with(
-            product=product_obj, resource="virtual-machine-plan-technical-configuration"
+        mock_getprpl_name.assert_has_calls(
+            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
         )
-        mock_is_sas.assert_called_once_with(
-            technical_config_obj, metadata_azure_obj.image_path, False
+        mock_filter.assert_has_calls(
+            [
+                mock.call(
+                    product=product_obj, resource="virtual-machine-plan-technical-configuration"
+                )
+                for _ in range(len(targets))
+            ]
+        )
+        mock_is_sas.assert_has_calls(
+            [
+                mock.call(technical_config_obj, metadata_azure_obj.image_path, False)
+                for _ in range(len(targets))
+            ]
         )
         mock_prep_img.assert_not_called()
         mock_upd_sku.assert_called_once_with(
@@ -1138,7 +1149,9 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
+        mock_getprpl_name.assert_called_once_with(
+            "example-product", "plan-1", first_target="preview"
+        )
         mock_filter.assert_has_calls(
             [
                 mock.call(
@@ -1210,15 +1223,28 @@ class TestAzureService:
         )
 
         azure_service.publish(metadata_azure_obj)
+        targets = list_all_targets()
 
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
-        mock_filter.assert_called_once_with(
-            product=product_obj, resource="virtual-machine-plan-technical-configuration"
+        mock_getprpl_name.assert_has_calls(
+            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
         )
-        mock_is_sas.assert_called_once_with(
-            technical_config_obj,
-            metadata_azure_obj.image_path,
-            False,
+        mock_filter.assert_has_calls(
+            [
+                mock.call(
+                    product=product_obj, resource="virtual-machine-plan-technical-configuration"
+                )
+                for _ in range(len(targets))
+            ]
+        )
+        mock_is_sas.assert_has_calls(
+            [
+                mock.call(
+                    technical_config_obj,
+                    metadata_azure_obj.image_path,
+                    False,
+                )
+                for _ in range(len(targets))
+            ]
         )
         mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
@@ -1277,14 +1303,28 @@ class TestAzureService:
         technical_config_obj.disk_versions = [disk_version_obj]
 
         azure_service.publish(metadata_azure_obj)
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
-        mock_filter.assert_called_once_with(
-            product=product_obj, resource="virtual-machine-plan-technical-configuration"
+
+        targets = list_all_targets()
+        mock_getprpl_name.assert_has_calls(
+            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
         )
-        mock_is_sas.assert_called_once_with(
-            technical_config_obj,
-            metadata_azure_obj.image_path,
-            False,
+        mock_filter.assert_has_calls(
+            [
+                mock.call(
+                    product=product_obj, resource="virtual-machine-plan-technical-configuration"
+                )
+                for _ in range(len(targets))
+            ]
+        )
+        mock_is_sas.assert_has_calls(
+            [
+                mock.call(
+                    technical_config_obj,
+                    metadata_azure_obj.image_path,
+                    False,
+                )
+                for _ in range(len(targets))
+            ]
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
@@ -1373,6 +1413,8 @@ class TestAzureService:
         mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.side_effect = [
             [technical_config_obj],
+            [technical_config_obj],
+            [technical_config_obj],
             [submission_obj],
             [submission_obj],
         ]
@@ -1399,16 +1441,25 @@ class TestAzureService:
 
         # Test
         azure_service.publish(metadata_azure_obj)
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
+
+        targets = list_all_targets()
+        mock_getprpl_name.assert_has_calls(
+            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+        )
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
             mock.call(product=product_obj, resource="submission"),
         ]
         mock_filter.assert_has_calls(filter_calls)
-        mock_is_sas.assert_called_once_with(
-            technical_config_obj,
-            metadata_azure_obj.image_path,
-            False,
+        mock_is_sas.assert_has_calls(
+            [
+                mock.call(
+                    technical_config_obj,
+                    metadata_azure_obj.image_path,
+                    False,
+                )
+                for _ in range(len(targets))
+            ]
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
@@ -1466,6 +1517,8 @@ class TestAzureService:
         mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
         mock_filter.side_effect = [
             [technical_config_obj],
+            [technical_config_obj],
+            [technical_config_obj],
             [submission_obj],
             [submission_obj],
         ]
@@ -1491,16 +1544,25 @@ class TestAzureService:
 
         # Test
         azure_service.publish(metadata_azure_obj)
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
+
+        targets = list_all_targets()
+        mock_getprpl_name.assert_has_calls(
+            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+        )
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
             mock.call(product=product_obj, resource="submission"),
         ]
         mock_filter.assert_has_calls(filter_calls)
-        mock_is_sas.assert_called_once_with(
-            technical_config_obj,
-            metadata_azure_obj.image_path,
-            False,
+        mock_is_sas.assert_has_calls(
+            [
+                mock.call(
+                    technical_config_obj,
+                    metadata_azure_obj.image_path,
+                    False,
+                )
+                for _ in range(len(targets))
+            ]
         )
         mock_prep_img.assert_called_once_with(
             metadata=metadata_azure_obj,
@@ -1588,7 +1650,7 @@ class TestAzureService:
             in caplog.text
         )
         assert (
-            'Preparing to associate the image "https://uri.test.com" with the plan "plan-1" from product "example-product" on "preview"'  # noqa: E501
+            'Preparing to associate the image "https://uri.test.com" with the plan "plan-1" from product "example-product"'  # noqa: E501
             in caplog.text
         )
         assert (

@@ -602,3 +602,18 @@ def logdiff(diff: DeepDiff) -> None:
     """Log the offer diff if it exists."""
     if diff:
         log.warning("Found the following offer diff before publishing:\n%s", diff.pretty())
+
+
+def list_all_targets(start_with: str = "preview") -> List[str]:
+    """List all the possible publishing targets order to seek data from Azure.
+
+    Args:
+        start_with (str): The first target to lookup into.
+    Returns:
+        List[Str]: The ordered list with targets to lookup.
+    """
+    targets = [start_with]
+    for tgt in ["preview", "live", "draft"]:
+        if tgt not in targets:
+            targets.append(tgt)
+    return targets

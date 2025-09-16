@@ -41,6 +41,7 @@ from cloudpub.ms_azure.utils import (
     create_disk_version_from_scratch,
     is_azure_job_not_complete,
     is_sas_present,
+    list_all_targets,
     logdiff,
     seek_disk_version,
     set_new_sas_disk_version,
@@ -258,10 +259,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             Product: the requested product
         """
-        targets = [first_target]
-        for tgt in ["preview", "draft", "live"]:
-            if tgt not in targets:
-                targets.append(tgt)
+        targets = list_all_targets(start_with=first_target)
 
         for t in targets:
             log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
@@ -377,20 +375,24 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
     def get_product_plan_by_name(
-        self, product_name: str, plan_name: str
+        self,
+        product_name: str,
+        plan_name: str,
+        first_target: str = "preview",
     ) -> Tuple[Product, PlanSummary, str]:
         """Return a tuple with the desired Product and Plan after iterating over all targets.
 
         Args:
             product_name (str): The name of the product to search for
             plan_name (str): The name of the plan to search for
-
+            first_target (str, optional)
+                The first target to lookup into. Defaults to ``preview``.
         Returns:
             Tuple[Product, PlanSummary, str]: The Product, PlanSummary and target when fonud
         Raises:
             NotFoundError whenever all targets are exhausted and no information was found
         """
-        targets = ["preview", "draft", "live"]
+        targets = list_all_targets(start_with=first_target)
 
         for tgt in targets:
             try:
@@ -664,71 +666,93 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
-        product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
+        disk_version = None
+        sas_found = False
         log.info(
-            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\" on \"%s\"",  # noqa: E501
+            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
             metadata.image_path,
             plan_name,
             product_name,
-            tgt,
         )
 
-        # 2. Retrieve the VM Technical configuration for the given plan
-        log.info("Retrieving the technical config for \"%s\" on \"%s\".", metadata.destination, tgt)
-        tech_config = self.get_plan_tech_config(product, plan)
-
-        # 3. Prepare the Disk Version
+        # 2. Prepare the Disk Version
         log.info("Creating the VMImageResource with SAS for image: \"%s\"", metadata.image_path)
         sas = OSDiskURI(uri=metadata.image_path)
         source = VMImageSource(source_type="sasUri", os_disk=sas.to_json(), data_disks=[])
 
+        # 3. Set the new Disk Version into the product/plan if required
+        #
         # Note: If `overwrite` is True it means we can set this VM image as the only one in the
         # plan's technical config and discard all other VM images which may've been present.
-        disk_version = None  # just to make mypy happy
         if metadata.overwrite is True:
+            product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
             log.warning(
                 "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
                 plan_name,
                 tgt,
                 metadata.image_path,
             )
+            tech_config = self.get_plan_tech_config(product, plan)
             disk_version = create_disk_version_from_scratch(metadata, source)
             tech_config.disk_versions = [disk_version]
+        else:
+            # Otherwise we need to check whether SAS isn't already present
+            # in any of the targets "preview", "live" or "draft" and if not attach and publish it.
+            for initial_target in list_all_targets(start_with="preview"):
 
-        # We just want to append a new image if the SAS is not already present.
-        elif not is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
-            # Here we can have the metadata.disk_version set or empty.
-            # When set we want to get the existing disk_version which matches its value.
-            log.info(
-                "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
-                metadata.destination,
-                tgt,
-                metadata.image_path,
-            )
-            disk_version = seek_disk_version(tech_config, metadata.disk_version)
-
-            # Check the images of the selected DiskVersion if it exists
-            if disk_version:
+                # 3.1 Retrieve the VM Technical configuration for the given plan
+                product, plan, tgt = self.get_product_plan_by_name(
+                    product_name, plan_name, first_target=initial_target
+                )
                 log.info(
-                    "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
-                    disk_version.version_number,
+                    "Retrieving the technical config for \"%s\" on \"%s\".",
+                    metadata.destination,
+                    tgt,
+                )
+                tech_config = self.get_plan_tech_config(product, plan)
+
+                if is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
+                    log.info(
+                        "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
+                        metadata.destination,
+                        tgt,
+                        metadata.image_path,
+                    )
+                    # We don't want to seek for SAS anymore as it was already found
+                    sas_found = True
+                    break
+                else:
+                    # Seek SAS URI until it reaches the last target
+                    continue
+
+            if not sas_found:
+                # At this point there's no SAS URI in any target so we can safely add it
+
+                # Here we can have the metadata.disk_version set or empty.
+                # When set we want to get the existing disk_version which matches its value.
+                log.info(
+                    "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
                     metadata.destination,
                     tgt,
                     metadata.image_path,
                 )
-                disk_version = set_new_sas_disk_version(disk_version, metadata, source)
+                disk_version = seek_disk_version(tech_config, metadata.disk_version)
 
-            else:  # The disk version doesn't exist, we need to create one from scratch
-                log.info("The DiskVersion doesn't exist, creating one from scratch.")
-                disk_version = create_disk_version_from_scratch(metadata, source)
-                tech_config.disk_versions.append(disk_version)
-        else:
-            log.info(
-                "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
-                metadata.destination,
-                tgt,
-                metadata.image_path,
-            )
+                # Check the images of the selected DiskVersion if it exists
+                if disk_version:
+                    log.info(
+                        "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
+                        disk_version.version_number,
+                        metadata.destination,
+                        tgt,
+                        metadata.image_path,
+                    )
+                    disk_version = set_new_sas_disk_version(disk_version, metadata, source)
+
+                else:  # The disk version doesn't exist, we need to create one from scratch
+                    log.info("The DiskVersion doesn't exist, creating one from scratch.")
+                    disk_version = create_disk_version_from_scratch(metadata, source)
+                    tech_config.disk_versions.append(disk_version)
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
