@@ -117,6 +117,8 @@ jobs:
           --out "dependency-check" \
           --format "ALL" \
           --nvdApiKey ${{ secrets.OWASP_API_KEY }} \
+          --ossIndexUsername ${{ secrets.OSS_INDEX_USERNAME }} \
+          --ossIndexPassword ${{ secrets.OSS_INDEX_PASSWORD }} \
           --enableExperimental \
           --scan . \
           --data .code_scanning/dependency-check/data \
