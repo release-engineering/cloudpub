@@ -225,19 +225,19 @@
 
 <div class="viewcode-block" id="AzureService.configure">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.configure">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">AzureResource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AzureResource</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create or update a resource and wait until it&#39;s done.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            resource (AzureResource):</span>
-<span class="sd">                The resource to create/modify in Azure.</span>
+<span class="sd">            resources (List[AzureResource]):</span>
+<span class="sd">                The list of resources to create/modify in Azure.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The result of job execution</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;$schema&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONFIGURE_SCHEMA</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">AZURE_API_VERSION</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">AZURE_API_VERSION</span><span class="p">),</span>
-            <span class="s2">&quot;resources&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">resource</span><span class="o">.</span><span class="n">to_json</span><span class="p">()],</span>
+            <span class="s2">&quot;resources&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">resources</span><span class="p">],</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">log</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Data to configure: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
@@ -487,7 +487,9 @@
 
 <div class="viewcode-block" id="AzureService.submit_to_status">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.submit_to_status">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">submit_to_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_to_status</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">AzureResource</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigureStatus</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Send a submission request to Microsoft with a new Product status.</span>
 
@@ -496,6 +498,8 @@
 <span class="sd">                The product ID to submit the new status.</span>
 <span class="sd">            status (str)</span>
 <span class="sd">                The new status: &#39;preview&#39; or &#39;live&#39;</span>
+<span class="sd">            resources (optional(list(AzureRerouce)))</span>
+<span class="sd">                Additional resources for modular push.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            The response from configure request.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -516,9 +520,12 @@
 
         <span class="c1"># Update the status with the expected one</span>
         <span class="n">submission</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">targetType</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="n">cfg_res</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AzureResource</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">submission</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">resources</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Performing a modular push to </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">product_id</span><span class="p">)</span>
+            <span class="n">cfg_res</span> <span class="o">=</span> <span class="n">resources</span> <span class="o">+</span> <span class="n">cfg_res</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Set the status </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> to submission.&quot;</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">submission</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resources</span><span class="o">=</span><span class="n">cfg_res</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AzureService.ensure_can_publish">
@@ -578,6 +585,57 @@
         <span class="k">return</span> <span class="n">tconfigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># It should have only one VMIPlanTechConfig per plan.</span></div>
 
 
+<div class="viewcode-block" id="AzureService.get_modular_resources_to_publish">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.get_modular_resources_to_publish">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_modular_resources_to_publish</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">AzureResource</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the required resources for a modular publishing.</span>
+
+<span class="sd">        According to Microsoft docs:</span>
+<span class="sd">        &quot;For a modular publish, all resources are required except for the product level details</span>
+<span class="sd">        (for example, listing, availability, packages, reseller) as applicable to your</span>
+<span class="sd">        product type.&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            product (Product): The original product to filter the resources from</span>
+<span class="sd">            tech_config (VMIPlanTechConfig): The updated tech config to publish</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[AzureResource]: _description_</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The following resources shouldn&#39;t be required:</span>
+        <span class="c1"># -&gt; customer-leads</span>
+        <span class="c1"># -&gt; test-drive</span>
+        <span class="c1"># -&gt; property</span>
+        <span class="c1"># -&gt; *listing*</span>
+        <span class="c1"># -&gt; reseller</span>
+        <span class="c1"># -&gt; price-and-availability-*</span>
+        <span class="c1"># NOTE: The &quot;submission&quot; resource will be already added by the &quot;submit_to_status&quot; method</span>
+        <span class="c1">#</span>
+        <span class="c1"># With that it needs only the related &quot;product&quot; and &quot;plan&quot; resources alongisde the</span>
+        <span class="c1"># updated tech_config</span>
+        <span class="n">product_id</span> <span class="o">=</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">product_id</span>
+        <span class="n">plan_id</span> <span class="o">=</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span>
+        <span class="n">prod_res</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="n">ProductSummary</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="n">prd</span>
+                <span class="k">for</span> <span class="n">prd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_product_resources</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="s2">&quot;product&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prd</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">product_id</span>
+            <span class="p">],</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">plan_res</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="n">PlanSummary</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="n">pln</span>
+                <span class="k">for</span> <span class="n">pln</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_product_resources</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="s2">&quot;plan&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pln</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">plan_id</span>
+            <span class="p">],</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">prod_res</span><span class="p">,</span> <span class="n">plan_res</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">]</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_is_submission_in_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">:</span> <span class="n">ProductSubmission</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the latest submission state is &quot;preview&quot;, False otherwise.</span>
 
@@ -605,7 +663,9 @@
         <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
         <span class="n">reraise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_publish_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_publish_preview</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">resources</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">AzureResource</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Submit the product to &#39;preview&#39;  if it&#39;s not already in this state.</span>
 
@@ -613,9 +673,11 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            product</span>
-<span class="sd">                The product with changes to publish live</span>
+<span class="sd">                The product with changes to publish to preview</span>
 <span class="sd">            product_name</span>
 <span class="sd">                The product name to display in logs.</span>
+<span class="sd">            resources:</span>
+<span class="sd">                Additional resources for modular push.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># We just want to set the ProductSubmission to &#39;preview&#39; if it&#39;s not in this status.</span>
         <span class="c1">#</span>
@@ -630,14 +692,14 @@
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The product </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> is already set to preview&quot;</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;preview&#39;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_to_status</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;preview&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">job_result</span> <span class="o">!=</span> <span class="s1">&#39;succeeded&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submission_state</span><span class="p">(</span>
             <span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;preview&quot;</span>
         <span class="p">):</span>
             <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
             <span class="n">failure_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to submit the product </span><span class="si">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> to preview. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to submit the product </span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">) to preview. &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">job_result</span><span class="si">}</span><span class="s2"> Errors: </span><span class="si">{</span><span class="n">errors</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">failure_msg</span><span class="p">)</span>
@@ -664,7 +726,7 @@
         <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">job_result</span> <span class="o">!=</span> <span class="s1">&#39;succeeded&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_submission_state</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;live&quot;</span><span class="p">):</span>
             <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
             <span class="n">failure_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to submit the product </span><span class="si">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> to live. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to submit the product </span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">) to live. &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">job_result</span><span class="si">}</span><span class="s2"> Errors: </span><span class="si">{</span><span class="n">errors</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">failure_msg</span><span class="p">)</span>
@@ -764,7 +826,7 @@
                 <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span>
                 <span class="n">tgt</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">tech_config</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">resources</span><span class="o">=</span><span class="p">[</span><span class="n">tech_config</span><span class="p">])</span>
 
         <span class="c1"># 5. Proceed to publishing if it was requested.</span>
         <span class="c1"># Note: The publishing will only occur if it made changes in disk_version.</span>
@@ -784,7 +846,13 @@
                 <span class="n">logdiff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diff_offer</span><span class="p">(</span><span class="n">product</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">ensure_can_publish</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">_publish_preview</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span>
+                <span class="c1"># According to the documentation we only need to pass the</span>
+                <span class="c1"># required resources for modular publish on &quot;preview&quot;</span>
+                <span class="c1"># https://learn.microsoft.com/en-us/partner-center/marketplace-offers/product-ingestion-api#method-2-publish-specific-draft-resources-also-known-as-modular-publish  # noqa: E501</span>
+                <span class="n">modular_resources</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">modular_push</span><span class="p">:</span>
+                    <span class="n">modular_resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_modular_resources_to_publish</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_publish_preview</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="n">modular_resources</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_publish_live</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">product_name</span><span class="p">)</span>
 
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>

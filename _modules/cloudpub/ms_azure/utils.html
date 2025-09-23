@@ -91,6 +91,11 @@
 <span class="sd">            check_base_sas_only (bool, optional):</span>
 <span class="sd">                Indicates to skip checking SAS parameters when set as ``True``.</span>
 <span class="sd">                Default to ``False``</span>
+<span class="sd">            modular_push (bool, optional):</span>
+<span class="sd">                Indicate whether to perform a modular push or not.</span>
+<span class="sd">                The modular push causes the effect to only publish</span>
+<span class="sd">                the changed plan instead of the whole offer to preview/live.</span>
+<span class="sd">                Default to ``False``.</span>
 <span class="sd">            **kwargs</span>
 <span class="sd">                Arguments for :class:`~cloudpub.common.PublishingMetadata`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -101,6 +106,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">recommended_sizes</span> <span class="o">=</span> <span class="n">recommended_sizes</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;legacy_sku_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_base_sas_only</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;check_base_sas_only&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modular_push</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;modular_push&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V1&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">support_legacy</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="kc">None</span>

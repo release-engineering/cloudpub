@@ -78,6 +78,10 @@ the version <code class="docutils literal notranslate"><span class="pre">2022-07
 Defaults to <code class="docutils literal notranslate"><span class="pre">{sku_id}-gen1</span></code></p></li>
 <li><p><strong>check_base_sas_only</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Indicates to skip checking SAS parameters when set as <code class="docutils literal notranslate"><span class="pre">True</span></code>.
 Default to <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
+<li><p><strong>modular_push</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Indicate whether to perform a modular push or not.
+The modular push causes the effect to only publish
+the changed plan instead of the whole offer to preview/live.
+Default to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 <li><p><strong>**kwargs</strong> – Arguments for <a class="reference internal" href="base.html#cloudpub.common.PublishingMetadata" title="cloudpub.common.PublishingMetadata"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublishingMetadata</span></code></a>.</p></li>
 </ul>
 </dd>
@@ -103,11 +107,11 @@ Default to <code class="docutils literal notranslate"><span class="pre">False</s
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.configure">
-<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.configure" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resources</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.configure" title="Link to this definition">¶</a></dt>
 <dd><p>Create or update a resource and wait until it’s done.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>resource</strong> (<a class="reference internal" href="#cloudpub.models.ms_azure.AzureResource" title="cloudpub.models.ms_azure.AzureResource"><em>AzureResource</em></a>) – The resource to create/modify in Azure.</p>
+<dd class="field-odd"><p><strong>resources</strong> (<em>List</em><em>[</em><a class="reference internal" href="#cloudpub.models.ms_azure.AzureResource" title="cloudpub.models.ms_azure.AzureResource"><em>AzureResource</em></a><em>]</em>) – The list of resources to create/modify in Azure.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The result of job execution</p>
@@ -173,6 +177,30 @@ giving up and raising.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.get_modular_resources_to_publish">
+<span class="sig-name descname"><span class="pre">get_modular_resources_to_publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tech_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_modular_resources_to_publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_modular_resources_to_publish" title="Link to this definition">¶</a></dt>
+<dd><p>Return the required resources for a modular publishing.</p>
+<p>According to Microsoft docs:
+“For a modular publish, all resources are required except for the product level details
+(for example, listing, availability, packages, reseller) as applicable to your
+product type.”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<a class="reference internal" href="#cloudpub.models.ms_azure.Product" title="cloudpub.models.ms_azure.Product"><em>Product</em></a>) – The original product to filter the resources from</p></li>
+<li><p><strong>tech_config</strong> (<a class="reference internal" href="#cloudpub.models.ms_azure.VMIPlanTechConfig" title="cloudpub.models.ms_azure.VMIPlanTechConfig"><em>VMIPlanTechConfig</em></a>) – The updated tech config to publish</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#cloudpub.models.ms_azure.AzureResource" title="cloudpub.models.ms_azure.AzureResource">AzureResource</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -360,13 +388,14 @@ publishing which could be missing to go live.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.submit_to_status">
-<span class="sig-name descname"><span class="pre">submit_to_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.submit_to_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.submit_to_status" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">submit_to_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.submit_to_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.submit_to_status" title="Link to this definition">¶</a></dt>
 <dd><p>Send a submission request to Microsoft with a new Product status.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The product ID to submit the new status.</p></li>
 <li><p><strong>status</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The new status: ‘preview’ or ‘live’</p></li>
+<li><p><strong>resources</strong> (<em>optional</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>(</em><em>AzureRerouce</em><em>)</em><em>)</em>) – Additional resources for modular push.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
