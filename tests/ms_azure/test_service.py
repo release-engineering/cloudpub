@@ -1792,7 +1792,7 @@ class TestAzureService:
             "Item root['resources'][1]['vmImageVersions'][1] added to iterable."
         ) in caplog.text
         assert (
-            'Updating the technical configuration for "example-product/plan-1" on "preview".'
+            'Updating the technical configuration for "example-product/plan-1" on "draft".'
             in caplog.text
         )
         assert (
