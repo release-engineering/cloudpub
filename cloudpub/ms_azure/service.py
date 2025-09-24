@@ -18,6 +18,7 @@ from cloudpub.models.ms_azure import (
     AzureResource,
     ConfigureStatus,
     CustomerLeads,
+    DiskVersion,
     Listing,
     ListingAsset,
     ListingTrailer,
@@ -38,9 +39,11 @@ from cloudpub.models.ms_azure import (
 from cloudpub.ms_azure.session import PartnerPortalSession
 from cloudpub.ms_azure.utils import (
     AzurePublishingMetadata,
+    TechnicalConfigLookUpData,
     create_disk_version_from_scratch,
     is_azure_job_not_complete,
     is_sas_present,
+    list_all_targets,
     logdiff,
     seek_disk_version,
     set_new_sas_disk_version,
@@ -258,10 +261,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             Product: the requested product
         """
-        targets = [first_target]
-        for tgt in ["preview", "draft", "live"]:
-            if tgt not in targets:
-                targets.append(tgt)
+        targets = list_all_targets(start_with=first_target)
 
         for t in targets:
             log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
@@ -377,20 +377,24 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
     def get_product_plan_by_name(
-        self, product_name: str, plan_name: str
+        self,
+        product_name: str,
+        plan_name: str,
+        first_target: str = "preview",
     ) -> Tuple[Product, PlanSummary, str]:
         """Return a tuple with the desired Product and Plan after iterating over all targets.
 
         Args:
             product_name (str): The name of the product to search for
             plan_name (str): The name of the plan to search for
-
+            first_target (str, optional)
+                The first target to lookup into. Defaults to ``preview``.
         Returns:
             Tuple[Product, PlanSummary, str]: The Product, PlanSummary and target when fonud
         Raises:
             NotFoundError whenever all targets are exhausted and no information was found
         """
-        targets = ["preview", "draft", "live"]
+        targets = list_all_targets(start_with=first_target)
 
         for tgt in targets:
             try:
@@ -651,6 +655,123 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             )
             raise RuntimeError(failure_msg)
 
+    def _overwrite_disk_version(
+        self,
+        metadata: AzurePublishingMetadata,
+        product_name: str,
+        plan_name: str,
+        source: VMImageSource,
+    ) -> TechnicalConfigLookUpData:
+        """Private method to overwrite the technical config with a new DiskVersion.
+
+        Args:
+            metadata (AzurePublishingMetadata): the incoming publishing metadata
+            product_name (str): the product (offer) name
+            plan_name (str): the plan name
+            source (VMImageSource): the source VMI to create and overwrite the new DiskVersion
+
+        Returns:
+            TechnicalConfigLookUpData: The overwritten tech_config for the product/plan
+        """
+        product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
+        log.warning(
+            "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
+            plan_name,
+            tgt,
+            metadata.image_path,
+        )
+        tech_config = self.get_plan_tech_config(product, plan)
+        disk_version = create_disk_version_from_scratch(metadata, source)
+        tech_config.disk_versions = [disk_version]
+        return {
+            "metadata": metadata,
+            "tech_config": tech_config,
+            "sas_found": False,
+            "product": product,
+            "plan": plan,
+            "target": tgt,
+        }
+
+    def _look_up_sas_on_technical_config(
+        self, metadata: AzurePublishingMetadata, product_name: str, plan_name: str, target: str
+    ) -> TechnicalConfigLookUpData:
+        """Private method to lookup for the TechnicalConfig of a given target.
+
+        Args:
+            metadata (AzurePublishingMetadata): the incoming publishing metadata.
+            product_name (str): the product (offer) name
+            plan_name (str): the plan name
+            target (str): the submission target to look up the TechnicalConfig object
+
+        Returns:
+            TechnicalConfigLookUpData: The data retrieved for the given submission target.
+        """
+        product, plan, tgt = self.get_product_plan_by_name(
+            product_name, plan_name, first_target=target
+        )
+        log.info(
+            "Retrieving the technical config for \"%s\" on \"%s\".",
+            metadata.destination,
+            tgt,
+        )
+        tech_config = self.get_plan_tech_config(product, plan)
+        sas_found = False
+
+        if is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
+            log.info(
+                "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
+                metadata.destination,
+                tgt,
+                metadata.image_path,
+            )
+            sas_found = True
+        return {
+            "metadata": metadata,
+            "tech_config": tech_config,
+            "sas_found": sas_found,
+            "product": product,
+            "plan": plan,
+            "target": tgt,
+        }
+
+    def _create_or_update_disk_version(
+        self,
+        tech_config_lookup: TechnicalConfigLookUpData,
+        source: VMImageSource,
+        disk_version: Optional[DiskVersion],
+    ) -> DiskVersion:
+        """Private method to create/update the DiskVersion of a given TechnicalConfig object.
+
+        Args:
+            tech_config_lookup (TechnicalConfigLookUpData): the incoming data to process
+            source (VMImageSource): the new VMI source to attach
+            disk_version (Optional[DiskVersion]): the disk version if it exists (for updates).
+
+        Returns:
+            DiskVersion: The updated DiskVersion
+        """
+        metadata = tech_config_lookup["metadata"]
+        target = tech_config_lookup["target"]
+        tech_config = tech_config_lookup["tech_config"]
+
+        # Check the images of the selected DiskVersion if it exists
+        if disk_version:
+            log.info(
+                "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
+                disk_version.version_number,
+                metadata.destination,
+                target,
+                metadata.image_path,
+            )
+            # Update the disk version with the new SAS
+            disk_version = set_new_sas_disk_version(disk_version, metadata, source)
+            return disk_version
+        # The disk version doesn't exist, we need to create one from scratch
+        log.info("The DiskVersion doesn't exist, creating one from scratch.")
+        disk_version = create_disk_version_from_scratch(metadata, source)
+        tech_config.disk_versions.append(disk_version)
+        return disk_version
+
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it if required.
@@ -664,71 +785,53 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
-        product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
+        disk_version = None
         log.info(
-            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\" on \"%s\"",  # noqa: E501
+            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
             metadata.image_path,
             plan_name,
             product_name,
-            tgt,
         )
 
-        # 2. Retrieve the VM Technical configuration for the given plan
-        log.info("Retrieving the technical config for \"%s\" on \"%s\".", metadata.destination, tgt)
-        tech_config = self.get_plan_tech_config(product, plan)
-
-        # 3. Prepare the Disk Version
+        # 2. Prepare the Disk Version
         log.info("Creating the VMImageResource with SAS for image: \"%s\"", metadata.image_path)
         sas = OSDiskURI(uri=metadata.image_path)
         source = VMImageSource(source_type="sasUri", os_disk=sas.to_json(), data_disks=[])
 
+        # 3. Set the new Disk Version into the product/plan if required
+        #
         # Note: If `overwrite` is True it means we can set this VM image as the only one in the
         # plan's technical config and discard all other VM images which may've been present.
-        disk_version = None  # just to make mypy happy
         if metadata.overwrite is True:
-            log.warning(
-                "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
-                plan_name,
-                tgt,
-                metadata.image_path,
-            )
-            disk_version = create_disk_version_from_scratch(metadata, source)
-            tech_config.disk_versions = [disk_version]
+            res = self._overwrite_disk_version(metadata, product_name, plan_name, source)
+            tgt = res["target"]
+            tech_config = res["tech_config"]
+            disk_version = tech_config.disk_versions[0]  # only 1 as it was overwritten
+        else:
+            # Otherwise we need to check whether SAS isn't already present
+            # in any of the targets "preview", "live" or "draft" and if not attach and publish it.
+            for target in list_all_targets(start_with="preview"):
+                res = self._look_up_sas_on_technical_config(
+                    metadata, product_name, plan_name, target
+                )
+                tech_config = res["tech_config"]
+                tgt = res["target"]
+                # We don't want to seek for SAS anymore as it was already found
+                if res["sas_found"]:
+                    break
+            else:
+                # At this point there's no SAS URI in any target so we can safely add it
 
-        # We just want to append a new image if the SAS is not already present.
-        elif not is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
-            # Here we can have the metadata.disk_version set or empty.
-            # When set we want to get the existing disk_version which matches its value.
-            log.info(
-                "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
-                metadata.destination,
-                tgt,
-                metadata.image_path,
-            )
-            disk_version = seek_disk_version(tech_config, metadata.disk_version)
-
-            # Check the images of the selected DiskVersion if it exists
-            if disk_version:
+                # Here we can have the metadata.disk_version set or empty.
+                # When set we want to get the existing disk_version which matches its value.
                 log.info(
-                    "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
-                    disk_version.version_number,
+                    "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
                     metadata.destination,
                     tgt,
                     metadata.image_path,
                 )
-                disk_version = set_new_sas_disk_version(disk_version, metadata, source)
-
-            else:  # The disk version doesn't exist, we need to create one from scratch
-                log.info("The DiskVersion doesn't exist, creating one from scratch.")
-                disk_version = create_disk_version_from_scratch(metadata, source)
-                tech_config.disk_versions.append(disk_version)
-        else:
-            log.info(
-                "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
-                metadata.destination,
-                tgt,
-                metadata.image_path,
-            )
+                dv = seek_disk_version(tech_config, metadata.disk_version)
+                disk_version = self._create_or_update_disk_version(res, source, dv)
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
@@ -749,6 +852,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # 5. Proceed to publishing if it was requested.
         # Note: The publishing will only occur if it made changes in disk_version.
         if not metadata.keepdraft:
+            product = res["product"]
             # Get the submission state
             submission: ProductSubmission = cast(
                 List[ProductSubmission],

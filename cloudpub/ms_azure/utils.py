@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from operator import attrgetter
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 from deepdiff import DeepDiff
 
@@ -9,6 +9,8 @@ from cloudpub.common import PublishingMetadata  # Cannot circular import AzurePu
 from cloudpub.models.ms_azure import (
     ConfigureStatus,
     DiskVersion,
+    PlanSummary,
+    Product,
     VMImageDefinition,
     VMImageSource,
     VMIPlanTechConfig,
@@ -111,6 +113,17 @@ class AzurePublishingMetadata(PublishingMetadata):
             )
         if not self.image_path.startswith("https://"):
             raise ValueError(f"Invalid SAS URI \"{self.image_path}\". Expected: http/https URL.")
+
+
+class TechnicalConfigLookUpData(TypedDict):
+    """A typed dict to be used for private methods data exchange."""
+
+    metadata: AzurePublishingMetadata
+    tech_config: VMIPlanTechConfig
+    sas_found: bool
+    product: Product
+    plan: PlanSummary
+    target: str
 
 
 def get_image_type_mapping(architecture: str, generation: str) -> str:
@@ -602,3 +615,18 @@ def logdiff(diff: DeepDiff) -> None:
     """Log the offer diff if it exists."""
     if diff:
         log.warning("Found the following offer diff before publishing:\n%s", diff.pretty())
+
+
+def list_all_targets(start_with: str = "preview") -> List[str]:
+    """List all the possible publishing targets order to seek data from Azure.
+
+    Args:
+        start_with (str): The first target to lookup into.
+    Returns:
+        List[Str]: The ordered list with targets to lookup.
+    """
+    targets = [start_with]
+    for tgt in ["preview", "live", "draft"]:
+        if tgt not in targets:
+            targets.append(tgt)
+    return targets
