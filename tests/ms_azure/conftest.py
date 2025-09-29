@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Dict, List
 from unittest import mock
 
@@ -171,6 +172,17 @@ def product_summary() -> Dict[str, Any]:
 @pytest.fixture
 def products_list(product_summary) -> Dict[str, Any]:
     return {"value": [product_summary]}
+
+
+@pytest.fixture
+def more_products_list(product_summary) -> Dict[str, Any]:
+    values = []
+    for i in range(5):
+        copy_dict = deepcopy(product_summary)
+        copy_dict['id'] = f"product/{i + 1}"
+        copy_dict['identity'] = {"externalId": f"product-{i + 1}"}
+        values.append(copy_dict)
+    return {"value": values}
 
 
 @pytest.fixture
