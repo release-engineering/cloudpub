@@ -339,10 +339,12 @@ class TestAzureService:
         azure_service.list_products()
         mock_products.__iter__.assert_not_called()
 
+    @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
     def test_get_product(
         self,
         mock_adict: mock.MagicMock,
+        target: str,
         azure_service: AzureService,
         product: Dict[str, Any],
         product_obj: Product,
@@ -351,32 +353,10 @@ class TestAzureService:
         mock_adict.return_value = product
 
         with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
-            res = azure_service.get_product("product-id")
+            res = azure_service.get_product("product-id", target=target)
 
             mock_get.assert_called_once_with(
-                path="/resource-tree/product/product-id", params={"targetType": "preview"}
-            )
-            mock_adict.assert_called_once_with(res_obj)
-            assert res == product_obj
-
-    @pytest.mark.parametrize("first_target", ["live", "draft"])
-    @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
-    def test_get_product_custom_first_target(
-        self,
-        mock_adict: mock.MagicMock,
-        first_target: str,
-        azure_service: AzureService,
-        product: Dict[str, Any],
-        product_obj: Product,
-    ) -> None:
-        res_obj = response(200, product)
-        mock_adict.return_value = product
-
-        with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
-            res = azure_service.get_product("product-id", first_target=first_target)
-
-            mock_get.assert_called_once_with(
-                path="/resource-tree/product/product-id", params={"targetType": first_target}
+                path="/resource-tree/product/product-id", params={"targetType": target}
             )
             mock_adict.assert_called_once_with(res_obj)
             assert res == product_obj
@@ -399,7 +379,7 @@ class TestAzureService:
 
         with mock.patch.object(azure_service.session, 'get', return_value=res_obj) as mock_get:
             with pytest.raises(NotFoundError, match="No such product with id \"unknown-id\""):
-                azure_service.get_product("unknown-id")
+                azure_service.get_product("unknown-id", target="draft")
                 calls = [
                     mock.call(path="/resource-tree/product/unknown-id?targetType=preview"),
                     mock.call(path="/resource-tree/product/unknown-id?targetType=live"),
@@ -407,12 +387,14 @@ class TestAzureService:
                 ]
                 mock_get.assert_has_calls(calls)
 
+    @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")
     def test_get_product_by_name(
         self,
         mock_products: mock.MagicMock,
         mock_getpr: mock.MagicMock,
+        target: str,
         azure_service: AzureService,
         product_obj: Product,
         product_summary_obj: ProductSummary,
@@ -421,12 +403,10 @@ class TestAzureService:
         mock_products.__iter__.return_value = [product_summary_obj]
         mock_getpr.return_value = product_obj
 
-        res = azure_service.get_product_by_name(product_name="example-product")
+        res = azure_service.get_product_by_name(product_name="example-product", target=target)
 
         mock_products.__iter__.assert_called_once()
-        mock_getpr.assert_called_once_with(
-            "ffffffff-ffff-ffff-ffff-ffffffffffff", first_target="preview"
-        )
+        mock_getpr.assert_called_once_with("ffffffff-ffff-ffff-ffff-ffffffffffff", target=target)
         assert res == product_obj
 
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
@@ -444,17 +424,19 @@ class TestAzureService:
         mock_getpr.return_value = product_obj
 
         with pytest.raises(NotFoundError, match="No such product with name \"foo-bar\""):
-            azure_service.get_product_by_name(product_name="foo-bar")
+            azure_service.get_product_by_name(product_name="foo-bar", target="draft")
 
         mock_products.__iter__.assert_called_once()
         mock_getpr.assert_not_called()
 
+    @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
     @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
-    def test_get_product_plan_by_name_success_first_attempt(
+    def test_get_product_plan_by_name_success(
         self,
         mock_getpr: mock.MagicMock,
         mock_getpl: mock.MagicMock,
+        target: str,
         product_obj: Product,
         plan_summary_obj: ProductSummary,
         azure_service: AzureService,
@@ -463,40 +445,12 @@ class TestAzureService:
         mock_getpr.return_value = product_obj
         mock_getpl.return_value = plan_summary_obj
 
-        product, plan, tgt = azure_service.get_product_plan_by_name("product", "plan")
+        product, plan = azure_service.get_product_plan_by_name("product", "plan", target)
 
         assert product == product_obj
         assert plan == plan_summary_obj
-        assert tgt == "preview"
-        mock_getpr.assert_called_once_with("product", first_target="preview")
+        mock_getpr.assert_called_once_with("product", target=target)
         mock_getpl.assert_called_once_with(product_obj, "plan")
-
-    @mock.patch("cloudpub.ms_azure.AzureService.get_plan_by_name")
-    @mock.patch("cloudpub.ms_azure.AzureService.get_product_by_name")
-    def test_get_product_plan_by_name_success_next_attempt(
-        self,
-        mock_getpr: mock.MagicMock,
-        mock_getpl: mock.MagicMock,
-        product_obj: Product,
-        plan_summary_obj: ProductSummary,
-        azure_service: AzureService,
-    ) -> None:
-        """Ensure the product/plan can be retrieved after the first attempt."""
-        mock_getpr.return_value = product_obj
-        mock_getpl.side_effect = [NotFoundError("Not found"), plan_summary_obj]
-
-        product, plan, tgt = azure_service.get_product_plan_by_name("product", "plan")
-
-        assert product == product_obj
-        assert plan == plan_summary_obj
-        assert tgt == "live"
-        mock_getpr.assert_has_calls(
-            [
-                mock.call("product", first_target="preview"),
-                mock.call("product", first_target="live"),
-            ]
-        )
-        mock_getpl.assert_has_calls([mock.call(product_obj, "plan") for _ in range(2)])
 
     @pytest.mark.parametrize(
         "product_rv,plan_rv",
@@ -521,14 +475,16 @@ class TestAzureService:
         mock_getpl.side_effect = plan_rv
 
         with pytest.raises(NotFoundError):
-            azure_service.get_product_plan_by_name("product", "plan")
+            azure_service.get_product_plan_by_name("product", "plan", target="draft")
 
+    @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")
     def test_diff_offer_changed(
         self,
         mock_products: mock.MagicMock,
         mock_getpr: mock.MagicMock,
+        target: str,
         azure_service: AzureService,
         product_obj: Product,
         product_summary_obj: ProductSummary,
@@ -539,7 +495,7 @@ class TestAzureService:
         data_product = deepcopy(product_obj.to_json())
         data_product["resources"][0]["id"] = "product/foo/bar"
 
-        diff = azure_service.diff_offer(Product.from_json(data_product))
+        diff = azure_service.diff_offer(Product.from_json(data_product), target=target)
         assert diff == {
             'values_changed': {
                 "root['resources'][0]['id']": {
@@ -549,19 +505,21 @@ class TestAzureService:
             },
         }
 
+    @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")
     def test_diff_offer_no_change(
         self,
         mock_products: mock.MagicMock,
         mock_getpr: mock.MagicMock,
+        target: str,
         azure_service: AzureService,
         product_obj: Product,
         product_summary_obj: ProductSummary,
     ) -> None:
         mock_products.__iter__.return_value = [product_summary_obj]
         mock_getpr.return_value = product_obj
-        assert azure_service.diff_offer(product_obj) == {}
+        assert azure_service.diff_offer(product_obj, target=target) == {}
 
     @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
     def test_get_submissions(
@@ -999,7 +957,7 @@ class TestAzureService:
         metadata_azure_obj.overwrite = True
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_disk_scratch.return_value = disk_version_obj
         mock_upd_sku.return_value = technical_config_obj
@@ -1013,7 +971,7 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getprpl_name.assert_called_once_with("example-product", "plan-1")
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1", 'draft')
         mock_filter.assert_called_once_with(
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
@@ -1058,7 +1016,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = True
         metadata_azure_obj.disk_version = "1.0.0"
         metadata_azure_obj.destination = "example-product/plan-1"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         technical_config_obj.disk_versions = []
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
@@ -1080,7 +1038,7 @@ class TestAzureService:
         targets = list_all_targets()
 
         mock_getprpl_name.assert_has_calls(
-            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+            [mock.call("example-product", "plan-1", tgt) for tgt in targets]
         )
         mock_filter.assert_has_calls(
             [
@@ -1140,7 +1098,7 @@ class TestAzureService:
         metadata_azure_obj.keepdraft = keepdraft
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = True
         mock_disk_scratch.return_value = disk_version_obj
@@ -1149,9 +1107,7 @@ class TestAzureService:
 
         azure_service.publish(metadata_azure_obj)
 
-        mock_getprpl_name.assert_called_once_with(
-            "example-product", "plan-1", first_target="preview"
-        )
+        mock_getprpl_name.assert_called_once_with("example-product", "plan-1", "preview")
         mock_filter.assert_has_calls(
             [
                 mock.call(
@@ -1199,7 +1155,7 @@ class TestAzureService:
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
         technical_config_obj.disk_versions[0].vm_images = []
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         mock_disk_scratch.return_value = disk_version_obj
@@ -1226,7 +1182,7 @@ class TestAzureService:
         targets = list_all_targets()
 
         mock_getprpl_name.assert_has_calls(
-            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+            [mock.call("example-product", "plan-1", tgt) for tgt in targets]
         )
         mock_filter.assert_has_calls(
             [
@@ -1279,7 +1235,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.return_value = [technical_config_obj]
         mock_is_sas.return_value = False
         expected_source = VMImageSource(
@@ -1306,7 +1262,7 @@ class TestAzureService:
 
         targets = list_all_targets()
         mock_getprpl_name.assert_has_calls(
-            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+            [mock.call("example-product", "plan-1", tgt) for tgt in targets]
         )
         mock_filter.assert_has_calls(
             [
@@ -1410,7 +1366,7 @@ class TestAzureService:
         metadata_azure_obj.support_legacy = True
         metadata_azure_obj.destination = "example-product/plan-1"
         metadata_azure_obj.disk_version = "2.0.0"
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.side_effect = [
             [technical_config_obj],
             [technical_config_obj],
@@ -1444,7 +1400,7 @@ class TestAzureService:
 
         targets = list_all_targets()
         mock_getprpl_name.assert_has_calls(
-            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+            [mock.call("example-product", "plan-1", tgt) for tgt in targets]
         )
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
@@ -1468,7 +1424,7 @@ class TestAzureService:
             source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
-        mock_diff_offer.assert_called_once_with(product_obj)
+        mock_diff_offer.assert_called_once_with(product_obj, 'draft')
         mock_configure.assert_called_once_with(resources=[technical_config_obj])
         submit_calls = [
             mock.call(product_id=product_obj.id, status="preview", resources=None),
@@ -1514,7 +1470,7 @@ class TestAzureService:
         metadata_azure_obj.disk_version = "2.1.0"
         metadata_azure_obj.architecture = "aarch64"
         technical_config_obj.disk_versions = [disk_version_arm64_obj]
-        mock_getprpl_name.return_value = product_obj, plan_summary_obj, "preview"
+        mock_getprpl_name.return_value = product_obj, plan_summary_obj
         mock_filter.side_effect = [
             [technical_config_obj],
             [technical_config_obj],
@@ -1547,7 +1503,7 @@ class TestAzureService:
 
         targets = list_all_targets()
         mock_getprpl_name.assert_has_calls(
-            [mock.call("example-product", "plan-1", first_target=tgt) for tgt in targets]
+            [mock.call("example-product", "plan-1", tgt) for tgt in targets]
         )
         filter_calls = [
             mock.call(product=product_obj, resource="virtual-machine-plan-technical-configuration"),
@@ -1571,7 +1527,7 @@ class TestAzureService:
             source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
-        mock_diff_offer.assert_called_once_with(product_obj)
+        mock_diff_offer.assert_called_once_with(product_obj, 'draft')
         mock_configure.assert_called_once_with(resources=[technical_config_obj])
         submit_calls = [
             mock.call(product_id=product_obj.id, status="preview", resources=None),

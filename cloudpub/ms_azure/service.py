@@ -244,7 +244,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             self._products = [p for p in self.products]
         return self._products
 
-    def get_product(self, product_id: str, first_target: str = "preview") -> Product:
+    def get_product(self, product_id: str, target: str) -> Product:
         """
         Return the requested Product by its ID.
 
@@ -256,34 +256,31 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Args:
             product_durable_id (str)
                 The product UUID
-            first_target (str, optional)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str)
+                The submission target to retrieve the product from.
         Returns:
             Product: the requested product
         """
-        targets = list_all_targets(start_with=first_target)
-
-        for t in targets:
-            log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
-            try:
-                resp = self.session.get(
-                    path=f"/resource-tree/product/{product_id}", params={"targetType": t}
-                )
-                data = self._assert_dict(resp)
-                return Product.from_json(data)
-            except (ValueError, HTTPError):
-                log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, t)
+        log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, target)
+        try:
+            resp = self.session.get(
+                path=f"/resource-tree/product/{product_id}", params={"targetType": target}
+            )
+            data = self._assert_dict(resp)
+            return Product.from_json(data)
+        except (ValueError, HTTPError):
+            log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, target)
         self._raise_error(NotFoundError, f"No such product with id \"{product_id}\"")
 
-    def get_product_by_name(self, product_name: str, first_target: str = "preview") -> Product:
+    def get_product_by_name(self, product_name: str, target: str) -> Product:
         """
         Return the requested Product by its name from Legacy CPP API.
 
         Args:
             product_name (str)
                 The product name according to Legacy CPP API.
-            first_target (str, optional)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str, optional)
+                The submission target to retrieve the product from.
         Returns:
             Product: the requested product when found
         Raises:
@@ -292,7 +289,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         for product in self.products:
             if product.identity.name == product_name:
                 log.debug("Product alias \"%s\" has the ID \"%s\"", product_name, product.id)
-                return self.get_product(product.id, first_target=first_target)
+                return self.get_product(product.id, target=target)
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
     def get_submissions(self, product_id: str) -> List[ProductSubmission]:
@@ -380,45 +377,41 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         self,
         product_name: str,
         plan_name: str,
-        first_target: str = "preview",
-    ) -> Tuple[Product, PlanSummary, str]:
+        target: str,
+    ) -> Tuple[Product, PlanSummary]:
         """Return a tuple with the desired Product and Plan after iterating over all targets.
 
         Args:
             product_name (str): The name of the product to search for
             plan_name (str): The name of the plan to search for
-            first_target (str, optional)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str)
+                The submission target to retrieve the product/plan from.
         Returns:
-            Tuple[Product, PlanSummary, str]: The Product, PlanSummary and target when fonud
+            Tuple[Product, PlanSummary]: The Product and PlanSummary when fonud
         Raises:
-            NotFoundError whenever all targets are exhausted and no information was found
+            NotFoundError whenever no information was found in the respective submission target.
         """
-        targets = list_all_targets(start_with=first_target)
+        try:
+            product = self.get_product_by_name(product_name, target=target)
+            plan = self.get_plan_by_name(product, plan_name)
+            return product, plan
+        except NotFoundError:
+            self._raise_error(
+                NotFoundError, f"No such plan with name \"{plan_name} for {product_name}\""
+            )
 
-        for tgt in targets:
-            try:
-                product = self.get_product_by_name(product_name, first_target=tgt)
-                plan = self.get_plan_by_name(product, plan_name)
-                return product, plan, tgt
-            except NotFoundError:
-                continue
-        self._raise_error(
-            NotFoundError, f"No such plan with name \"{plan_name} for {product_name}\""
-        )
-
-    def diff_offer(self, product: Product, first_target="preview") -> DeepDiff:
+    def diff_offer(self, product: Product, target: str) -> DeepDiff:
         """Compute the difference between the provided product and the one in the remote.
 
         Args:
             product (Product)
                 The local product to diff with the remote one.
-            first_target (str)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str)
+                The submission target to retrieve the product from.
         Returns:
             DeepDiff: The diff data.
         """
-        remote = self.get_product(product.id, first_target=first_target)
+        remote = self.get_product(product.id, target=target)
         return DeepDiff(remote.to_json(), product.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES)
 
     def submit_to_status(
@@ -661,6 +654,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         product_name: str,
         plan_name: str,
         source: VMImageSource,
+        target: str,
     ) -> TechnicalConfigLookUpData:
         """Private method to overwrite the technical config with a new DiskVersion.
 
@@ -669,15 +663,16 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             product_name (str): the product (offer) name
             plan_name (str): the plan name
             source (VMImageSource): the source VMI to create and overwrite the new DiskVersion
+            target (str): the submission target.
 
         Returns:
             TechnicalConfigLookUpData: The overwritten tech_config for the product/plan
         """
-        product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
+        product, plan = self.get_product_plan_by_name(product_name, plan_name, target)
         log.warning(
             "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
             plan_name,
-            tgt,
+            target,
             metadata.image_path,
         )
         tech_config = self.get_plan_tech_config(product, plan)
@@ -689,7 +684,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             "sas_found": False,
             "product": product,
             "plan": plan,
-            "target": tgt,
+            "target": target,
         }
 
     def _look_up_sas_on_technical_config(
@@ -706,13 +701,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             TechnicalConfigLookUpData: The data retrieved for the given submission target.
         """
-        product, plan, tgt = self.get_product_plan_by_name(
-            product_name, plan_name, first_target=target
-        )
+        product, plan = self.get_product_plan_by_name(product_name, plan_name, target)
         log.info(
             "Retrieving the technical config for \"%s\" on \"%s\".",
             metadata.destination,
-            tgt,
+            target,
         )
         tech_config = self.get_plan_tech_config(product, plan)
         sas_found = False
@@ -721,7 +714,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.info(
                 "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
                 metadata.destination,
-                tgt,
+                target,
                 metadata.image_path,
             )
             sas_found = True
@@ -731,7 +724,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             "sas_found": sas_found,
             "product": product,
             "plan": plan,
-            "target": tgt,
+            "target": target,
         }
 
     def _create_or_update_disk_version(
@@ -803,19 +796,18 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # Note: If `overwrite` is True it means we can set this VM image as the only one in the
         # plan's technical config and discard all other VM images which may've been present.
         if metadata.overwrite is True:
-            res = self._overwrite_disk_version(metadata, product_name, plan_name, source)
-            tgt = res["target"]
+            target = "draft"
+            res = self._overwrite_disk_version(metadata, product_name, plan_name, source, target)
             tech_config = res["tech_config"]
             disk_version = tech_config.disk_versions[0]  # only 1 as it was overwritten
         else:
             # Otherwise we need to check whether SAS isn't already present
             # in any of the targets "preview", "live" or "draft" and if not attach and publish it.
-            for target in list_all_targets(start_with="preview"):
+            for target in list_all_targets():
                 res = self._look_up_sas_on_technical_config(
                     metadata, product_name, plan_name, target
                 )
                 tech_config = res["tech_config"]
-                tgt = res["target"]
                 # We don't want to seek for SAS anymore as it was already found
                 if res["sas_found"]:
                     break
@@ -827,7 +819,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 log.info(
                     "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
                     metadata.destination,
-                    tgt,
+                    target,
                     metadata.image_path,
                 )
                 dv = seek_disk_version(tech_config, metadata.disk_version)
@@ -835,7 +827,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
-            log.info("Updating SKUs for \"%s\" on \"%s\".", metadata.destination, tgt)
+            log.info("Updating SKUs for \"%s\" on \"%s\".", metadata.destination, target)
             tech_config.skus = update_skus(
                 disk_versions=tech_config.disk_versions,
                 generation=metadata.generation,
@@ -845,7 +837,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.info(
                 "Updating the technical configuration for \"%s\" on \"%s\".",
                 metadata.destination,
-                tgt,
+                target,
             )
             self.configure(resources=[tech_config])
 
@@ -865,7 +857,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 log.info(
                     "Publishing the new changes for \"%s\" on plan \"%s\"", product_name, plan_name
                 )
-                logdiff(self.diff_offer(product))
+                logdiff(self.diff_offer(product, target))
                 self.ensure_can_publish(product.id)
 
                 # According to the documentation we only need to pass the
