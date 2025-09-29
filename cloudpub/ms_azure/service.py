@@ -43,7 +43,6 @@ from cloudpub.ms_azure.utils import (
     create_disk_version_from_scratch,
     is_azure_job_not_complete,
     is_sas_present,
-    list_all_targets,
     logdiff,
     seek_disk_version,
     set_new_sas_disk_version,
@@ -243,6 +242,20 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         if not self._products:
             self._products = [p for p in self.products]
         return self._products
+
+    def get_productid(self, product_name: str) -> str:
+        """Retrieve the desired product ID for the requested product name.
+
+        Args:
+            product_name (str): the product's name to retrieve its product ID.
+        Returns:
+            The requested product ID when found.
+        Raises NotFoundError when the product was not found.
+        """
+        for product in self.list_products():
+            if product.identity.name == product_name:
+                return product.id
+        raise NotFoundError(f"No such product with name {product_name}")
 
     def get_product(self, product_id: str, target: str) -> Product:
         """
@@ -553,6 +566,31 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         )[0]
         return [prod_res, plan_res, tech_config]
 
+    def compute_targets(self, product_id: str) -> List[str]:
+        """List all the possible publishing targets order to seek data from Azure.
+
+        It also returns the ordered list of targets with the following precedence:
+            ``preview`` -> ``live`` -> ``draft``
+
+        Args:
+            product_id (str)
+                The product_id to retrieve all existing submission targets.
+
+        Returns:
+            List[Str]: The ordered list with targets to lookup.
+        """
+        all_targets = ["preview", "live", "draft"]
+        computed_targets = []
+
+        # We cannot simply return all targets above because the existing product might
+        # lack one of them. So now we need to filter out unexisting targets.
+        product_submissions = self.get_submissions(product_id)
+        product_targets = [s.target.targetType for s in product_submissions]
+        for t in all_targets:
+            if t in product_targets:
+                computed_targets.append(t)
+        return computed_targets
+
     def _is_submission_in_preview(self, current: ProductSubmission) -> bool:
         """Return True if the latest submission state is "preview", False otherwise.
 
@@ -778,6 +816,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
+        product_id = self.get_productid(product_name)
         disk_version = None
         log.info(
             "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
@@ -796,14 +835,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # Note: If `overwrite` is True it means we can set this VM image as the only one in the
         # plan's technical config and discard all other VM images which may've been present.
         if metadata.overwrite is True:
-            target = "draft"
+            target = "draft"  # It's expected to exist for whenever product.
             res = self._overwrite_disk_version(metadata, product_name, plan_name, source, target)
             tech_config = res["tech_config"]
             disk_version = tech_config.disk_versions[0]  # only 1 as it was overwritten
         else:
             # Otherwise we need to check whether SAS isn't already present
             # in any of the targets "preview", "live" or "draft" and if not attach and publish it.
-            for target in list_all_targets():
+            for target in self.compute_targets(product_id):
                 res = self._look_up_sas_on_technical_config(
                     metadata, product_name, plan_name, target
                 )
