@@ -13,7 +13,7 @@ from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_chain, wait_fixed
 
 from cloudpub.common import BaseService
-from cloudpub.error import InvalidStateError, NotFoundError
+from cloudpub.error import ConflictError, InvalidStateError, NotFoundError
 from cloudpub.models.ms_azure import (
     RESOURCE_MAPING,
     AzureResource,
@@ -492,31 +492,28 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.debug("Set the status \"%s\" to submission.", status)
         return self.configure(resources=cfg_res)
 
-    @retry(
-        wait=wait_fixed(300),
-        stop=stop_after_delay(max_delay=60 * 60 * 24 * 7),  # Give up after retrying for 7 days,
-        reraise=True,
-    )
     def ensure_can_publish(self, product_id: str) -> None:
         """
         Ensure the offer is not already being published.
 
-        It will wait for up to 7 days retrying to make sure it's possible to publish before
-        giving up and raising.
+        It will raise ConflictError if a publish is already in progress in any submission target.
 
         Args:
             product_id (str)
                 The product ID to check the offer's publishing status
         Raises:
-            RuntimeError: whenever a publishing is already in progress.
+            ConflictError: whenever a publishing is already in progress for any submission target.
         """
         log.info("Ensuring no other publishing jobs are in progress for \"%s\"", product_id)
-        submission_targets = ["preview", "live"]
 
-        for target in submission_targets:
-            sub = self.get_submission_state(product_id, state=target)
-            if sub and sub.status and sub.status == "running":
-                raise RuntimeError(f"The offer {product_id} is already being published to {target}")
+        for sub in self.get_submissions(product_id):
+            if sub and sub.status and sub.status != "completed":
+                msg = (
+                    f"The offer {product_id} is already being published to "
+                    f"{sub.target.targetType}: {sub.status}/{sub.result}"
+                )
+                log.error(msg)
+                raise ConflictError(msg)
 
     def get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
         """
