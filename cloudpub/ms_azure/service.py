@@ -18,6 +18,7 @@ from cloudpub.models.ms_azure import (
     AzureResource,
     ConfigureStatus,
     CustomerLeads,
+    DiskVersion,
     Listing,
     ListingAsset,
     ListingTrailer,
@@ -38,6 +39,7 @@ from cloudpub.models.ms_azure import (
 from cloudpub.ms_azure.session import PartnerPortalSession
 from cloudpub.ms_azure.utils import (
     AzurePublishingMetadata,
+    TechnicalConfigLookUpData,
     create_disk_version_from_scratch,
     is_azure_job_not_complete,
     is_sas_present,
@@ -241,7 +243,21 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             self._products = [p for p in self.products]
         return self._products
 
-    def get_product(self, product_id: str, first_target: str = "preview") -> Product:
+    def get_productid(self, product_name: str) -> str:
+        """Retrieve the desired product ID for the requested product name.
+
+        Args:
+            product_name (str): the product's name to retrieve its product ID.
+        Returns:
+            The requested product ID when found.
+        Raises NotFoundError when the product was not found.
+        """
+        for product in self.list_products():
+            if product.identity.name == product_name:
+                return product.id
+        raise NotFoundError(f"No such product with name {product_name}")
+
+    def get_product(self, product_id: str, target: str) -> Product:
         """
         Return the requested Product by its ID.
 
@@ -253,37 +269,31 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Args:
             product_durable_id (str)
                 The product UUID
-            first_target (str, optional)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str)
+                The submission target to retrieve the product from.
         Returns:
             Product: the requested product
         """
-        targets = [first_target]
-        for tgt in ["preview", "draft", "live"]:
-            if tgt not in targets:
-                targets.append(tgt)
-
-        for t in targets:
-            log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, t)
-            try:
-                resp = self.session.get(
-                    path=f"/resource-tree/product/{product_id}", params={"targetType": t}
-                )
-                data = self._assert_dict(resp)
-                return Product.from_json(data)
-            except (ValueError, HTTPError):
-                log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, t)
+        log.info("Requesting the product ID \"%s\" with state \"%s\".", product_id, target)
+        try:
+            resp = self.session.get(
+                path=f"/resource-tree/product/{product_id}", params={"targetType": target}
+            )
+            data = self._assert_dict(resp)
+            return Product.from_json(data)
+        except (ValueError, HTTPError):
+            log.debug("Couldn't find the product \"%s\" with state \"%s\"", product_id, target)
         self._raise_error(NotFoundError, f"No such product with id \"{product_id}\"")
 
-    def get_product_by_name(self, product_name: str, first_target: str = "preview") -> Product:
+    def get_product_by_name(self, product_name: str, target: str) -> Product:
         """
         Return the requested Product by its name from Legacy CPP API.
 
         Args:
             product_name (str)
                 The product name according to Legacy CPP API.
-            first_target (str, optional)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str, optional)
+                The submission target to retrieve the product from.
         Returns:
             Product: the requested product when found
         Raises:
@@ -292,7 +302,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         for product in self.products:
             if product.identity.name == product_name:
                 log.debug("Product alias \"%s\" has the ID \"%s\"", product_name, product.id)
-                return self.get_product(product.id, first_target=first_target)
+                return self.get_product(product.id, target=target)
         self._raise_error(NotFoundError, f"No such product with name \"{product_name}\"")
 
     def get_submissions(self, product_id: str) -> List[ProductSubmission]:
@@ -377,44 +387,44 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         self._raise_error(NotFoundError, f"No such plan with name \"{plan_name}\"")
 
     def get_product_plan_by_name(
-        self, product_name: str, plan_name: str
-    ) -> Tuple[Product, PlanSummary, str]:
+        self,
+        product_name: str,
+        plan_name: str,
+        target: str,
+    ) -> Tuple[Product, PlanSummary]:
         """Return a tuple with the desired Product and Plan after iterating over all targets.
 
         Args:
             product_name (str): The name of the product to search for
             plan_name (str): The name of the plan to search for
-
+            target (str)
+                The submission target to retrieve the product/plan from.
         Returns:
-            Tuple[Product, PlanSummary, str]: The Product, PlanSummary and target when fonud
+            Tuple[Product, PlanSummary]: The Product and PlanSummary when fonud
         Raises:
-            NotFoundError whenever all targets are exhausted and no information was found
+            NotFoundError whenever no information was found in the respective submission target.
         """
-        targets = ["preview", "draft", "live"]
+        try:
+            product = self.get_product_by_name(product_name, target=target)
+            plan = self.get_plan_by_name(product, plan_name)
+            return product, plan
+        except NotFoundError:
+            self._raise_error(
+                NotFoundError, f"No such plan with name \"{plan_name} for {product_name}\""
+            )
 
-        for tgt in targets:
-            try:
-                product = self.get_product_by_name(product_name, first_target=tgt)
-                plan = self.get_plan_by_name(product, plan_name)
-                return product, plan, tgt
-            except NotFoundError:
-                continue
-        self._raise_error(
-            NotFoundError, f"No such plan with name \"{plan_name} for {product_name}\""
-        )
-
-    def diff_offer(self, product: Product, first_target="preview") -> DeepDiff:
+    def diff_offer(self, product: Product, target: str) -> DeepDiff:
         """Compute the difference between the provided product and the one in the remote.
 
         Args:
             product (Product)
                 The local product to diff with the remote one.
-            first_target (str)
-                The first target to lookup into. Defaults to ``preview``.
+            target (str)
+                The submission target to retrieve the product from.
         Returns:
             DeepDiff: The diff data.
         """
-        remote = self.get_product(product.id, first_target=first_target)
+        remote = self.get_product(product.id, target=target)
         return DeepDiff(remote.to_json(), product.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES)
 
     def submit_to_status(
@@ -556,6 +566,31 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         )[0]
         return [prod_res, plan_res, tech_config]
 
+    def compute_targets(self, product_id: str) -> List[str]:
+        """List all the possible publishing targets order to seek data from Azure.
+
+        It also returns the ordered list of targets with the following precedence:
+            ``preview`` -> ``live`` -> ``draft``
+
+        Args:
+            product_id (str)
+                The product_id to retrieve all existing submission targets.
+
+        Returns:
+            List[Str]: The ordered list with targets to lookup.
+        """
+        all_targets = ["preview", "live", "draft"]
+        computed_targets = []
+
+        # We cannot simply return all targets above because the existing product might
+        # lack one of them. So now we need to filter out unexisting targets.
+        product_submissions = self.get_submissions(product_id)
+        product_targets = [s.target.targetType for s in product_submissions]
+        for t in all_targets:
+            if t in product_targets:
+                computed_targets.append(t)
+        return computed_targets
+
     def _is_submission_in_preview(self, current: ProductSubmission) -> bool:
         """Return True if the latest submission state is "preview", False otherwise.
 
@@ -651,6 +686,123 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             )
             raise RuntimeError(failure_msg)
 
+    def _overwrite_disk_version(
+        self,
+        metadata: AzurePublishingMetadata,
+        product_name: str,
+        plan_name: str,
+        source: VMImageSource,
+        target: str,
+    ) -> TechnicalConfigLookUpData:
+        """Private method to overwrite the technical config with a new DiskVersion.
+
+        Args:
+            metadata (AzurePublishingMetadata): the incoming publishing metadata
+            product_name (str): the product (offer) name
+            plan_name (str): the plan name
+            source (VMImageSource): the source VMI to create and overwrite the new DiskVersion
+            target (str): the submission target.
+
+        Returns:
+            TechnicalConfigLookUpData: The overwritten tech_config for the product/plan
+        """
+        product, plan = self.get_product_plan_by_name(product_name, plan_name, target)
+        log.warning(
+            "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
+            plan_name,
+            target,
+            metadata.image_path,
+        )
+        tech_config = self.get_plan_tech_config(product, plan)
+        disk_version = create_disk_version_from_scratch(metadata, source)
+        tech_config.disk_versions = [disk_version]
+        return {
+            "metadata": metadata,
+            "tech_config": tech_config,
+            "sas_found": False,
+            "product": product,
+            "plan": plan,
+            "target": target,
+        }
+
+    def _look_up_sas_on_technical_config(
+        self, metadata: AzurePublishingMetadata, product_name: str, plan_name: str, target: str
+    ) -> TechnicalConfigLookUpData:
+        """Private method to lookup for the TechnicalConfig of a given target.
+
+        Args:
+            metadata (AzurePublishingMetadata): the incoming publishing metadata.
+            product_name (str): the product (offer) name
+            plan_name (str): the plan name
+            target (str): the submission target to look up the TechnicalConfig object
+
+        Returns:
+            TechnicalConfigLookUpData: The data retrieved for the given submission target.
+        """
+        product, plan = self.get_product_plan_by_name(product_name, plan_name, target)
+        log.info(
+            "Retrieving the technical config for \"%s\" on \"%s\".",
+            metadata.destination,
+            target,
+        )
+        tech_config = self.get_plan_tech_config(product, plan)
+        sas_found = False
+
+        if is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
+            log.info(
+                "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
+                metadata.destination,
+                target,
+                metadata.image_path,
+            )
+            sas_found = True
+        return {
+            "metadata": metadata,
+            "tech_config": tech_config,
+            "sas_found": sas_found,
+            "product": product,
+            "plan": plan,
+            "target": target,
+        }
+
+    def _create_or_update_disk_version(
+        self,
+        tech_config_lookup: TechnicalConfigLookUpData,
+        source: VMImageSource,
+        disk_version: Optional[DiskVersion],
+    ) -> DiskVersion:
+        """Private method to create/update the DiskVersion of a given TechnicalConfig object.
+
+        Args:
+            tech_config_lookup (TechnicalConfigLookUpData): the incoming data to process
+            source (VMImageSource): the new VMI source to attach
+            disk_version (Optional[DiskVersion]): the disk version if it exists (for updates).
+
+        Returns:
+            DiskVersion: The updated DiskVersion
+        """
+        metadata = tech_config_lookup["metadata"]
+        target = tech_config_lookup["target"]
+        tech_config = tech_config_lookup["tech_config"]
+
+        # Check the images of the selected DiskVersion if it exists
+        if disk_version:
+            log.info(
+                "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
+                disk_version.version_number,
+                metadata.destination,
+                target,
+                metadata.image_path,
+            )
+            # Update the disk version with the new SAS
+            disk_version = set_new_sas_disk_version(disk_version, metadata, source)
+            return disk_version
+        # The disk version doesn't exist, we need to create one from scratch
+        log.info("The DiskVersion doesn't exist, creating one from scratch.")
+        disk_version = create_disk_version_from_scratch(metadata, source)
+        tech_config.disk_versions.append(disk_version)
+        return disk_version
+
     def publish(self, metadata: AzurePublishingMetadata) -> None:
         """
         Associate a VM image with a given product listing (destination) and publish it if required.
@@ -664,75 +816,57 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         #   "product-name/plan-name"
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
-        product, plan, tgt = self.get_product_plan_by_name(product_name, plan_name)
+        product_id = self.get_productid(product_name)
+        disk_version = None
         log.info(
-            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\" on \"%s\"",  # noqa: E501
+            "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
             metadata.image_path,
             plan_name,
             product_name,
-            tgt,
         )
 
-        # 2. Retrieve the VM Technical configuration for the given plan
-        log.info("Retrieving the technical config for \"%s\" on \"%s\".", metadata.destination, tgt)
-        tech_config = self.get_plan_tech_config(product, plan)
-
-        # 3. Prepare the Disk Version
+        # 2. Prepare the Disk Version
         log.info("Creating the VMImageResource with SAS for image: \"%s\"", metadata.image_path)
         sas = OSDiskURI(uri=metadata.image_path)
         source = VMImageSource(source_type="sasUri", os_disk=sas.to_json(), data_disks=[])
 
+        # 3. Set the new Disk Version into the product/plan if required
+        #
         # Note: If `overwrite` is True it means we can set this VM image as the only one in the
         # plan's technical config and discard all other VM images which may've been present.
-        disk_version = None  # just to make mypy happy
         if metadata.overwrite is True:
-            log.warning(
-                "Overwriting the plan \"%s\" on \"%s\" with the given image: \"%s\".",
-                plan_name,
-                tgt,
-                metadata.image_path,
-            )
-            disk_version = create_disk_version_from_scratch(metadata, source)
-            tech_config.disk_versions = [disk_version]
+            target = "draft"  # It's expected to exist for whenever product.
+            res = self._overwrite_disk_version(metadata, product_name, plan_name, source, target)
+            tech_config = res["tech_config"]
+            disk_version = tech_config.disk_versions[0]  # only 1 as it was overwritten
+        else:
+            # Otherwise we need to check whether SAS isn't already present
+            # in any of the targets "preview", "live" or "draft" and if not attach and publish it.
+            for target in self.compute_targets(product_id):
+                res = self._look_up_sas_on_technical_config(
+                    metadata, product_name, plan_name, target
+                )
+                tech_config = res["tech_config"]
+                # We don't want to seek for SAS anymore as it was already found
+                if res["sas_found"]:
+                    break
+            else:
+                # At this point there's no SAS URI in any target so we can safely add it
 
-        # We just want to append a new image if the SAS is not already present.
-        elif not is_sas_present(tech_config, metadata.image_path, metadata.check_base_sas_only):
-            # Here we can have the metadata.disk_version set or empty.
-            # When set we want to get the existing disk_version which matches its value.
-            log.info(
-                "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
-                metadata.destination,
-                tgt,
-                metadata.image_path,
-            )
-            disk_version = seek_disk_version(tech_config, metadata.disk_version)
-
-            # Check the images of the selected DiskVersion if it exists
-            if disk_version:
+                # Here we can have the metadata.disk_version set or empty.
+                # When set we want to get the existing disk_version which matches its value.
                 log.info(
-                    "DiskVersion \"%s\" exists in \"%s\" on \"%s\" for the image \"%s\".",
-                    disk_version.version_number,
+                    "Scanning the disk versions from \"%s\" on \"%s\" for the image \"%s\"",
                     metadata.destination,
-                    tgt,
+                    target,
                     metadata.image_path,
                 )
-                disk_version = set_new_sas_disk_version(disk_version, metadata, source)
-
-            else:  # The disk version doesn't exist, we need to create one from scratch
-                log.info("The DiskVersion doesn't exist, creating one from scratch.")
-                disk_version = create_disk_version_from_scratch(metadata, source)
-                tech_config.disk_versions.append(disk_version)
-        else:
-            log.info(
-                "The destination \"%s\" on \"%s\" already contains the SAS URI: \"%s\".",
-                metadata.destination,
-                tgt,
-                metadata.image_path,
-            )
+                dv = seek_disk_version(tech_config, metadata.disk_version)
+                disk_version = self._create_or_update_disk_version(res, source, dv)
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
         if disk_version:
-            log.info("Updating SKUs for \"%s\" on \"%s\".", metadata.destination, tgt)
+            log.info("Updating SKUs for \"%s\" on \"%s\".", metadata.destination, target)
             tech_config.skus = update_skus(
                 disk_versions=tech_config.disk_versions,
                 generation=metadata.generation,
@@ -742,13 +876,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             log.info(
                 "Updating the technical configuration for \"%s\" on \"%s\".",
                 metadata.destination,
-                tgt,
+                target,
             )
             self.configure(resources=[tech_config])
 
         # 5. Proceed to publishing if it was requested.
         # Note: The publishing will only occur if it made changes in disk_version.
         if not metadata.keepdraft:
+            product = res["product"]
             # Get the submission state
             submission: ProductSubmission = cast(
                 List[ProductSubmission],
@@ -761,7 +896,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 log.info(
                     "Publishing the new changes for \"%s\" on plan \"%s\"", product_name, plan_name
                 )
-                logdiff(self.diff_offer(product))
+                logdiff(self.diff_offer(product, target))
                 self.ensure_can_publish(product.id)
 
                 # According to the documentation we only need to pass the
