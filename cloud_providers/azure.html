@@ -106,6 +106,27 @@ Default to <code class="docutils literal notranslate"><span class="pre">False</s
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.compute_targets">
+<span class="sig-name descname"><span class="pre">compute_targets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.compute_targets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.compute_targets" title="Link to this definition">¶</a></dt>
+<dd><p>List all the possible publishing targets order to seek data from Azure.</p>
+<dl class="simple">
+<dt>It also returns the ordered list of targets with the following precedence:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">preview</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">live</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">draft</span></code></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The product_id to retrieve all existing submission targets.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ordered list with targets to lookup.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.configure">
 <span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resources</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.configure" title="Link to this definition">¶</a></dt>
 <dd><p>Create or update a resource and wait until it’s done.</p>
@@ -124,13 +145,13 @@ Default to <code class="docutils literal notranslate"><span class="pre">False</s
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.diff_offer">
-<span class="sig-name descname"><span class="pre">diff_offer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'preview'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.diff_offer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.diff_offer" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">diff_offer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.diff_offer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.diff_offer" title="Link to this definition">¶</a></dt>
 <dd><p>Compute the difference between the provided product and the one in the remote.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>product</strong> (<a class="reference internal" href="#cloudpub.models.ms_azure.Product" title="cloudpub.models.ms_azure.Product"><em>Product</em></a>) – The local product to diff with the remote one.</p></li>
-<li><p><strong>first_target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The first target to lookup into. Defaults to <code class="docutils literal notranslate"><span class="pre">preview</span></code>.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The submission target to retrieve the product from.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -247,7 +268,7 @@ product type.”</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.get_product">
-<span class="sig-name descname"><span class="pre">get_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'preview'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_product" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_product" title="Link to this definition">¶</a></dt>
 <dd><p>Return the requested Product by its ID.</p>
 <p>It will return the product with the latest publishing status, trying to
 fetch it in the following order: “preview” -&gt; “draft” -&gt; “live”. The first
@@ -257,7 +278,7 @@ publishing which could be missing to go live.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>product_durable_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The product UUID</p></li>
-<li><p><strong>first_target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – The first target to lookup into. Defaults to <code class="docutils literal notranslate"><span class="pre">preview</span></code>.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The submission target to retrieve the product from.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -271,13 +292,13 @@ publishing which could be missing to go live.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.get_product_by_name">
-<span class="sig-name descname"><span class="pre">get_product_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'preview'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_product_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_product_by_name" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_product_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_product_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_product_by_name" title="Link to this definition">¶</a></dt>
 <dd><p>Return the requested Product by its name from Legacy CPP API.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>product_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The product name according to Legacy CPP API.</p></li>
-<li><p><strong>first_target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – The first target to lookup into. Defaults to <code class="docutils literal notranslate"><span class="pre">preview</span></code>.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – The submission target to retrieve the product from.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -294,25 +315,44 @@ publishing which could be missing to go live.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.get_product_plan_by_name">
-<span class="sig-name descname"><span class="pre">get_product_plan_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plan_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_product_plan_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_product_plan_by_name" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_product_plan_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plan_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_product_plan_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_product_plan_by_name" title="Link to this definition">¶</a></dt>
 <dd><p>Return a tuple with the desired Product and Plan after iterating over all targets.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>product_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The name of the product to search for</p></li>
 <li><p><strong>plan_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The name of the plan to search for</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The submission target to retrieve the product/plan from.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The Product, PlanSummary and target when fonud</p>
+<dd class="field-even"><p>The Product and PlanSummary when fonud</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#cloudpub.models.ms_azure.Product" title="cloudpub.models.ms_azure.Product">Product</a>, <a class="reference internal" href="#cloudpub.models.ms_azure.PlanSummary" title="cloudpub.models.ms_azure.PlanSummary">PlanSummary</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#cloudpub.models.ms_azure.Product" title="cloudpub.models.ms_azure.Product">Product</a>, <a class="reference internal" href="#cloudpub.models.ms_azure.PlanSummary" title="cloudpub.models.ms_azure.PlanSummary">PlanSummary</a>]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>NotFoundError whenever all targets are exhausted and no information was found</strong> – </p>
+<dd class="field-even"><p><strong>NotFoundError whenever no information was found in the respective submission target.</strong> – </p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.get_productid">
+<span class="sig-name descname"><span class="pre">get_productid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.get_productid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.get_productid" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve the desired product ID for the requested product name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>product_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – the product’s name to retrieve its product ID.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The requested product ID when found.</p>
+</dd>
+</dl>
+<p>Raises NotFoundError when the product was not found.</p>
 </dd></dl>
 
 <dl class="py method">
