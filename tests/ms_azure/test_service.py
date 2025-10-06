@@ -161,7 +161,7 @@ class TestAzureService:
     @pytest.mark.parametrize(
         "targets_list",
         [
-            ["preview", "live", "draft"],
+            ["live", "preview", "draft"],
             ["live", "draft"],
             ["preview", "draft"],
             ["draft"],
@@ -1651,6 +1651,86 @@ class TestAzureService:
         mock_submit.assert_has_calls(submit_calls)
         mock_ensure_publish.assert_called_once_with(product_obj.id)
 
+    @mock.patch("cloudpub.ms_azure.AzureService._publish_live")
+    @mock.patch("cloudpub.ms_azure.AzureService._publish_preview")
+    @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
+    @mock.patch("cloudpub.ms_azure.AzureService._create_or_update_disk_version")
+    @mock.patch("cloudpub.ms_azure.AzureService._overwrite_disk_version")
+    @mock.patch("cloudpub.ms_azure.AzureService.compute_targets")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_productid")
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    def test_publish_live_when_sas_is_present_in_draft(
+        self,
+        mock_configure: mock.MagicMock,
+        mock_get_productid: mock.MagicMock,
+        mock_compute_targets: mock.MagicMock,
+        mock_create_diskversion: mock.MagicMock,
+        mock_overwrite: mock.MagicMock,
+        mock_ensure_can_publish: mock.MagicMock,
+        mock_publish_preview: mock.MagicMock,
+        mock_publish_live: mock.MagicMock,
+        token: Dict[str, Any],
+        auth_dict: Dict[str, Any],
+        configure_success_response: Dict[str, Any],
+        product: Dict[str, Any],
+        products_list: Dict[str, Any],
+        product_summary: Dict[str, Any],
+        metadata_azure_obj: mock.MagicMock,
+        vmimage_source: Dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Ensure live publish works as expected when the SAS is already present as draft."""
+        # Prepare testing data
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.destination = "example-product/plan-1"
+        # SAS URI will be already present during draft
+        metadata_azure_obj.image_path = vmimage_source["osDisk"]["uri"]
+
+        # targets
+        mock_get_productid.return_value = "fake-id"
+        targets = ["draft"]
+        mock_compute_targets.return_value = targets
+
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        mock_configure.return_value = ConfigureStatus.from_json(configure_success_response)
+
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        # Test
+        with caplog.at_level(logging.INFO):
+            with requests_mock.Mocker() as m:
+                m.post(login_url, json=token)
+                m.get(f"{base_url}/product", json=products_list)
+                m.get(f"{base_url}/resource-tree/product/{product_id}", json=product)
+                azure_svc = AzureService(auth_dict)
+                azure_svc.publish(metadata=metadata_azure_obj)
+
+        # Present messages
+        assert (
+            "Requesting the product ID \"ffffffff-ffff-ffff-ffff-ffffffffffff\""
+            " with state \"draft\"."
+        ) in caplog.messages
+        assert (
+            "Retrieving the technical config for \"example-product/plan-1\" on \"draft\"."
+            in caplog.messages
+        )
+        assert (
+            "The destination \"example-product/plan-1\" on \"draft\" "
+            "already contains the SAS URI: \"https://uri.test.com\"."
+        ) in caplog.messages
+        mock_publish_preview.assert_called_once()
+        mock_publish_live.assert_called_once()
+        mock_ensure_can_publish.assert_called_once()
+        mock_create_diskversion.assert_not_called()
+        mock_overwrite.assert_not_called()
+
     @mock.patch("cloudpub.ms_azure.AzureService.compute_targets")
     @mock.patch("cloudpub.ms_azure.AzureService.get_productid")
     def test_publish_live_when_state_is_preview(
@@ -1761,7 +1841,6 @@ class TestAzureService:
             'Looking up for submission in state "live" for "ffffffff-ffff-ffff-ffff-ffffffffffff"'
             in caplog.text
         )
-        assert 'The product "example-product" is already set to preview' in caplog.text
         assert (
             'Submitting the status of "ffffffff-ffff-ffff-ffff-ffffffffffff" to "live"'
             in caplog.text
