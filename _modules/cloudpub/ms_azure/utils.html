@@ -34,7 +34,7 @@
 <span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">attrgetter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">deepdiff</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepDiff</span>
 
@@ -42,8 +42,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.models.ms_azure</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ConfigureStatus</span><span class="p">,</span>
     <span class="n">DiskVersion</span><span class="p">,</span>
-    <span class="n">PlanSummary</span><span class="p">,</span>
-    <span class="n">Product</span><span class="p">,</span>
     <span class="n">VMImageDefinition</span><span class="p">,</span>
     <span class="n">VMImageSource</span><span class="p">,</span>
     <span class="n">VMIPlanTechConfig</span><span class="p">,</span>
@@ -152,17 +150,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid SAS URI </span><span class="se">\&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">. Expected: http/https URL.&quot;</span><span class="p">)</span></div>
 
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">TechnicalConfigLookUpData</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A typed dict to be used for private methods data exchange.&quot;&quot;&quot;</span>
-
-    <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span>
-    <span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span>
-    <span class="n">sas_found</span><span class="p">:</span> <span class="nb">bool</span>
-    <span class="n">product</span><span class="p">:</span> <span class="n">Product</span>
-    <span class="n">plan</span><span class="p">:</span> <span class="n">PlanSummary</span>
-    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_image_type_mapping</span><span class="p">(</span><span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">generation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
