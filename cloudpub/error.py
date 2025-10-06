@@ -21,5 +21,9 @@ class NotFoundError(ValueError):
     """Represent a missing resource."""
 
 
+class ConflictError(RuntimeError):
+    """Report a submission conflict error."""
+
+
 class Timeout(Exception):
     """Represent a missing resource."""
