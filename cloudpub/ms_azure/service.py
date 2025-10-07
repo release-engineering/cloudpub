@@ -10,7 +10,7 @@ from requests import HTTPError
 from tenacity import RetryError, Retrying, retry
 from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_attempt, stop_after_delay
-from tenacity.wait import wait_chain, wait_fixed
+from tenacity.wait import wait_fixed
 
 from cloudpub.common import BaseService
 from cloudpub.error import ConflictError, InvalidStateError, NotFoundError, Timeout
@@ -175,15 +175,27 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         log.debug("Query Job details response: %s", parsed_resp)
         return parsed_resp
 
-    @retry(
-        retry=retry_if_result(predicate=is_azure_job_not_complete),
-        wait=wait_chain(
-            *[wait_fixed(wait=60)]  # First wait for 1 minute  # noqa: W503
-            + [wait_fixed(wait=10 * 60)]  # Then wait for 10 minutes  # noqa: W503
-            + [wait_fixed(wait=30 * 60)]  # Finally wait each 30 minutes  # noqa: W503
-        ),
-        stop=stop_after_delay(max_delay=60 * 60 * 24 * 7),  # Give up after retrying for 7 days
-    )
+    def query_job_status(self, job_id: str) -> ConfigureStatus:
+        """Query the job status for a given Job ID.
+
+        It will raise error if any invalid state is detected.
+
+        Args:
+            job_id (str): The job ID to query details from.
+
+        Returns:
+            ConfigureStatus: The ConfigureStatus from JobID
+        Raises:
+            InvalidStateError: If the job has failed.
+        """
+        job_details = self._query_job_details(job_id=job_id)
+        if job_details.job_result == "failed":
+            error_message = f"Job {job_id} failed: \n{job_details.errors}"
+            self._raise_error(InvalidStateError, error_message)
+        elif job_details.job_result == "succeeded":
+            log.debug("Job %s succeeded", job_id)
+        return job_details
+
     def _wait_for_job_completion(self, job_id: str) -> ConfigureStatus:
         """
         Wait until the specified job ID is complete.
@@ -202,13 +214,15 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Raises:
             InvalidStateError if the job failed
         """
-        job_details = self._query_job_details(job_id=job_id)
-        if job_details.job_result == "failed":
-            error_message = f"Job {job_id} failed: \n{job_details.errors}"
-            self._raise_error(InvalidStateError, error_message)
-        elif job_details.job_result == "succeeded":
-            log.debug("Job %s succeeded", job_id)
-        return job_details
+        r = Retrying(
+            retry=retry_if_result(predicate=is_azure_job_not_complete),
+            wait=wait_fixed(self.retry_interval),
+            stop=stop_after_delay(max_delay=self.retry_timeout),
+        )
+        try:
+            return r(self.query_job_status, job_id)
+        except RetryError:
+            self._raise_error(Timeout, f"Time out waiting for job {job_id}")
 
     def configure(self, resources: List[AzureResource]) -> ConfigureStatus:
         """
