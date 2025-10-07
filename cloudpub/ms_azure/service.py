@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+from enum import IntEnum
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from deepdiff import DeepDiff
@@ -69,6 +70,15 @@ AZURE_PRODUCT_RESOURCES = Union[
     TestDrive,
     VMIPlanTechConfig,
 ]
+
+
+class SasFoundStatus(IntEnum):
+    """Represent the submission target level of SAS found in a given product."""
+
+    missing = 0
+    draft = 1
+    preview = 2
+    live = 3
 
 
 class AzureService(BaseService[AzurePublishingMetadata]):
@@ -570,7 +580,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         """List all the possible publishing targets order to seek data from Azure.
 
         It also returns the ordered list of targets with the following precedence:
-            ``preview`` -> ``live`` -> ``draft``
+        ``live`` -> ``preview`` -> ``draft``
 
         Args:
             product_id (str)
@@ -579,7 +589,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             List[Str]: The ordered list with targets to lookup.
         """
-        all_targets = ["preview", "live", "draft"]
+        all_targets = ["live", "preview", "draft"]
         computed_targets = []
 
         # We cannot simply return all targets above because the existing product might
@@ -622,7 +632,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         self, product: Product, product_name: str, resources: Optional[List[AzureResource]] = None
     ) -> None:
         """
-        Submit the product to 'preview'  if it's not already in this state.
+        Submit the product to 'preview' after going through Azure Marketplace Validatoin.
 
         This is required to execute the validation pipeline on Azure side.
 
@@ -634,19 +644,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             resources:
                 Additional resources for modular push.
         """
-        # We just want to set the ProductSubmission to 'preview' if it's not in this status.
-        #
-        # The `preview` stage runs the Azure pipeline which takes up to 4 days.
-        # Meanwhile the `submit_for_status` will be blocked querying the `job_status`until
-        # all the Azure verification pipeline finishes.
-        submission: ProductSubmission = cast(
-            List[ProductSubmission],
-            self.filter_product_resources(product=product, resource="submission"),
-        )[0]
-        if self._is_submission_in_preview(submission):
-            log.info("The product \"%s\" is already set to preview", product_name)
-            return
-
         res = self.submit_to_status(product_id=product.id, status='preview', resources=resources)
 
         if res.job_result != 'succeeded' or not self.get_submission_state(
@@ -817,7 +814,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         product_name = metadata.destination.split("/")[0]
         plan_name = metadata.destination.split("/")[-1]
         product_id = self.get_productid(product_name)
-        disk_version = None
+        sas_in_target = SasFoundStatus.missing
         log.info(
             "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
             metadata.image_path,
@@ -838,7 +835,6 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             target = "draft"  # It's expected to exist for whenever product.
             res = self._overwrite_disk_version(metadata, product_name, plan_name, source, target)
             tech_config = res["tech_config"]
-            disk_version = tech_config.disk_versions[0]  # only 1 as it was overwritten
         else:
             # Otherwise we need to check whether SAS isn't already present
             # in any of the targets "preview", "live" or "draft" and if not attach and publish it.
@@ -849,6 +845,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 tech_config = res["tech_config"]
                 # We don't want to seek for SAS anymore as it was already found
                 if res["sas_found"]:
+                    sas_in_target = SasFoundStatus[target]
                     break
             else:
                 # At this point there's no SAS URI in any target so we can safely add it
@@ -862,10 +859,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                     metadata.image_path,
                 )
                 dv = seek_disk_version(tech_config, metadata.disk_version)
-                disk_version = self._create_or_update_disk_version(res, source, dv)
+                self._create_or_update_disk_version(res, source, dv)
 
         # 4. With the updated disk_version we should adjust the SKUs and submit the changes
-        if disk_version:
+        if sas_in_target == SasFoundStatus.missing:
             log.info("Updating SKUs for \"%s\" on \"%s\".", metadata.destination, target)
             tech_config.skus = update_skus(
                 disk_versions=tech_config.disk_versions,
@@ -892,7 +889,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
 
             # We should only publish if there are new changes OR
             # the existing offer was already in preview
-            if disk_version or self._is_submission_in_preview(submission):
+            if sas_in_target <= SasFoundStatus.draft or self._is_submission_in_preview(submission):
                 log.info(
                     "Publishing the new changes for \"%s\" on plan \"%s\"", product_name, plan_name
                 )
@@ -905,8 +902,10 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 modular_resources = None
                 if metadata.modular_push:
                     modular_resources = self.get_modular_resources_to_publish(product, tech_config)
-                self._publish_preview(product, product_name, resources=modular_resources)
-                self._publish_live(product, product_name)
+                if sas_in_target < SasFoundStatus.preview:
+                    self._publish_preview(product, product_name, resources=modular_resources)
+                if sas_in_target < SasFoundStatus.live:
+                    self._publish_live(product, product_name)
 
         log.info(
             "Finished publishing the image \"%s\" to \"%s\"",
