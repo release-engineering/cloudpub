@@ -7,13 +7,13 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 from deepdiff import DeepDiff
 from requests import HTTPError
-from tenacity import retry
-from tenacity.retry import retry_if_result
+from tenacity import RetryError, Retrying, retry
+from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_chain, wait_fixed
 
 from cloudpub.common import BaseService
-from cloudpub.error import ConflictError, InvalidStateError, NotFoundError
+from cloudpub.error import ConflictError, InvalidStateError, NotFoundError, Timeout
 from cloudpub.models.ms_azure import (
     RESOURCE_MAPING,
     AzureResource,
@@ -92,18 +92,31 @@ class AzureService(BaseService[AzurePublishingMetadata]):
     CONFIGURE_SCHEMA = "https://schema.mp.microsoft.com/schema/configure/{AZURE_API_VERSION}"
     DIFF_EXCLUDES = [r"root\['resources'\]\[[0-9]+\]\['url'\]"]
 
-    def __init__(self, credentials: Dict[str, str]):
+    def __init__(
+        self,
+        credentials: Dict[str, str],
+        retry_interval: Union[int, float] = 300,
+        retry_timeout: Union[int, float] = 3600 * 24 * 7,
+    ):
         """
         Create a new AuzureService object.
 
         Args:
             credentials (dict)
                 Dictionary with Azure credentials to authenticate on Product Ingestion API.
+            retry_interval (int, float)
+                The wait time interval in seconds for retrying jobs.
+                Defaults to 300
+            retry_timeout (int, float)
+                The max time in seconds to attempt retries.
+                Defaults to 7 days.
         """
         self.session = PartnerPortalSession.make_graph_api_session(
             auth_keys=credentials, schema_version=self.AZURE_SCHEMA_VERSION
         )
         self._products: List[ProductSummary] = []
+        self.retry_interval = retry_interval
+        self.retry_timeout = retry_timeout
 
     def _configure(self, data: Dict[str, Any]) -> ConfigureStatus:
         """
@@ -515,6 +528,26 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 log.error(msg)
                 raise ConflictError(msg)
 
+    def wait_active_publishing(self, product_id: str) -> None:
+        """
+        Wait when there's an existing submission in progress.
+
+        Args:
+            product_id (str)
+                The product ID of to verify the submissions state.
+        """
+        r = Retrying(
+            retry=retry_if_exception_type(ConflictError),
+            wait=wait_fixed(self.retry_interval),
+            stop=stop_after_delay(max_delay=self.retry_timeout),
+        )
+        log.info("Checking for active changes on %s.", product_id)
+
+        try:
+            r(self.ensure_can_publish, product_id)
+        except RetryError:
+            self._raise_error(Timeout, f"Timed out waiting for {product_id} to be unlocked")
+
     def get_plan_tech_config(self, product: Product, plan: PlanSummary) -> VMIPlanTechConfig:
         """
         Return the VMIPlanTechConfig resource for the given product/plan.
@@ -834,6 +867,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         plan_name = metadata.destination.split("/")[-1]
         product_id = self.get_productid(product_name)
         sas_in_target = SasFoundStatus.missing
+        self.wait_active_publishing(product_id=product_id)
         log.info(
             "Preparing to associate the image \"%s\" with the plan \"%s\" from product \"%s\"",
             metadata.image_path,
