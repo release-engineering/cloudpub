@@ -258,12 +258,10 @@ class TestAzureService:
                 assert "Got HTTP 502 from server when querying job job-id status." in caplog.text
                 assert "Considering the job_status as \"pending\"." in caplog.text
 
-    @mock.patch("cloudpub.ms_azure.utils.is_azure_job_not_complete")
     @mock.patch("cloudpub.ms_azure.AzureService._query_job_details")
     def test_wait_for_job_completion_successful_completion(
         self,
         mock_job_details: mock.MagicMock,
-        mock_is_job_not_complete: mock.MagicMock,
         azure_service: AzureService,
         caplog: LogCaptureFixture,
         job_details_running_obj: ConfigureStatus,
@@ -277,7 +275,6 @@ class TestAzureService:
             job_details_running_obj,
         ]
 
-        azure_service._wait_for_job_completion.retry.sleep = mock.Mock()  # type: ignore
         job_id = "job_id_111"
         with caplog.at_level(logging.DEBUG):
             res = azure_service._wait_for_job_completion(job_id=job_id)
@@ -286,12 +283,29 @@ class TestAzureService:
             assert f"Job {job_id} failed" not in caplog.text
             assert f"Job {job_id} succeeded" in caplog.text
 
-    @mock.patch("cloudpub.ms_azure.utils.is_azure_job_not_complete")
+    @mock.patch("cloudpub.ms_azure.AzureService._query_job_details")
+    def test_wait_for_job_completion_successful_timeout(
+        self,
+        mock_job_details: mock.MagicMock,
+        azure_service: AzureService,
+        caplog: LogCaptureFixture,
+        job_details_running_obj: ConfigureStatus,
+        job_details_completed_successfully_obj: ConfigureStatus,
+    ) -> None:
+        mock_job_details.side_effect = [job_details_running_obj for _ in range(15)]
+        azure_service.retry_interval = 0.1
+        azure_service.retry_timeout = 0.5
+
+        job_id = "job_id_111"
+        err = f"Time out waiting for job {job_id}"
+
+        with pytest.raises(Timeout, match=err):
+            azure_service._wait_for_job_completion(job_id=job_id)
+
     @mock.patch("cloudpub.ms_azure.AzureService._query_job_details")
     def test_get_job_details_after_failed_completion(
         self,
         mock_job_details: mock.MagicMock,
-        mock_is_job_not_completed: mock.MagicMock,
         azure_service: AzureService,
         caplog: LogCaptureFixture,
         job_details_running_obj: ConfigureStatus,
@@ -306,7 +320,6 @@ class TestAzureService:
             job_details_running_obj,
         ]
 
-        azure_service._wait_for_job_completion.retry.sleep = mock.Mock()  # type: ignore
         job_id = "job_id_111"
         with caplog.at_level(logging.ERROR):
             with pytest.raises(InvalidStateError) as e_info:
