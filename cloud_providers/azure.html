@@ -109,10 +109,8 @@ Default to <code class="docutils literal notranslate"><span class="pre">False</s
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.compute_targets">
 <span class="sig-name descname"><span class="pre">compute_targets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.compute_targets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.compute_targets" title="Link to this definition">¶</a></dt>
 <dd><p>List all the possible publishing targets order to seek data from Azure.</p>
-<dl class="simple">
-<dt>It also returns the ordered list of targets with the following precedence:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">preview</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">live</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">draft</span></code></p>
-</dd>
-</dl>
+<p>It also returns the ordered list of targets with the following precedence:
+<code class="docutils literal notranslate"><span class="pre">live</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">preview</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">draft</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The product_id to retrieve all existing submission targets.</p>
