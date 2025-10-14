@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.6.0 - 2025-10-14
+
+- Azure: fix bug preventing pushing preview offers live by @JAVGan in https://github.com/release-engineering/cloudpub
+- Improvement: Azure: Allow modular publishing by @JAVGan in https://github.com/release-engineering/cloudpub/pull/136
+- Add Ashwini Kumar as codeowner by @JAVGan in https://github.com/release-engineering/cloudpub/pull/145
+- BugFix: Azure: check for SAS in all targets by @JAVGan in https://github.com/release-engineering/cloudpub/pull/140
+- Azure: ensure draft is published when SAS found by @JAVGan in https://github.com/release-engineering/cloudpub/pull/146
+- Update dependencies
+
 ## 1.5.0 - 2025-07-28
 
 - Drop support to python 3.9
