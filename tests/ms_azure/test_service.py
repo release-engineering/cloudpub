@@ -578,6 +578,25 @@ class TestAzureService:
             },
         }
 
+    def test_diff_two_offers_changed(
+        self,
+        azure_service: AzureService,
+        product_obj: Product,
+    ) -> None:
+        data_product = deepcopy(product_obj.to_json())
+        data_product["resources"][0]["id"] = "product/foo/bar"
+        last_offer = Product.from_json(data_product)
+
+        diff = azure_service.diff_two_offers(last_offer, product_obj)
+        assert diff == {
+            'values_changed': {
+                "root['resources'][0]['id']": {
+                    'new_value': 'product/foo/bar',
+                    'old_value': 'product/ffffffff-ffff-ffff-ffff-ffffffffffff',
+                },
+            },
+        }
+
     @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
     @mock.patch("cloudpub.ms_azure.AzureService.products")
@@ -593,6 +612,13 @@ class TestAzureService:
         mock_products.__iter__.return_value = [product_summary_obj]
         mock_getpr.return_value = product_obj
         assert azure_service.diff_offer(product_obj, target=target) == {}
+
+    def test_diff_two_offers_no_change(
+        self,
+        azure_service: AzureService,
+        product_obj: Product,
+    ) -> None:
+        assert azure_service.diff_two_offers(product_obj, product_obj) == {}
 
     @mock.patch("cloudpub.ms_azure.AzureService._assert_dict")
     def test_get_submissions(
