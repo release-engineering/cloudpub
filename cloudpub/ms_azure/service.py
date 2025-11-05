@@ -891,6 +891,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 generation=metadata.generation,
                 plan_name=plan_name,
                 old_skus=tech_config.skus,
+                unsupported_security_type_arches=metadata.unsupported_security_type_arches,
             )
             log.info(
                 "Updating the technical configuration for \"%s\" on \"%s\".",
