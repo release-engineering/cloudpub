@@ -21,6 +21,10 @@ from cloudpub.utils import get_url_params
 log = logging.getLogger(__name__)
 
 
+DEFAULT_UNSUPPORTED_SECURITY_TYPE_ARCHES = ["x64Gen1"]
+"""The default list of arches that don't support security type."""
+
+
 class AzurePublishingMetadata(PublishingMetadata):
     """A collection of metadata necessary for publishing a VHD Image into a product."""
 
@@ -34,6 +38,7 @@ class AzurePublishingMetadata(PublishingMetadata):
         generation: str = "V2",
         support_legacy: bool = False,
         recommended_sizes: Optional[List[str]] = None,
+        unsupported_security_type_arches: Optional[List[str]] = None,
         **kwargs,
     ) -> None:
         """
@@ -61,6 +66,9 @@ class AzurePublishingMetadata(PublishingMetadata):
                 The modular push causes the effect to only publish
                 the changed plan instead of the whole offer to preview/live.
                 Default to ``False``.
+            unsupported_security_type_arches (list, optional):
+                The list of arches that don't support security type.
+                Default to ``["x64Gen1"]``.
             **kwargs
                 Arguments for :class:`~cloudpub.common.PublishingMetadata`.
         """
@@ -72,7 +80,9 @@ class AzurePublishingMetadata(PublishingMetadata):
         self.legacy_sku_id = kwargs.pop("legacy_sku_id", None)
         self.check_base_sas_only = kwargs.pop("check_base_sas_only", False)
         self.modular_push = kwargs.pop("modular_push", None) or False
-
+        self.unsupported_security_type_arches = (
+            unsupported_security_type_arches or DEFAULT_UNSUPPORTED_SECURITY_TYPE_ARCHES
+        )
         if generation == "V1" or not support_legacy:
             self.legacy_sku_id = None
         else:
@@ -309,6 +319,7 @@ def _build_skus(
     alt_gen: str,
     plan_name: str,
     security_type: Optional[List[str]] = None,
+    unsupported_security_type_arches: Optional[List[str]] = None,
 ) -> List[VMISku]:
     def get_skuid(arch):
         if arch == "x64":
@@ -316,8 +327,11 @@ def _build_skus(
         return f"{plan_name}-{arch.lower()}"
 
     def get_safe_security_type(image_type):
-        # Arches which aren't x86Gen2 (like ARM64) doesn't work well with security type
-        if image_type != "x64Gen2":
+        unsupported_arches = (
+            unsupported_security_type_arches or DEFAULT_UNSUPPORTED_SECURITY_TYPE_ARCHES
+        )
+        # Some arches (like x86 Gen1) doesn't support security type, so we need to skip them.
+        if image_type in unsupported_arches:
             return None
         return security_type
 
@@ -348,8 +362,8 @@ def _build_skus(
 
 
 def _get_security_type(old_skus: List[VMISku]) -> Optional[List[str]]:
-    # The security type may exist only for x64 Gen2, so it iterates over all gens to find it
-    # Get the security type for all gens
+    # The security type may not be applied for certain arches, like x64 Gen1.
+    # This function will return the proper security type for the arches that has it set.
     for osku in old_skus:
         if osku.security_type is not None:
             return osku.security_type
@@ -361,6 +375,7 @@ def update_skus(
     generation: str,
     plan_name: str,
     old_skus: Optional[List[VMISku]] = None,
+    unsupported_security_type_arches: Optional[List[str]] = None,
 ) -> List[VMISku]:
     """
     Return the expected VMISku list based on given DiskVersion.
@@ -375,13 +390,20 @@ def update_skus(
         old_skus (list, optional)
             A list of the existing SKUs to extract the security_type value
             when set.
+        unsupported_security_type_arches (list, optional)
+            The list of arches that don't support security type.
+            Default to ``["x64Gen1"]``.
     Returns:
         The updated list with VMISkus.
     """
     if not old_skus:
         alt_gen = "V2" if generation == "V1" else "V1"
         return _build_skus(
-            disk_versions, default_gen=generation, alt_gen=alt_gen, plan_name=plan_name
+            disk_versions,
+            default_gen=generation,
+            alt_gen=alt_gen,
+            plan_name=plan_name,
+            unsupported_security_type_arches=unsupported_security_type_arches,
         )
 
     # If we have SKUs for each image we don't need to update them as they're already
@@ -419,6 +441,7 @@ def update_skus(
         alt_gen=alt_gen,
         plan_name=plan_name,
         security_type=security_type,
+        unsupported_security_type_arches=unsupported_security_type_arches,
     )
 
 

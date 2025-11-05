@@ -1088,6 +1088,7 @@ class TestAzureService:
             generation=metadata_azure_obj.generation,
             plan_name="plan-1",
             old_skus=expected_tech_config.skus,
+            unsupported_security_type_arches=metadata_azure_obj.unsupported_security_type_arches,
         )
         mock_configure.assert_called_once_with(resources=[technical_config_obj])
         mock_submit.assert_not_called()
@@ -1171,6 +1172,7 @@ class TestAzureService:
             generation=metadata_azure_obj.generation,
             plan_name="plan-1",
             old_skus=expected_tech_config.skus,
+            unsupported_security_type_arches=metadata_azure_obj.unsupported_security_type_arches,
         )
         mock_disk_scratch.assert_called_once_with(metadata_azure_obj, expected_source)
         mock_configure.assert_called_once_with(resources=[expected_tech_config])

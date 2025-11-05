@@ -489,7 +489,7 @@ class TestAzureUtils:
             VMISku.from_json(x)
             for x in [
                 {"imageType": "x64Gen2", "skuId": "plan1", "securityType": ["trusted"]},
-                {"imageType": "arm64Gen2", "skuId": "plan1-arm64"},
+                {"imageType": "arm64Gen2", "skuId": "plan1-arm64", "securityType": ["trusted"]},
                 {"imageType": "x64Gen1", "skuId": "plan1-gen1"},
             ]
         ]
