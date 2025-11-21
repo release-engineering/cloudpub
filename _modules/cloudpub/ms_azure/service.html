@@ -508,6 +508,24 @@
         <span class="k">return</span> <span class="n">DeepDiff</span><span class="p">(</span><span class="n">remote</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">product</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="AzureService.diff_two_offers">
+<a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.diff_two_offers">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">diff_two_offers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_offer</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">prev_offer</span><span class="p">:</span> <span class="n">Product</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepDiff</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the difference between two provided products.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            last_offer (Product)</span>
+<span class="sd">                The lastest offer state to diff</span>
+<span class="sd">            prev_offer (Product)</span>
+<span class="sd">                The previous offer state to diff</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            DeepDiff: The diff data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">DeepDiff</span><span class="p">(</span>
+            <span class="n">prev_offer</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">last_offer</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span>
+        <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="AzureService.submit_to_status">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.submit_to_status">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">submit_to_status</span><span class="p">(</span>
