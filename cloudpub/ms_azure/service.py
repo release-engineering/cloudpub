@@ -437,6 +437,21 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         remote = self.get_product(product.id, target=target)
         return DeepDiff(remote.to_json(), product.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES)
 
+    def diff_two_offers(self, last_offer: Product, prev_offer: Product) -> DeepDiff:
+        """Compute the difference between two provided products.
+
+        Args:
+            last_offer (Product)
+                The lastest offer state to diff
+            prev_offer (Product)
+                The previous offer state to diff
+        Returns:
+            DeepDiff: The diff data.
+        """
+        return DeepDiff(
+            prev_offer.to_json(), last_offer.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES
+        )
+
     def submit_to_status(
         self, product_id: str, status: str, resources: Optional[List[AzureResource]] = None
     ) -> ConfigureStatus:
