@@ -585,7 +585,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             [
                 prop
                 for prop in self.filter_product_resources(product=product, resource="property")
-                if prop.product_id == product_id
+                if prop.product_id == product_id  # type: ignore [union-attr]
             ],
         )[0]
         plan_res = cast(
