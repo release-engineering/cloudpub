@@ -1906,6 +1906,7 @@ class TestAzureService:
         submission: Dict[str, Any],
         product_summary_obj: ProductSummary,
         plan_summary_obj: PlanSummary,
+        product_property_obj: ProductProperty,
         metadata_azure_obj: mock.MagicMock,
         gen2_image: Dict[str, Any],
         caplog: pytest.LogCaptureFixture,
@@ -1947,6 +1948,7 @@ class TestAzureService:
         expected_tc = VMIPlanTechConfig.from_json(new_tc)
         expected_modular_resources = [
             product_summary_obj,
+            product_property_obj,
             plan_summary_obj,
             expected_tc,
             ProductSubmission.from_json(submission_preview),

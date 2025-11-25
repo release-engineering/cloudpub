@@ -563,14 +563,13 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         # The following resources shouldn't be required:
         # -> customer-leads
         # -> test-drive
-        # -> property
         # -> *listing*
         # -> reseller
         # -> price-and-availability-*
         # NOTE: The "submission" resource will be already added by the "submit_to_status" method
         #
-        # With that it needs only the related "product" and "plan" resources alongisde the
-        # updated tech_config
+        # With that it needs only the related "product", "property" and "plan" resources alongisde
+        # the updated tech_config
         product_id = tech_config.product_id
         plan_id = tech_config.plan_id
         prod_res = cast(
@@ -581,6 +580,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 if prd.id == product_id
             ],
         )[0]
+        property = cast(
+            List[ProductProperty],
+            [
+                prop
+                for prop in self.filter_product_resources(product=product, resource="property")
+                if prop.product_id == product_id
+            ],
+        )[0]
         plan_res = cast(
             List[PlanSummary],
             [
@@ -589,7 +596,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 if pln.id == plan_id
             ],
         )[0]
-        return [prod_res, plan_res, tech_config]
+        return [prod_res, property, plan_res, tech_config]
 
     def compute_targets(self, product_id: str) -> List[str]:
         """List all the possible publishing targets order to seek data from Azure.
