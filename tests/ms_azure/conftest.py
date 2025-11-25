@@ -220,11 +220,11 @@ def plan_summary() -> Dict[str, Any]:
 @pytest.fixture
 def product_property() -> Dict[str, Any]:
     return {
-        "$schema": "https://product-ingestion.azureedge.net/schema/property/2022-03-01-preview3",
+        "$schema": "https://schema.mp.microsoft.com/schema/property/2022-03-01-preview2",
         "id": "property/ffffffff-ffff-ffff-ffff-ffffffffffff/public/main",
         "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
         "kind": "azureVM",
-        "termsOfUse": "test",
+        "termsOfUseUrl": "test",
         "termsConditions": "custom",
         "categories": {"compute": ["operating-systems"]},
     }
