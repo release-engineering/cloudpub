@@ -711,11 +711,21 @@ class ProductProperty(AzureProductLinkedResource):
     `Schema definition for ProductProperty <https://schema.mp.microsoft.com/schema/property/2022-03-01-preview2>`_
     """  # noqa E501
 
+    schema: str = field(
+        validator=instance_of(str),
+        metadata={
+            "alias": MS_SCHEMA,
+            "const": "https://schema.mp.microsoft.com/schema/property/2022-03-01-preview2",
+        },
+    )
+    """
+    The `resource schema`_ for Graph API."""
+
     kind: str
     """Expected to be ``azureVM``"""
 
     terms_of_use: Optional[str] = field(
-        validator=optional(instance_of(str)), metadata={"alias": "termsOfUse"}
+        validator=optional(instance_of(str)), metadata={"alias": "termsOfUseUrl"}
     )
     """The product terms of use."""
 
