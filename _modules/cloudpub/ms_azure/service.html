@@ -648,14 +648,13 @@
         <span class="c1"># The following resources shouldn&#39;t be required:</span>
         <span class="c1"># -&gt; customer-leads</span>
         <span class="c1"># -&gt; test-drive</span>
-        <span class="c1"># -&gt; property</span>
         <span class="c1"># -&gt; *listing*</span>
         <span class="c1"># -&gt; reseller</span>
         <span class="c1"># -&gt; price-and-availability-*</span>
         <span class="c1"># NOTE: The &quot;submission&quot; resource will be already added by the &quot;submit_to_status&quot; method</span>
         <span class="c1">#</span>
-        <span class="c1"># With that it needs only the related &quot;product&quot; and &quot;plan&quot; resources alongisde the</span>
-        <span class="c1"># updated tech_config</span>
+        <span class="c1"># With that it needs only the related &quot;product&quot;, &quot;property&quot; and &quot;plan&quot; resources alongisde</span>
+        <span class="c1"># the updated tech_config</span>
         <span class="n">product_id</span> <span class="o">=</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">product_id</span>
         <span class="n">plan_id</span> <span class="o">=</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span>
         <span class="n">prod_res</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
@@ -666,6 +665,14 @@
                 <span class="k">if</span> <span class="n">prd</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">product_id</span>
             <span class="p">],</span>
         <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">property</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">List</span><span class="p">[</span><span class="n">ProductProperty</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="n">prop</span>
+                <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_product_resources</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="s2">&quot;property&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prop</span><span class="o">.</span><span class="n">product_id</span> <span class="o">==</span> <span class="n">product_id</span>  <span class="c1"># type: ignore [union-attr]</span>
+            <span class="p">],</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">plan_res</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
             <span class="n">List</span><span class="p">[</span><span class="n">PlanSummary</span><span class="p">],</span>
             <span class="p">[</span>
@@ -674,7 +681,7 @@
                 <span class="k">if</span> <span class="n">pln</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">plan_id</span>
             <span class="p">],</span>
         <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">prod_res</span><span class="p">,</span> <span class="n">plan_res</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="p">[</span><span class="n">prod_res</span><span class="p">,</span> <span class="nb">property</span><span class="p">,</span> <span class="n">plan_res</span><span class="p">,</span> <span class="n">tech_config</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="AzureService.compute_targets">

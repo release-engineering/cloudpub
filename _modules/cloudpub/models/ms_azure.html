@@ -803,11 +803,21 @@
 <span class="sd">    `Schema definition for ProductProperty &lt;https://schema.mp.microsoft.com/schema/property/2022-03-01-preview2&gt;`_</span>
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa E501</span>
 
+    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">validator</span><span class="o">=</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="n">MS_SCHEMA</span><span class="p">,</span>
+            <span class="s2">&quot;const&quot;</span><span class="p">:</span> <span class="s2">&quot;https://schema.mp.microsoft.com/schema/property/2022-03-01-preview2&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The `resource schema`_ for Graph API.&quot;&quot;&quot;</span>
+
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Expected to be ``azureVM``&quot;&quot;&quot;</span>
 
     <span class="n">terms_of_use</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
-        <span class="n">validator</span><span class="o">=</span><span class="n">optional</span><span class="p">(</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">)),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="s2">&quot;termsOfUse&quot;</span><span class="p">}</span>
+        <span class="n">validator</span><span class="o">=</span><span class="n">optional</span><span class="p">(</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">)),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="s2">&quot;termsOfUseUrl&quot;</span><span class="p">}</span>
     <span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The product terms of use.&quot;&quot;&quot;</span>
 
