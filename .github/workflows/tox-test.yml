@@ -151,7 +151,7 @@ jobs:
           || exit_code=$?
           exit $exit_code
       - name: Store OWASP report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: owasp-report
