@@ -1762,6 +1762,490 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService._publish_live")
     @mock.patch("cloudpub.ms_azure.AzureService._publish_preview")
     @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
+    @mock.patch("cloudpub.ms_azure.AzureService.compute_targets")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_productid")
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    def test_publish_live_multiple_arches_new_disk_version(
+        self,
+        mock_configure: mock.MagicMock,
+        mock_get_productid: mock.MagicMock,
+        mock_compute_targets: mock.MagicMock,
+        mock_ensure_can_publish: mock.MagicMock,
+        mock_publish_preview: mock.MagicMock,
+        mock_publish_live: mock.MagicMock,
+        token: Dict[str, Any],
+        auth_dict: Dict[str, Any],
+        configure_success_response: Dict[str, Any],
+        technical_config: Dict[str, Any],
+        product_listing: Dict[str, Any],
+        plan_summary: Dict[str, Any],
+        product_property: Dict[str, Any],
+        submission: Dict[str, Any],
+        products_list: Dict[str, Any],
+        product_summary: Dict[str, Any],
+        metadata_azure_obj: mock.MagicMock,
+        arm_image: Dict[str, Any],
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """Ensure a new disk version is properly created with the new image and gets published."""
+        # Prepare testing data
+        vm_versions = [
+            {
+                "versionNumber": "1.0.2025010100",  # This version shouldn't be modified
+                "vmImages": [
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen2",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen1",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250730.3.aarch64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "arm64Gen2",
+                    },
+                ],
+                "lifecycleState": "generallyAvailable",
+            },
+        ]
+        technical_config["skus"].append({"skuId": "plan-1-arm64", "imageType": "arm64Gen2"})
+        technical_config["vmImageVersions"] = vm_versions
+        product_json = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/resource-tree/2022-03-01-preview2",  # noqa: E501
+            "root": "product/product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": "draft"},
+            "resources": [
+                product_summary,
+                technical_config,
+                plan_summary,
+                product_property,
+                product_listing,
+                submission,
+            ],
+        }
+        image_path = "https://uri.test.com/test_aarch64.vhd"
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.architecture = "aarch64"
+        metadata_azure_obj.destination = "example-product/plan-1"
+        metadata_azure_obj.image_path = image_path
+        arm_image["source"]["osDisk"]["uri"] = image_path
+
+        # targets
+        mock_get_productid.return_value = "fake-id"
+        targets = ["draft"]
+        mock_compute_targets.return_value = targets
+
+        mock_configure.return_value = ConfigureStatus.from_json(configure_success_response)
+
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        # Expected data on configure request
+        expected_vm_versions = deepcopy(vm_versions)
+        expected_vm_versions.append(
+            {
+                "versionNumber": "2.1.0",
+                "vmImages": [arm_image],
+                "lifecycleState": "generallyAvailable",
+            }
+        )
+        expected_technical_config = deepcopy(technical_config)
+        expected_technical_config["vmImageVersions"] = expected_vm_versions
+
+        # Test
+        with caplog.at_level(logging.INFO):
+            with requests_mock.Mocker() as m:
+                m.post(login_url, json=token)
+                m.get(f"{base_url}/product", json=products_list)
+                m.get(f"{base_url}/resource-tree/product/{product_id}", json=product_json)
+                azure_svc = AzureService(auth_dict)
+                azure_svc.publish(metadata=metadata_azure_obj)
+
+        # assert expected_msg_log in caplog.messages
+        mock_configure.assert_called_once_with(
+            resources=[VMIPlanTechConfig.from_json(expected_technical_config)]
+        )
+        assert "The DiskVersion doesn't exist, creating one from scratch." in caplog.messages
+        mock_ensure_can_publish.assert_called_once()
+        mock_publish_preview.assert_called_once()
+        mock_publish_live.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "vm_versions",
+        [
+            # Versions with all architectures present
+            [
+                {
+                    "versionNumber": "2.1.0",
+                    "vmImages": [
+                        {
+                            "source": {
+                                "sourceType": "sasUri",
+                                "osDisk": {
+                                    "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                                },
+                                "dataDisks": [],
+                            },
+                            "imageType": "x64Gen2",
+                        },
+                        {
+                            "source": {
+                                "sourceType": "sasUri",
+                                "osDisk": {
+                                    "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                                },
+                                "dataDisks": [],
+                            },
+                            "imageType": "x64Gen1",
+                        },
+                        {
+                            "source": {
+                                "sourceType": "sasUri",
+                                "osDisk": {
+                                    "uri": "https://uri.test.com/sample-1.0-20250730.3.aarch64.vhd"
+                                },
+                                "dataDisks": [],
+                            },
+                            "imageType": "arm64Gen2",
+                        },
+                    ],
+                    "lifecycleState": "generallyAvailable",
+                },
+            ],
+            # Versions with only x64 present
+            [
+                {
+                    "versionNumber": "2.1.0",
+                    "vmImages": [
+                        {
+                            "source": {
+                                "sourceType": "sasUri",
+                                "osDisk": {
+                                    "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                                },
+                                "dataDisks": [],
+                            },
+                            "imageType": "x64Gen2",
+                        },
+                        {
+                            "source": {
+                                "sourceType": "sasUri",
+                                "osDisk": {
+                                    "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                                },
+                                "dataDisks": [],
+                            },
+                            "imageType": "x64Gen1",
+                        },
+                    ],
+                    "lifecycleState": "generallyAvailable",
+                },
+            ],
+            # Versions with only ARM64 present
+            [
+                {
+                    "versionNumber": "2.1.0",
+                    "vmImages": [
+                        {
+                            "source": {
+                                "sourceType": "sasUri",
+                                "osDisk": {
+                                    "uri": "https://uri.test.com/sample-1.0-20250730.3.aarch64.vhd"
+                                },
+                                "dataDisks": [],
+                            },
+                            "imageType": "arm64Gen2",
+                        },
+                    ],
+                    "lifecycleState": "generallyAvailable",
+                },
+            ],
+        ],
+        ids=[
+            "all_arches",
+            "only_x64",
+            "only_arm64",
+        ],
+    )
+    @pytest.mark.parametrize(
+        "new_vm_image,support_legacy,expected_vm_images",
+        [
+            # Ensure ARM64 Gen2 is added to the disk version
+            (
+                {
+                    "source": {
+                        "sourceType": "sasUri",
+                        "osDisk": {"uri": "https://uri.test.com/newimg-2.0-20260101.0.aarch64.vhd"},
+                        "dataDisks": [],
+                    },
+                    "imageType": "arm64Gen2",
+                },
+                False,
+                [
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen2",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen1",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/newimg-2.0-20260101.0.aarch64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "arm64Gen2",
+                    },
+                ],
+            ),
+            # Ensure x86 Gen2 is added to the disk version
+            (
+                {
+                    "source": {
+                        "sourceType": "sasUri",
+                        "osDisk": {"uri": "https://uri.test.com/newimg-2.0-20260101.0.x86_64.vhd"},
+                        "dataDisks": [],
+                    },
+                    "imageType": "x64Gen2",
+                },
+                False,
+                [
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/newimg-2.0-20260101.0.x86_64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen2",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250510.1.x86_64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen1",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250730.3.aarch64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "arm64Gen2",
+                    },
+                ],
+            ),
+            # legacy (V1) + V2 images for x64 should both get the new SAS URI
+            (
+                {
+                    "source": {
+                        "sourceType": "sasUri",
+                        "osDisk": {"uri": "https://uri.test.com/newimg-2.0-20260101.0.x64.vhd"},
+                        "dataDisks": [],
+                    },
+                    "imageType": "x64Gen2",
+                },
+                True,
+                [
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {"uri": "https://uri.test.com/newimg-2.0-20260101.0.x64.vhd"},
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen2",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {"uri": "https://uri.test.com/newimg-2.0-20260101.0.x64.vhd"},
+                            "dataDisks": [],
+                        },
+                        "imageType": "x64Gen1",
+                    },
+                    {
+                        "source": {
+                            "sourceType": "sasUri",
+                            "osDisk": {
+                                "uri": "https://uri.test.com/sample-1.0-20250730.3.aarch64.vhd"
+                            },
+                            "dataDisks": [],
+                        },
+                        "imageType": "arm64Gen2",
+                    },
+                ],
+            ),
+        ],
+        ids=[
+            "add_arm64_gen2",
+            "add_x64_gen2",
+            "legacy_x64_v2",
+        ],
+    )
+    @mock.patch("cloudpub.ms_azure.AzureService._publish_live")
+    @mock.patch("cloudpub.ms_azure.AzureService._publish_preview")
+    @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
+    @mock.patch("cloudpub.ms_azure.AzureService.compute_targets")
+    @mock.patch("cloudpub.ms_azure.AzureService.get_productid")
+    @mock.patch("cloudpub.ms_azure.AzureService.configure")
+    def test_publish_live_multiple_arches_existing_disk_version(
+        self,
+        mock_configure: mock.MagicMock,
+        mock_get_productid: mock.MagicMock,
+        mock_compute_targets: mock.MagicMock,
+        mock_ensure_can_publish: mock.MagicMock,
+        mock_publish_preview: mock.MagicMock,
+        mock_publish_live: mock.MagicMock,
+        new_vm_image: Dict[str, Any],
+        support_legacy: bool,
+        expected_vm_images: List[Dict[str, Any]],
+        vm_versions: List[Dict[str, Any]],
+        token: Dict[str, Any],
+        auth_dict: Dict[str, Any],
+        configure_success_response: Dict[str, Any],
+        technical_config: Dict[str, Any],
+        product_listing: Dict[str, Any],
+        plan_summary: Dict[str, Any],
+        product_property: Dict[str, Any],
+        submission: Dict[str, Any],
+        products_list: Dict[str, Any],
+        product_summary: Dict[str, Any],
+        metadata_azure_obj: mock.MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """Ensure the existing disk version is properly updated when required and published."""
+        # Prepare testing data
+        technical_config["skus"].append({"skuId": "plan-1-arm64", "imageType": "arm64Gen2"})
+        technical_config["vmImageVersions"] = vm_versions
+        product_json = {
+            "$schema": "https://product-ingestion.azureedge.net/schema/resource-tree/2022-03-01-preview2",  # noqa: E501
+            "root": "product/product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "target": {"targetType": "draft"},
+            "resources": [
+                product_summary,
+                technical_config,
+                plan_summary,
+                product_property,
+                product_listing,
+                submission,
+            ],
+        }
+        image_path = new_vm_image["source"]["osDisk"]["uri"]
+        metadata_azure_obj.keepdraft = False
+        metadata_azure_obj.support_legacy = support_legacy
+        metadata_azure_obj.architecture = (
+            "arm64" if new_vm_image["imageType"] == "arm64Gen2" else "x64"
+        )
+        metadata_azure_obj.destination = "example-product/plan-1"
+        metadata_azure_obj.image_path = image_path
+        # fmt: off
+        # Note: If we're adding only a single arch and the disk version doesn't contain all arches
+        # we end up expecting only the added arches to be present in the configure request.
+        if len(vm_versions[0]["vmImages"]) == 1:  # The existing vm_versions only have arm64 present
+            if new_vm_image["imageType"] == "arm64Gen2":
+                # if the new image is ARM64 we will NOT have x64 in the configure request
+                expected_vm_images = [x for x in expected_vm_images if x["imageType"] == "arm64Gen2"]  # noqa: E501
+            elif new_vm_image["imageType"] == "x64Gen2" and support_legacy is False:
+                # if the new image is x64 in not support legacy we will not have Gen1
+                expected_vm_images = [x for x in reversed(expected_vm_images) if x["imageType"] != "x64Gen1"]  # noqa: E501
+            elif new_vm_image["imageType"] == "x64Gen2" and support_legacy is True:
+                # if the new image is x64 and support legacy we will have all 3 images
+                # in the configure request, but the order will be different due to the algorithm's
+                # implementation
+                expected_vm_images = [x for x in reversed(expected_vm_images)]  # noqa: E501
+        elif len(vm_versions[0]["vmImages"]) == 2:  # The existing vm_versions only have x64 present
+            if new_vm_image["imageType"] != "arm64Gen2":
+                # if the new image is x64 we will only have x64 (gen1+2) in the configure request
+                expected_vm_images = [x for x in expected_vm_images if x["imageType"] != "arm64Gen2"]  # noqa: E501
+        # fmt: on
+
+        # targets
+        mock_get_productid.return_value = "fake-id"
+        targets = ["draft"]
+        mock_compute_targets.return_value = targets
+
+        mock_configure.return_value = ConfigureStatus.from_json(configure_success_response)
+
+        # Constants
+        login_url = "https://login.microsoftonline.com/foo/oauth2/token"
+        base_url = "https://graph.microsoft.com/rp/product-ingestion"
+        product_id = str(product_summary['id']).split("/")[-1]
+
+        # Expected data on configure request
+        expected_technical_config = deepcopy(technical_config)
+        expected_technical_config["vmImageVersions"] = [
+            {
+                "versionNumber": "2.1.0",  # This version will be modified and updated with new img
+                "vmImages": expected_vm_images,
+                "lifecycleState": "generallyAvailable",
+            }
+        ]
+
+        # Test
+        with caplog.at_level(logging.INFO):
+            with requests_mock.Mocker() as m:
+                m.post(login_url, json=token)
+                m.get(f"{base_url}/product", json=products_list)
+                m.get(f"{base_url}/resource-tree/product/{product_id}", json=product_json)
+                azure_svc = AzureService(auth_dict)
+                azure_svc.publish(metadata=metadata_azure_obj)
+
+        # assert expected_msg_log in caplog.messages
+        mock_configure.assert_called_once_with(
+            resources=[VMIPlanTechConfig.from_json(expected_technical_config)],
+        )
+        assert "The DiskVersion doesn't exist, creating one from scratch." not in caplog.messages
+        mock_ensure_can_publish.assert_called_once()
+        mock_publish_preview.assert_called_once()
+        mock_publish_live.assert_called_once()
+
+    @mock.patch("cloudpub.ms_azure.AzureService._publish_live")
+    @mock.patch("cloudpub.ms_azure.AzureService._publish_preview")
+    @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
     @mock.patch("cloudpub.ms_azure.AzureService._create_or_update_disk_version")
     @mock.patch("cloudpub.ms_azure.AzureService._overwrite_disk_version")
     @mock.patch("cloudpub.ms_azure.AzureService.compute_targets")
