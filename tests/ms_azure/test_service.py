@@ -1094,7 +1094,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1105,7 +1104,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_upd_sku: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
@@ -1144,7 +1142,6 @@ class TestAzureService:
             product=product_obj, resource="virtual-machine-plan-technical-configuration"
         )
         mock_is_sas.assert_not_called()
-        mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_called_once_with(metadata_azure_obj, expected_source)
         mock_upd_sku.assert_called_once_with(
             disk_versions=[disk_version_obj],
@@ -1161,7 +1158,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1172,7 +1168,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_upd_sku: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
@@ -1231,7 +1226,6 @@ class TestAzureService:
                 for _ in range(len(targets))
             ]
         )
-        mock_prep_img.assert_not_called()
         mock_upd_sku.assert_called_once_with(
             disk_versions=expected_tech_config.disk_versions,
             generation=metadata_azure_obj.generation,
@@ -1250,7 +1244,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService._is_submission_in_preview")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
     @mock.patch("cloudpub.ms_azure.service.update_skus")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1261,7 +1254,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_upd_sku: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_is_preview: mock.MagicMock,
@@ -1306,7 +1298,6 @@ class TestAzureService:
             metadata_azure_obj.image_path,
             False,
         )
-        mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
         mock_upd_sku.assert_not_called()
         mock_configure.assert_not_called()
@@ -1317,7 +1308,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.get_productid")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1328,7 +1318,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_get_productid: mock.MagicMock,
@@ -1397,7 +1386,6 @@ class TestAzureService:
                 for _ in range(len(targets))
             ]
         )
-        mock_prep_img.assert_not_called()
         mock_disk_scratch.assert_not_called()
         mock_configure.assert_called_once_with(resources=[expected_tech_config])
         mock_submit.assert_not_called()
@@ -1407,7 +1395,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.get_productid")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1418,7 +1405,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_get_productid: mock.MagicMock,
@@ -1453,9 +1439,6 @@ class TestAzureService:
             )
         )
 
-        mock_prep_img.return_value = deepcopy(
-            disk_version_obj.vm_images
-        )  # During submit it will pop the disk_versions
         technical_config_obj.disk_versions = [disk_version_obj]
         technical_config_obj.disk_versions = [disk_version_obj]
         mock_get_productid.return_value = "fake-id"
@@ -1485,12 +1468,6 @@ class TestAzureService:
                 )
                 for _ in range(len(targets))
             ]
-        )
-        mock_prep_img.assert_called_once_with(
-            metadata=metadata_azure_obj,
-            gen1=disk_version_obj.vm_images[1],
-            gen2=disk_version_obj.vm_images[0],
-            source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
         mock_configure.assert_called_once_with(resources=[technical_config_obj])
@@ -1543,7 +1520,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1554,7 +1530,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_diff_offer: mock.MagicMock,
@@ -1599,9 +1574,6 @@ class TestAzureService:
             image_type=get_image_type_mapping(metadata_azure_obj.architecture, "V1"),
             source=expected_source.to_json(),
         )
-        mock_prep_img.return_value = deepcopy(
-            disk_version_obj.vm_images
-        )  # During submit it will pop the disk_versions
         technical_config_obj.disk_versions = [disk_version_obj]
         technical_config_obj.disk_versions = [disk_version_obj]
         mock_get_productid.return_value = "fake-id"
@@ -1630,12 +1602,6 @@ class TestAzureService:
                 for _ in range(len(targets))
             ]
         )
-        mock_prep_img.assert_called_once_with(
-            metadata=metadata_azure_obj,
-            gen1=disk_version_obj.vm_images[0],
-            gen2=disk_version_obj.vm_images[1],
-            source=expected_source,
-        )
         mock_disk_scratch.assert_not_called()
         mock_diff_offer.assert_called_once_with(product_obj, 'draft')
         mock_configure.assert_called_once_with(resources=[technical_config_obj])
@@ -1654,7 +1620,6 @@ class TestAzureService:
     @mock.patch("cloudpub.ms_azure.AzureService.diff_offer")
     @mock.patch("cloudpub.ms_azure.AzureService.configure")
     @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
-    @mock.patch("cloudpub.ms_azure.utils.prepare_vm_images")
     @mock.patch("cloudpub.ms_azure.service.is_sas_present")
     @mock.patch("cloudpub.ms_azure.service.create_disk_version_from_scratch")
     @mock.patch("cloudpub.ms_azure.AzureService.filter_product_resources")
@@ -1665,7 +1630,6 @@ class TestAzureService:
         mock_filter: mock.MagicMock,
         mock_disk_scratch: mock.MagicMock,
         mock_is_sas: mock.MagicMock,
-        mock_prep_img: mock.MagicMock,
         mock_submit: mock.MagicMock,
         mock_configure: mock.MagicMock,
         mock_diff_offer: mock.MagicMock,
@@ -1712,9 +1676,6 @@ class TestAzureService:
             image_type=get_image_type_mapping(metadata_azure_obj.architecture, "V2"),
             source=expected_source.to_json(),
         )
-        mock_prep_img.return_value = deepcopy(
-            disk_version_arm64_obj.vm_images
-        )  # During submit it will pop the disk_versions
         technical_config_obj.disk_versions = [disk_version_arm64_obj]
         mock_get_productid.return_value = "fake-id"
         targets = ["preview", "live", "draft"]
@@ -1741,12 +1702,6 @@ class TestAzureService:
                 )
                 for _ in range(len(targets))
             ]
-        )
-        mock_prep_img.assert_called_once_with(
-            metadata=metadata_azure_obj,
-            gen1=None,
-            gen2=disk_version_arm64_obj.vm_images[0],
-            source=expected_source,
         )
         mock_disk_scratch.assert_not_called()
         mock_diff_offer.assert_called_once_with(product_obj, 'draft')

@@ -8,7 +8,6 @@ from _pytest.logging import LogCaptureFixture
 from cloudpub.models.ms_azure import (
     ConfigureStatus,
     DiskVersion,
-    VMImageDefinition,
     VMImageSource,
     VMIPlanTechConfig,
     VMISku,
@@ -19,7 +18,6 @@ from cloudpub.ms_azure.utils import (
     get_image_type_mapping,
     is_azure_job_not_complete,
     is_sas_present,
-    prepare_vm_images,
     update_skus,
 )
 
@@ -162,76 +160,6 @@ class TestAzureUtils:
 
         res = is_sas_present(tech_config=technical_config_obj, sas_uri=sas2, base_only=base_only)
         assert res is expected
-
-    def test_prepare_vm_images_gen1(
-        self,
-        metadata_azure_obj: AzurePublishingMetadata,
-        gen1_image_obj: VMImageDefinition,
-        gen2_image_obj: VMImageDefinition,
-    ) -> None:
-        metadata_azure_obj.generation = "V1"
-        new_source = VMImageSource.from_json(
-            {
-                "sourceType": "sasUri",
-                "osDisk": {"uri": "https://foo.com/bar"},
-                "dataDisks": [],
-            }
-        )
-        gen1_image_obj.source = new_source
-        res = prepare_vm_images(
-            metadata=metadata_azure_obj, gen1=gen1_image_obj, gen2=gen2_image_obj, source=new_source
-        )
-        assert res == [gen1_image_obj]
-
-    def test_prepare_vm_images_gen2(
-        self,
-        metadata_azure_obj: AzurePublishingMetadata,
-        gen1_image_obj: VMImageDefinition,
-        gen2_image_obj: VMImageDefinition,
-    ) -> None:
-        metadata_azure_obj.generation = "V2"
-        new_source = VMImageSource.from_json(
-            {
-                "sourceType": "sasUri",
-                "osDisk": {"uri": "https://foo.com/bar"},
-                "dataDisks": [],
-            }
-        )
-
-        # Test Gen2 only
-        gen2_image_obj.source = new_source
-        res = prepare_vm_images(
-            metadata=metadata_azure_obj, gen1=gen1_image_obj, gen2=gen2_image_obj, source=new_source
-        )
-        assert res == [gen2_image_obj]
-
-        # Test Gen1 + Gen2
-        metadata_azure_obj.support_legacy = True
-        gen1_image_obj.source = new_source
-        res = prepare_vm_images(
-            metadata=metadata_azure_obj, gen1=gen1_image_obj, gen2=gen2_image_obj, source=new_source
-        )
-        assert res == [gen2_image_obj, gen1_image_obj]
-
-    def test_prepare_vm_images_empty(
-        self, metadata_azure_obj: AzurePublishingMetadata, caplog: LogCaptureFixture
-    ) -> None:
-        expected_err = "At least one argument of \"gen1\" or \"gen2\" must be set."
-
-        new_source = VMImageSource.from_json(
-            {
-                "sourceType": "sasUri",
-                "osDisk": {"uri": "https://foo.com/bar"},
-                "dataDisks": [],
-            }
-        )
-
-        with caplog.at_level(logging.ERROR):
-            with pytest.raises(ValueError, match=expected_err):
-                prepare_vm_images(
-                    metadata=metadata_azure_obj, gen1=None, gen2=None, source=new_source
-                )
-            assert expected_err in caplog.text
 
     def test_update_new_skus_x86_gen2_default(
         self, technical_config_obj: VMIPlanTechConfig, metadata_azure_obj: AzurePublishingMetadata

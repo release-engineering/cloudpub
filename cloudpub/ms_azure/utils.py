@@ -241,56 +241,6 @@ def is_legacy_gen_supported(metadata: AzurePublishingMetadata) -> bool:
     return metadata.architecture == "x64" and metadata.support_legacy
 
 
-def prepare_vm_images(
-    metadata: AzurePublishingMetadata,
-    gen1: Optional[VMImageDefinition],
-    gen2: Optional[VMImageDefinition],
-    source: VMImageSource,
-) -> List[VMImageDefinition]:
-    """
-    Update the vm_images list with the proper SAS based in existing generation(s).
-
-    Args:
-        metadata (AzurePublishingMetadata)
-            The VHD publishing metadata.
-        gen1 (VMImageDefinition, optional)
-            The VMImageDefinition for Gen1 VHD.
-            If not set the argument `gen2` must be set.
-        gen2 (VMImageDefinition, optional)
-            The VMImageDefinition for Gen2 VHD.
-            If not set the argument `gen1` must be set.
-        source (VMImageSource):
-            The VMImageSource with the updated SAS URI.
-    Returns:
-        list: A new list containing the expected VMImageDefinition(s)
-    """
-    if not gen1 and not gen2:
-        msg = "At least one argument of \"gen1\" or \"gen2\" must be set."
-        log.error(msg)
-        raise ValueError(msg)
-
-    raw_source = source.to_json()
-    json_gen1 = {
-        "imageType": get_image_type_mapping(metadata.architecture, "V1"),
-        "source": raw_source,
-    }
-    json_gen2 = {
-        "imageType": get_image_type_mapping(metadata.architecture, "V2"),
-        "source": raw_source,
-    }
-
-    if metadata.generation == "V2":
-        # In this case we need to set a V2 SAS URI
-        gen2_new = VMImageDefinition.from_json(json_gen2)
-        if is_legacy_gen_supported(metadata):  # and in this case a V1 as well
-            gen1_new = VMImageDefinition.from_json(json_gen1)
-            return [gen2_new, gen1_new]
-        return [gen2_new]
-    else:
-        # It's expected to be a Gen1 only, let's get rid of Gen2
-        return [VMImageDefinition.from_json(json_gen1)]
-
-
 def _all_skus_present(old_skus: List[VMISku], disk_versions: List[DiskVersion]) -> bool:
     image_types = set()
     for sku in old_skus:
