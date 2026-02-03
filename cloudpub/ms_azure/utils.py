@@ -580,21 +580,41 @@ def set_new_sas_disk_version(
     # If we already have a VMImageDefinition let's use it
     if disk_version.vm_images:
         log.debug("The DiskVersion \"%s\" contains inner images.", disk_version.version_number)
-        img, img_legacy = vm_images_by_generation(disk_version, metadata.architecture)
-
-        # Now we replace the SAS URI for the vm_images
         log.info(
             "Adjusting the VMImages from existing DiskVersion \"%s\""
-            "to fit the new image with SAS \"%s\".",
+            " to fit the new image with SAS \"%s\".",
             disk_version.version_number,
             metadata.image_path,
         )
-        disk_version.vm_images = prepare_vm_images(
-            metadata=metadata,
-            gen1=img_legacy,
-            gen2=img,
-            source=source,
-        )
+        # Verify whether the arch is present for the new image
+        is_arch_present = False
+        # If the arch is present, update the SAS URI
+        for img in disk_version.vm_images:
+            if (
+                img.image_type == get_image_type_mapping(metadata.architecture, metadata.generation)
+            ) or (
+                metadata.support_legacy
+                and img.image_type == get_image_type_mapping(metadata.architecture, "V1")  # noqa
+            ):
+                is_arch_present = True
+                img.source.os_disk.uri = source.os_disk.uri
+
+        # If the arch is not present, add it to the DiskVersion
+        if not is_arch_present:
+            if metadata.support_legacy:
+                disk_version.vm_images.append(
+                    VMImageDefinition(
+                        image_type=get_image_type_mapping(metadata.architecture, "V1"),
+                        source=source.to_json(),
+                    )
+                )
+            disk_version.vm_images.append(
+                VMImageDefinition(
+                    image_type=get_image_type_mapping(metadata.architecture, metadata.generation),
+                    source=source.to_json(),
+                )
+            )
+        return disk_version
 
     # If no VMImages, we need to create them from scratch
     else:
