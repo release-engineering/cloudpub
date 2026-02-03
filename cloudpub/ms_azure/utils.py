@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from operator import attrgetter
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
 from deepdiff import DeepDiff
 
@@ -433,47 +433,6 @@ def seek_disk_version(
 
     log.debug("Disk Version %s was not found.", version_number)
     return None
-
-
-def vm_images_by_generation(
-    disk_version: DiskVersion, architecture: str
-) -> Tuple[Optional[VMImageDefinition], ...]:
-    """
-    Return a tuple containing the Gen1 and Gen2 VHD images in this order.
-
-    If one of the images doesn't exist it will return None in the expected tuple position.
-
-    Args:
-        disk_version
-            The disk version to retrieve the VMImageDefinitions from
-        architecture
-            The expected architecture for the VMImageDefinition.
-    Returns:
-        Gen1 and Gen2 VMImageDefinitions when they exist.
-    """
-    log.debug("Sorting the VMImageDefinition by generation.")
-    # Here we have 3 possibilities:
-    # 1. vm_images => "Gen1" only
-    # 2. vm_images => "Gen2" only
-    # 3. vm_images => "Gen1" and "Gen2"
-
-    # So let's get the first image whatever it is
-    img = disk_version.vm_images.pop(0)
-
-    # If first `img` is Gen2 we set the other one as `img_legacy`
-    if img.image_type == get_image_type_mapping(architecture, "V2"):
-        img_legacy = disk_version.vm_images.pop(0) if len(disk_version.vm_images) > 0 else None
-
-    else:  # Otherwise we set it as `img_legacy` and get the gen2
-        img_legacy = img
-        img = (
-            disk_version.vm_images.pop(0)  # type: ignore
-            if len(disk_version.vm_images) > 0
-            else None
-        )
-    log.debug("Image for current generation: %s", img)
-    log.debug("Image for legacy generation: %s", img_legacy)
-    return img, img_legacy
 
 
 def create_vm_image_definitions(
