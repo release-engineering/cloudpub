@@ -56,7 +56,7 @@ def auth_dict() -> Dict[str, str]:
 @mock.patch("cloudpub.ms_azure.service.PartnerPortalSession")
 def azure_service(auth_dict: Dict[str, str]) -> AzureService:
     """Return an instance of AzureService with mocked PartnerPortalSession."""
-    return AzureService(auth_dict)
+    return AzureService(auth_dict, retry_interval=0, retry_timeout=10)
 
 
 def job_details(status: str, result: str, errors: List[Dict[str, Any]]) -> Dict[str, Any]:
