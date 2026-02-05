@@ -92,15 +92,21 @@ Default to <code class="docutils literal notranslate"><span class="pre">False</s
 
 <dl class="py class">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cloudpub.ms_azure.</span></span><span class="sig-name descname"><span class="pre">AzureService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cloudpub.ms_azure.</span></span><span class="sig-name descname"><span class="pre">AzureService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">604800</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService" title="Link to this definition">¶</a></dt>
 <dd><p>Service provider for Microsoft Azure using the Product Ingestion API.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.__init__" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">604800</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.__init__" title="Link to this definition">¶</a></dt>
 <dd><p>Create a new AuzureService object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>credentials</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary with Azure credentials to authenticate on Product Ingestion API.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>credentials</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary with Azure credentials to authenticate on Product Ingestion API.</p></li>
+<li><p><strong>retry_interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The wait time interval in seconds for retrying jobs.
+Defaults to 300</p></li>
+<li><p><strong>retry_timeout</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The max time in seconds to attempt retries.
+Defaults to 7 days.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -185,14 +191,13 @@ Default to <code class="docutils literal notranslate"><span class="pre">False</s
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.ensure_can_publish">
 <span class="sig-name descname"><span class="pre">ensure_can_publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.ensure_can_publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.ensure_can_publish" title="Link to this definition">¶</a></dt>
 <dd><p>Ensure the offer is not already being published.</p>
-<p>It will wait for up to 7 days retrying to make sure it’s possible to publish before
-giving up and raising.</p>
+<p>It will raise ConflictError if a publish is already in progress in any submission target.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The product ID to check the offer’s publishing status</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – whenever a publishing is already in progress.</p>
+<dd class="field-even"><p><strong>ConflictError</strong> – whenever a publishing is already in progress for any submission target.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
@@ -445,6 +450,27 @@ publishing which could be missing to go live.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.query_job_status">
+<span class="sig-name descname"><span class="pre">query_job_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.query_job_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.query_job_status" title="Link to this definition">¶</a></dt>
+<dd><p>Query the job status for a given Job ID.</p>
+<p>It will raise error if any invalid state is detected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>job_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The job ID to query details from.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ConfigureStatus from JobID</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ConfigureStatus</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>InvalidStateError</strong> – If the job has failed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.submit_to_status">
 <span class="sig-name descname"><span class="pre">submit_to_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.submit_to_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.submit_to_status" title="Link to this definition">¶</a></dt>
 <dd><p>Send a submission request to Microsoft with a new Product status.</p>
@@ -461,6 +487,20 @@ publishing which could be missing to go live.</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The response from configure request.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cloudpub.ms_azure.AzureService.wait_active_publishing">
+<span class="sig-name descname"><span class="pre">wait_active_publishing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpub/ms_azure/service.html#AzureService.wait_active_publishing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cloudpub.ms_azure.AzureService.wait_active_publishing" title="Link to this definition">¶</a></dt>
+<dd><p>Wait when there’s an existing submission in progress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>product_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The product ID of to verify the submissions state.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
