@@ -1728,6 +1728,7 @@ class TestAzureService:
         mock_ensure_can_publish: mock.MagicMock,
         mock_publish_preview: mock.MagicMock,
         mock_publish_live: mock.MagicMock,
+        mock_wait_active_publish: mock.MagicMock,
         token: Dict[str, Any],
         auth_dict: Dict[str, Any],
         configure_success_response: Dict[str, Any],
@@ -1843,6 +1844,7 @@ class TestAzureService:
         )
         assert "The DiskVersion doesn't exist, creating one from scratch." in caplog.messages
         mock_ensure_can_publish.assert_called_once()
+        mock_wait_active_publish.assert_called_once()
         mock_publish_preview.assert_called_once()
         mock_publish_live.assert_called_once()
 
@@ -2194,10 +2196,13 @@ class TestAzureService:
             resources=[VMIPlanTechConfig.from_json(expected_technical_config)],
         )
         assert "The DiskVersion doesn't exist, creating one from scratch." not in caplog.messages
-        mock_ensure_can_publish.assert_called_once()
+        mock_ensure_can_publish.assert_has_calls(
+            [mock.call("fake-id"), mock.call("ffffffff-ffff-ffff-ffff-ffffffffffff")]
+        )
         mock_publish_preview.assert_called_once()
         mock_publish_live.assert_called_once()
 
+    @mock.patch("cloudpub.ms_azure.AzureService.wait_active_publishing")
     @mock.patch("cloudpub.ms_azure.AzureService._publish_live")
     @mock.patch("cloudpub.ms_azure.AzureService._publish_preview")
     @mock.patch("cloudpub.ms_azure.AzureService.ensure_can_publish")
@@ -2216,7 +2221,7 @@ class TestAzureService:
         mock_ensure_can_publish: mock.MagicMock,
         mock_publish_preview: mock.MagicMock,
         mock_publish_live: mock.MagicMock,
-        mock_wait_publish: mock.MagicMock,
+        mock_wait_active_publish: mock.MagicMock,
         token: Dict[str, Any],
         auth_dict: Dict[str, Any],
         configure_success_response: Dict[str, Any],
@@ -2275,7 +2280,7 @@ class TestAzureService:
         ) in caplog.messages
         mock_publish_preview.assert_called_once()
         mock_publish_live.assert_called_once()
-        mock_wait_publish.assert_called_once()
+        mock_wait_active_publish.assert_called_once()
         mock_ensure_can_publish.assert_called_once()
         mock_create_diskversion.assert_not_called()
         mock_overwrite.assert_not_called()
