@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.0 - 2026-02-06
+
+- feature: Add "offline" diff for AzureService by @JAVGan in https://github.com/release-engineering/cloudpub/pull/152
+- Azure: Fix modular push by @JAVGan in https://github.com/release-engineering/cloudpub/pull/159
+- Azure: rework how conflict detection works by @JAVGan in https://github.com/release-engineering/cloudpub/pull/147
+- Azure: Fix bug when updating SAS URI on existing DiskVersion  by @JAVGan in https://github.com/release-engineering/cloudpub/pull/177
+- Bump dependencies
+
+
 ## 1.6.0 - 2025-10-14
 
 - Azure: fix bug preventing pushing preview offers live by @JAVGan in https://github.com/release-engineering/cloudpub
