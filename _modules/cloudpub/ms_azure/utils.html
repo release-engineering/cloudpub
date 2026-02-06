@@ -34,7 +34,7 @@
 <span></span><span class="c1"># SPDX-License-Identifier: GPL-3.0-or-later</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">attrgetter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">deepdiff</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepDiff</span>
 
@@ -280,56 +280,6 @@
     <span class="k">return</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span> <span class="ow">and</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">prepare_vm_images</span><span class="p">(</span>
-    <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span>
-    <span class="n">gen1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">],</span>
-    <span class="n">gen2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">],</span>
-    <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Update the vm_images list with the proper SAS based in existing generation(s).</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        metadata (AzurePublishingMetadata)</span>
-<span class="sd">            The VHD publishing metadata.</span>
-<span class="sd">        gen1 (VMImageDefinition, optional)</span>
-<span class="sd">            The VMImageDefinition for Gen1 VHD.</span>
-<span class="sd">            If not set the argument `gen2` must be set.</span>
-<span class="sd">        gen2 (VMImageDefinition, optional)</span>
-<span class="sd">            The VMImageDefinition for Gen2 VHD.</span>
-<span class="sd">            If not set the argument `gen1` must be set.</span>
-<span class="sd">        source (VMImageSource):</span>
-<span class="sd">            The VMImageSource with the updated SAS URI.</span>
-<span class="sd">    Returns:</span>
-<span class="sd">        list: A new list containing the expected VMImageDefinition(s)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">gen1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">gen2</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;At least one argument of </span><span class="se">\&quot;</span><span class="s2">gen1</span><span class="se">\&quot;</span><span class="s2"> or </span><span class="se">\&quot;</span><span class="s2">gen2</span><span class="se">\&quot;</span><span class="s2"> must be set.&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-    <span class="n">raw_source</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
-    <span class="n">json_gen1</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;imageType&quot;</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">raw_source</span><span class="p">,</span>
-    <span class="p">}</span>
-    <span class="n">json_gen2</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;imageType&quot;</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">raw_source</span><span class="p">,</span>
-    <span class="p">}</span>
-
-    <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V2&quot;</span><span class="p">:</span>
-        <span class="c1"># In this case we need to set a V2 SAS URI</span>
-        <span class="n">gen2_new</span> <span class="o">=</span> <span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">):</span>  <span class="c1"># and in this case a V1 as well</span>
-            <span class="n">gen1_new</span> <span class="o">=</span> <span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen1</span><span class="p">)</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">gen2_new</span><span class="p">,</span> <span class="n">gen1_new</span><span class="p">]</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">gen2_new</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># It&#39;s expected to be a Gen1 only, let&#39;s get rid of Gen2</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">VMImageDefinition</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json_gen1</span><span class="p">)]</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_all_skus_present</span><span class="p">(</span><span class="n">old_skus</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">],</span> <span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="n">image_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">sku</span> <span class="ow">in</span> <span class="n">old_skus</span><span class="p">:</span>
@@ -524,47 +474,6 @@
     <span class="k">return</span> <span class="kc">None</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">vm_images_by_generation</span><span class="p">(</span>
-    <span class="n">disk_version</span><span class="p">:</span> <span class="n">DiskVersion</span><span class="p">,</span> <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">],</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return a tuple containing the Gen1 and Gen2 VHD images in this order.</span>
-
-<span class="sd">    If one of the images doesn&#39;t exist it will return None in the expected tuple position.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        disk_version</span>
-<span class="sd">            The disk version to retrieve the VMImageDefinitions from</span>
-<span class="sd">        architecture</span>
-<span class="sd">            The expected architecture for the VMImageDefinition.</span>
-<span class="sd">    Returns:</span>
-<span class="sd">        Gen1 and Gen2 VMImageDefinitions when they exist.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sorting the VMImageDefinition by generation.&quot;</span><span class="p">)</span>
-    <span class="c1"># Here we have 3 possibilities:</span>
-    <span class="c1"># 1. vm_images =&gt; &quot;Gen1&quot; only</span>
-    <span class="c1"># 2. vm_images =&gt; &quot;Gen2&quot; only</span>
-    <span class="c1"># 3. vm_images =&gt; &quot;Gen1&quot; and &quot;Gen2&quot;</span>
-
-    <span class="c1"># So let&#39;s get the first image whatever it is</span>
-    <span class="n">img</span> <span class="o">=</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="c1"># If first `img` is Gen2 we set the other one as `img_legacy`</span>
-    <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V2&quot;</span><span class="p">):</span>
-        <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
-
-    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Otherwise we set it as `img_legacy` and get the gen2</span>
-        <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">img</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image for current generation: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image for legacy generation: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">img_legacy</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">create_vm_image_definitions</span><span class="p">(</span>
     <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">]:</span>
@@ -619,21 +528,41 @@
     <span class="c1"># If we already have a VMImageDefinition let&#39;s use it</span>
     <span class="k">if</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> contains inner images.&quot;</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
-        <span class="n">img</span><span class="p">,</span> <span class="n">img_legacy</span> <span class="o">=</span> <span class="n">vm_images_by_generation</span><span class="p">(</span><span class="n">disk_version</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">)</span>
-
-        <span class="c1"># Now we replace the SAS URI for the vm_images</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s2">&quot;Adjusting the VMImages from existing DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot; to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
             <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span> <span class="o">=</span> <span class="n">prepare_vm_images</span><span class="p">(</span>
-            <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
-            <span class="n">gen1</span><span class="o">=</span><span class="n">img_legacy</span><span class="p">,</span>
-            <span class="n">gen2</span><span class="o">=</span><span class="n">img</span><span class="p">,</span>
-            <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="c1"># Verify whether the arch is present for the new image</span>
+        <span class="n">is_arch_present</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># If the arch is present, update the SAS URI</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">)</span>
+            <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span>
+                <span class="ow">and</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+            <span class="p">):</span>
+                <span class="n">is_arch_present</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">img</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span>
+
+        <span class="c1"># If the arch is not present, add it to the DiskVersion</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_arch_present</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>
+                <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">VMImageDefinition</span><span class="p">(</span>
+                        <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
+                        <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">VMImageDefinition</span><span class="p">(</span>
+                    <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">),</span>
+                    <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">disk_version</span>
 
     <span class="c1"># If no VMImages, we need to create them from scratch</span>
     <span class="k">else</span><span class="p">:</span>
