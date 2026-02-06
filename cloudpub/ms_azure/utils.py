@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from operator import attrgetter
-from typing import Any, Dict, List, Optional, Tuple, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
 from deepdiff import DeepDiff
 
@@ -241,56 +241,6 @@ def is_legacy_gen_supported(metadata: AzurePublishingMetadata) -> bool:
     return metadata.architecture == "x64" and metadata.support_legacy
 
 
-def prepare_vm_images(
-    metadata: AzurePublishingMetadata,
-    gen1: Optional[VMImageDefinition],
-    gen2: Optional[VMImageDefinition],
-    source: VMImageSource,
-) -> List[VMImageDefinition]:
-    """
-    Update the vm_images list with the proper SAS based in existing generation(s).
-
-    Args:
-        metadata (AzurePublishingMetadata)
-            The VHD publishing metadata.
-        gen1 (VMImageDefinition, optional)
-            The VMImageDefinition for Gen1 VHD.
-            If not set the argument `gen2` must be set.
-        gen2 (VMImageDefinition, optional)
-            The VMImageDefinition for Gen2 VHD.
-            If not set the argument `gen1` must be set.
-        source (VMImageSource):
-            The VMImageSource with the updated SAS URI.
-    Returns:
-        list: A new list containing the expected VMImageDefinition(s)
-    """
-    if not gen1 and not gen2:
-        msg = "At least one argument of \"gen1\" or \"gen2\" must be set."
-        log.error(msg)
-        raise ValueError(msg)
-
-    raw_source = source.to_json()
-    json_gen1 = {
-        "imageType": get_image_type_mapping(metadata.architecture, "V1"),
-        "source": raw_source,
-    }
-    json_gen2 = {
-        "imageType": get_image_type_mapping(metadata.architecture, "V2"),
-        "source": raw_source,
-    }
-
-    if metadata.generation == "V2":
-        # In this case we need to set a V2 SAS URI
-        gen2_new = VMImageDefinition.from_json(json_gen2)
-        if is_legacy_gen_supported(metadata):  # and in this case a V1 as well
-            gen1_new = VMImageDefinition.from_json(json_gen1)
-            return [gen2_new, gen1_new]
-        return [gen2_new]
-    else:
-        # It's expected to be a Gen1 only, let's get rid of Gen2
-        return [VMImageDefinition.from_json(json_gen1)]
-
-
 def _all_skus_present(old_skus: List[VMISku], disk_versions: List[DiskVersion]) -> bool:
     image_types = set()
     for sku in old_skus:
@@ -485,47 +435,6 @@ def seek_disk_version(
     return None
 
 
-def vm_images_by_generation(
-    disk_version: DiskVersion, architecture: str
-) -> Tuple[Optional[VMImageDefinition], ...]:
-    """
-    Return a tuple containing the Gen1 and Gen2 VHD images in this order.
-
-    If one of the images doesn't exist it will return None in the expected tuple position.
-
-    Args:
-        disk_version
-            The disk version to retrieve the VMImageDefinitions from
-        architecture
-            The expected architecture for the VMImageDefinition.
-    Returns:
-        Gen1 and Gen2 VMImageDefinitions when they exist.
-    """
-    log.debug("Sorting the VMImageDefinition by generation.")
-    # Here we have 3 possibilities:
-    # 1. vm_images => "Gen1" only
-    # 2. vm_images => "Gen2" only
-    # 3. vm_images => "Gen1" and "Gen2"
-
-    # So let's get the first image whatever it is
-    img = disk_version.vm_images.pop(0)
-
-    # If first `img` is Gen2 we set the other one as `img_legacy`
-    if img.image_type == get_image_type_mapping(architecture, "V2"):
-        img_legacy = disk_version.vm_images.pop(0) if len(disk_version.vm_images) > 0 else None
-
-    else:  # Otherwise we set it as `img_legacy` and get the gen2
-        img_legacy = img
-        img = (
-            disk_version.vm_images.pop(0)  # type: ignore
-            if len(disk_version.vm_images) > 0
-            else None
-        )
-    log.debug("Image for current generation: %s", img)
-    log.debug("Image for legacy generation: %s", img_legacy)
-    return img, img_legacy
-
-
 def create_vm_image_definitions(
     metadata: AzurePublishingMetadata, source: VMImageSource
 ) -> List[VMImageDefinition]:
@@ -580,21 +489,41 @@ def set_new_sas_disk_version(
     # If we already have a VMImageDefinition let's use it
     if disk_version.vm_images:
         log.debug("The DiskVersion \"%s\" contains inner images.", disk_version.version_number)
-        img, img_legacy = vm_images_by_generation(disk_version, metadata.architecture)
-
-        # Now we replace the SAS URI for the vm_images
         log.info(
             "Adjusting the VMImages from existing DiskVersion \"%s\""
-            "to fit the new image with SAS \"%s\".",
+            " to fit the new image with SAS \"%s\".",
             disk_version.version_number,
             metadata.image_path,
         )
-        disk_version.vm_images = prepare_vm_images(
-            metadata=metadata,
-            gen1=img_legacy,
-            gen2=img,
-            source=source,
-        )
+        # Verify whether the arch is present for the new image
+        is_arch_present = False
+        # If the arch is present, update the SAS URI
+        for img in disk_version.vm_images:
+            if (
+                img.image_type == get_image_type_mapping(metadata.architecture, metadata.generation)
+            ) or (
+                metadata.support_legacy
+                and img.image_type == get_image_type_mapping(metadata.architecture, "V1")  # noqa
+            ):
+                is_arch_present = True
+                img.source.os_disk.uri = source.os_disk.uri
+
+        # If the arch is not present, add it to the DiskVersion
+        if not is_arch_present:
+            if metadata.support_legacy:
+                disk_version.vm_images.append(
+                    VMImageDefinition(
+                        image_type=get_image_type_mapping(metadata.architecture, "V1"),
+                        source=source.to_json(),
+                    )
+                )
+            disk_version.vm_images.append(
+                VMImageDefinition(
+                    image_type=get_image_type_mapping(metadata.architecture, metadata.generation),
+                    source=source.to_json(),
+                )
+            )
+        return disk_version
 
     # If no VMImages, we need to create them from scratch
     else:
