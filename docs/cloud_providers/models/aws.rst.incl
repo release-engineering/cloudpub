@@ -122,6 +122,9 @@ Resources internal elements
 .. autoclass:: cloudpub.models.aws.PromoResourcesVideo()
    :members:
 
+.. autoclass:: cloudpub.models.aws.PromotionalMedia()
+   :members:
+
 .. autoclass:: cloudpub.models.aws.PositiveTargeting()
    :members:
 
