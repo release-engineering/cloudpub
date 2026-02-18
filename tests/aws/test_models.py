@@ -1,5 +1,6 @@
 import json
 import re
+from copy import deepcopy
 from typing import Any, Dict
 
 import pytest
@@ -16,6 +17,8 @@ from cloudpub.models.aws import (
     ProductVersionsBase,
     ProductVersionsCloudFormationSource,
     ProductVersionsVirtualizationSource,
+    PromotionalMedia,
+    PromotionalResources,
     SecurityGroup,
     Version,
     VersionMapping,
@@ -125,3 +128,64 @@ def test_describe_entity_response_parsed_details(
 def test_list_changeset_response_parsed(list_changeset_response: Dict[str, Any]) -> None:
     resp = ListChangeSetsResponse.from_json(list_changeset_response)
     assert len(resp.change_set_list) == 1
+
+
+@pytest.mark.parametrize(
+    "promotional_media",
+    [
+        None,
+        [],
+        [
+            {
+                'Type': 'Image',
+                'Url': 'https://foo.com/bar.png',
+                'Title': 'Logo1',
+                'Description': None,
+            }
+        ],
+        [
+            {
+                'Type': 'Image',
+                'Url': 'https://foo.com/bar.png',
+                'Title': 'Logo1',
+                # Description field intentionally omitted to test absence
+            }
+        ],
+        [
+            {
+                'Type': 'Image',
+                'Url': 'https://foo.com/bar.png',
+                'Title': 'Logo1',
+                'Description': 'This is the logo1',
+            },
+            {
+                'Type': 'Video',
+                'Url': 'https://foo.com/video.mp4',
+                'Title': 'Video',
+                'Description': 'This is the promotional video',
+            },
+        ],
+    ],
+)
+def test_promotional_resources_promotional_media(
+    promotional_media, promotional_resource: Dict[str, Any]
+) -> None:
+    resource = deepcopy(promotional_resource)
+    resource["PromotionalMedia"] = promotional_media
+
+    obj = PromotionalResources.from_json(resource)
+
+    assert obj
+    if not promotional_media:
+        assert obj.promotional_media is None
+    else:
+        assert obj.promotional_media == [PromotionalMedia.from_json(x) for x in promotional_media]
+
+
+def test_promotional_resources_promotional_media_absent(promotional_resource: Dict[str, Any]):
+    resource = deepcopy(promotional_resource)
+    del resource["PromotionalMedia"]
+
+    obj = PromotionalResources.from_json(resource)
+    assert obj
+    assert obj.promotional_media is None

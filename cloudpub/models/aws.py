@@ -639,11 +639,25 @@ class PromoResourcesVideo(BaseResources):
 
 
 @define
+class PromotionalMedia(BaseResources):
+    """Represent a single element of promotional media from class :class:`~cloudpub.models.aws.PromotionalResources`."""  # noqa: E501
+
+    title: str = field(validator=instance_of(str), metadata={"alias": "Title"})
+    """The title of the promotional media resource."""
+
+    description: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "Description"}
+    )
+    """The description of the promotional media resource."""
+
+
+@define
 class PromotionalResources(AttrsJSONDecodeMixin):
     """Represent the "PromotionalResources" section of the :class:`~cloudpub.models.aws.ProductDetailResponse`."""  # noqa: E501
 
-    promotional_media: Optional[str] = field(
-        validator=optional(instance_of(str)),
+    promotional_media: Optional[List[PromotionalMedia]] = field(
+        converter=lambda x: [PromotionalMedia.from_json(a) for a in x] if x else None,
+        on_setattr=NO_OP,
         metadata={"alias": "PromotionalMedia", "hide_unset": True},
     )
     """The product's promotional media."""
