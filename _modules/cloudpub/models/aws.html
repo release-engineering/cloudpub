@@ -737,14 +737,31 @@
 
 
 
+<div class="viewcode-block" id="PromotionalMedia">
+<a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.models.aws.PromotionalMedia">[docs]</a>
+<span class="nd">@define</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PromotionalMedia</span><span class="p">(</span><span class="n">BaseResources</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent a single element of promotional media from class :class:`~cloudpub.models.aws.PromotionalResources`.&quot;&quot;&quot;</span>  <span class="c1"># noqa: E501</span>
+
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">validator</span><span class="o">=</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="s2">&quot;Title&quot;</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The title of the promotional media resource.&quot;&quot;&quot;</span>
+
+    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">validator</span><span class="o">=</span><span class="n">optional</span><span class="p">(</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">)),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="s2">&quot;Description&quot;</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The description of the promotional media resource.&quot;&quot;&quot;</span></div>
+
+
+
 <div class="viewcode-block" id="PromotionalResources">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.models.aws.PromotionalResources">[docs]</a>
 <span class="nd">@define</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PromotionalResources</span><span class="p">(</span><span class="n">AttrsJSONDecodeMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the &quot;PromotionalResources&quot; section of the :class:`~cloudpub.models.aws.ProductDetailResponse`.&quot;&quot;&quot;</span>  <span class="c1"># noqa: E501</span>
 
-    <span class="n">promotional_media</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
-        <span class="n">validator</span><span class="o">=</span><span class="n">optional</span><span class="p">(</span><span class="n">instance_of</span><span class="p">(</span><span class="nb">str</span><span class="p">)),</span>
+    <span class="n">promotional_media</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">PromotionalMedia</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">converter</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">PromotionalMedia</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">on_setattr</span><span class="o">=</span><span class="n">NO_OP</span><span class="p">,</span>
         <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;alias&quot;</span><span class="p">:</span> <span class="s2">&quot;PromotionalMedia&quot;</span><span class="p">,</span> <span class="s2">&quot;hide_unset&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
     <span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The product&#39;s promotional media.&quot;&quot;&quot;</span>
