@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
+import os
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -9,6 +10,8 @@ from requests.adapters import HTTPAdapter, Retry
 from cloudpub.utils import base_url, join_url
 
 log = logging.getLogger(__name__)
+
+AZURE_SESSION_TIMEOUT: float = float(os.environ.get("AZURE_SESSION_TIMEOUT", 5.0))
 
 
 class AccessToken:
@@ -131,7 +134,7 @@ class PartnerPortalSession:
             "grant_type": "client_credentials",
         }
 
-        resp = self.session.post(url, headers=headers, data=data, timeout=30)
+        resp = self.session.post(url, headers=headers, data=data, timeout=AZURE_SESSION_TIMEOUT)
         resp.raise_for_status()
         return AccessToken(resp.json())
 
@@ -159,7 +162,10 @@ class PartnerPortalSession:
         log.debug("Sending a %s request to %s", method, path)
         formatted_url = self._prefix_url.format(**self.auth_keys)
         url = join_url(formatted_url, path)
-        return self.session.request(method, url=url, params=params, headers=headers, **kwargs)
+        timeout = kwargs.pop("timeout", AZURE_SESSION_TIMEOUT)
+        return self.session.request(
+            method, url=url, params=params, headers=headers, timeout=timeout, **kwargs
+        )
 
     def get(self, path: str, **kwargs: Any) -> requests.Response:
         """Execute an API GET request."""

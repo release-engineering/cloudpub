@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 from httmock import response
 
-from cloudpub.ms_azure.session import AccessToken, PartnerPortalSession
+from cloudpub.ms_azure.session import AZURE_SESSION_TIMEOUT, AccessToken, PartnerPortalSession
 from cloudpub.utils import join_url
 
 
@@ -72,7 +72,7 @@ class TestPartnerPortalSession:
 
         session_mock.return_value.request.assert_called_once()
         session_mock.return_value.post.assert_called_once_with(
-            login_url, headers=login_header, data=login_data, timeout=30
+            login_url, headers=login_header, data=login_data, timeout=AZURE_SESSION_TIMEOUT
         )
 
     @pytest.mark.parametrize(
@@ -110,10 +110,19 @@ class TestPartnerPortalSession:
         if json:
             getattr(session, method)(path, json)
             mock_session.return_value.request.assert_called_once_with(
-                method, url=url, params=put_param, headers=put_headers, json={"foo": "bar"}
+                method,
+                url=url,
+                params=put_param,
+                headers=put_headers,
+                json={"foo": "bar"},
+                timeout=AZURE_SESSION_TIMEOUT,
             )
         else:
             getattr(session, method)(path)
             mock_session.return_value.request.assert_called_once_with(
-                method, url=url, params=put_param, headers=put_headers
+                method,
+                url=url,
+                params=put_param,
+                headers=put_headers,
+                timeout=AZURE_SESSION_TIMEOUT,
             )
