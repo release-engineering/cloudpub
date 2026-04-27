@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.1 - 2026-04-27
+
+- AWS: Fix bug on PromotionalResources model by @JAVGan in https://github.com/release-engineering/cloudpub/pull/180
+- Azure: Add default timeout of 5s for all requests by @JAVGan in https://github.com/release-engineering/cloudpub/pull/188
+- Bump dependencies
+
 ## 1.7.0 - 2026-02-06
 
 - feature: Add "offline" diff for AzureService by @JAVGan in https://github.com/release-engineering/cloudpub/pull/152
