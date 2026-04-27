@@ -5,13 +5,33 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 import requests
-from requests.adapters import HTTPAdapter, Retry
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from cloudpub.utils import base_url, join_url
 
 log = logging.getLogger(__name__)
 
 AZURE_SESSION_TIMEOUT: float = float(os.environ.get("AZURE_SESSION_TIMEOUT", 5.0))
+AZURE_TOTAL_RETRIES: int = int(os.environ.get("AZURE_TOTAL_RETRIES", 5))
+AZURE_BACKOFF_FACTOR: float = float(os.environ.get("AZURE_BACKOFF_FACTOR", 1.0))
+# Inclusive range of HTTP response status codes for which _request retries.
+AZURE_RETRY_HTTP_STATUS_MIN: int = 408
+AZURE_RETRY_HTTP_STATUS_MAX: int = 512
+
+
+def _should_retry_request_http_error(exc: BaseException) -> bool:
+    if not isinstance(exc, requests.exceptions.HTTPError):
+        return False
+    err_response = exc.response
+    if err_response is None:
+        return False
+    code = err_response.status_code
+    return AZURE_RETRY_HTTP_STATUS_MIN <= code <= AZURE_RETRY_HTTP_STATUS_MAX
 
 
 class AccessToken:
@@ -71,15 +91,6 @@ class PartnerPortalSession:
         self._token: Optional[AccessToken] = None
         self._additional_args = kwargs
         self.session = requests.Session()
-        total_retries = kwargs.pop("total_retries", 5)
-        backoff_factor = kwargs.pop("backoff_factor", 1)
-        status_forcelist = kwargs.pop("status_forcelist", tuple(range(500, 512)))
-        retries = Retry(
-            total=total_retries,
-            backoff_factor=backoff_factor,
-            status_forcelist=status_forcelist,
-        )
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
     @classmethod
     def make_graph_api_session(
@@ -145,6 +156,12 @@ class PartnerPortalSession:
         log.debug("Serving the bearer token")
         return self._token.access_token
 
+    @retry(
+        retry=retry_if_exception(_should_retry_request_http_error),
+        stop=stop_after_attempt(AZURE_TOTAL_RETRIES),
+        wait=wait_exponential(multiplier=AZURE_BACKOFF_FACTOR),
+        reraise=True,
+    )
     def _request(
         self, method: str, path: str, params: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> requests.Response:
@@ -163,9 +180,11 @@ class PartnerPortalSession:
         formatted_url = self._prefix_url.format(**self.auth_keys)
         url = join_url(formatted_url, path)
         timeout = kwargs.pop("timeout", AZURE_SESSION_TIMEOUT)
-        return self.session.request(
+        response = self.session.request(
             method, url=url, params=params, headers=headers, timeout=timeout, **kwargs
         )
+        response.raise_for_status()
+        return response
 
     def get(self, path: str, **kwargs: Any) -> requests.Response:
         """Execute an API GET request."""
