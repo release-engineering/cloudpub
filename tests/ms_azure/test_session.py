@@ -1,11 +1,14 @@
 import importlib
 import os
+import threading
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict, List, Tuple
 from unittest import mock
 
 import pytest
 from httmock import response
+from requests.adapters import HTTPAdapter
 
 from cloudpub.ms_azure.session import AZURE_SESSION_TIMEOUT, AccessToken, PartnerPortalSession
 from cloudpub.utils import join_url
@@ -233,3 +236,187 @@ class TestPartnerPortalSession:
                 headers=put_headers,
                 timeout=explicit_timeout,
             )
+
+
+def _start_local_server(handler: type[BaseHTTPRequestHandler]) -> tuple[HTTPServer, int]:
+    server = HTTPServer(("127.0.0.1", 0), handler)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, port
+
+
+def _sequential_http_handler(
+    responses: List[Tuple[int, bytes | None]],
+) -> tuple[type[BaseHTTPRequestHandler], List[int]]:
+    """Build a handler that returns each (status, body) in order for GET/PUT."""
+    call_count = [0]
+
+    class Handler(BaseHTTPRequestHandler):
+        def respond(self) -> None:
+            call_count[0] += 1
+            idx = call_count[0] - 1
+            status, body = responses[idx] if idx < len(responses) else responses[-1]
+            self.send_response(status)
+            if body is not None:
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.end_headers()
+
+        do_GET = respond
+        do_PUT = respond
+        do_POST = respond
+
+        def log_message(self, fmt: str, *args: Any) -> None:  # noqa: A003
+            pass
+
+    return Handler, call_count
+
+
+def _partner_portal_over_http(
+    auth_dict: Dict[str, str],
+    port: int,
+    **session_kwargs: Any,
+) -> PartnerPortalSession:
+    """Build a PartnerPortalSession that targets a local HTTP server using the retry adapter."""
+    session = PartnerPortalSession(
+        auth_keys=auth_dict,
+        prefix_url=f"http://127.0.0.1:{port}/rp/product-ingestion",
+        mandatory_params={"$version": auth_dict["AZURE_SCHEMA_VERSION"]},
+        backoff_factor=0,
+        **session_kwargs,
+    )
+    # __init__ only mounts https://; mirror the same Retry policy for http used in tests
+    session.session.mount("http://", session.session.get_adapter("https://"))
+    return session
+
+
+class TestPartnerPortalSessionRetries:
+    """
+    Exercise PartnerPortalSession urllib3 Retry behavior via real HTTP transport.
+
+    PartnerPortalSession mounts urllib3 Retry on https:// for status codes in
+    ``range(500, 512)`` (500–511). These tests exercise the real transport; the
+    ``requests_mock`` library patches ``Session.send`` and would skip urllib3 retries.
+    """
+
+    def test_default_status_forcelist_is_500_through_511(self, auth_dict: Dict[str, str]) -> None:
+        p = PartnerPortalSession(
+            auth_keys=auth_dict,
+            prefix_url="https://graph.microsoft.com/rp/product-ingestion",
+            mandatory_params={"$version": auth_dict["AZURE_SCHEMA_VERSION"]},
+        )
+        adapter = p.session.get_adapter("https://")
+        assert isinstance(adapter, HTTPAdapter)
+        retry = adapter.max_retries
+        assert retry.total == 5
+        assert retry.backoff_factor == 1
+        assert retry.status_forcelist == tuple(range(500, 512))
+
+    @pytest.mark.parametrize(
+        "first_status",
+        [500, 503, 511],
+    )
+    def test_get_retries_on_forcelist_status_then_succeeds(
+        self,
+        auth_dict: Dict[str, str],
+        first_status: int,
+    ) -> None:
+        ok = b'{"ok": true}'
+        handler_cls, call_count = _sequential_http_handler(
+            [(first_status, None), (200, ok)],
+        )
+        server, port = _start_local_server(handler_cls)
+        try:
+            s = _partner_portal_over_http(auth_dict, port)
+            with mock.patch.object(PartnerPortalSession, "_get_token", return_value="t"):
+                r = s.get("foo")
+            assert r.status_code == 200
+            assert r.json() == {"ok": True}
+            assert call_count[0] == 2
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_put_retries_on_forcelist_status_then_succeeds(self, auth_dict: Dict[str, str]) -> None:
+        ok = b'{"saved": true}'
+        handler_cls, call_count = _sequential_http_handler([(503, None), (200, ok)])
+        server, port = _start_local_server(handler_cls)
+        try:
+            s = _partner_portal_over_http(auth_dict, port)
+            with mock.patch.object(PartnerPortalSession, "_get_token", return_value="t"):
+                r = s.put("foo", json={"a": 1})
+            assert r.status_code == 200
+            assert call_count[0] == 2
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    @pytest.mark.parametrize(
+        "status",
+        [403, 407, 408, 429],
+    )
+    def test_get_does_not_retry_status_outside_forcelist(
+        self, auth_dict: Dict[str, str], status: int
+    ) -> None:
+        handler_cls, call_count = _sequential_http_handler([(status, None), (200, b"{}")])
+        server, port = _start_local_server(handler_cls)
+        try:
+            s = _partner_portal_over_http(auth_dict, port)
+            with mock.patch.object(PartnerPortalSession, "_get_token", return_value="t"):
+                r = s.get("foo")
+            assert r.status_code == status
+            assert call_count[0] == 1
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_get_does_not_retry_512(self, auth_dict: Dict[str, str]) -> None:
+        """512 is not in ``range(500, 512)`` (upper bound is 511)."""
+        handler_cls, call_count = _sequential_http_handler([(512, None), (200, b"{}")])
+        server, port = _start_local_server(handler_cls)
+        try:
+            s = _partner_portal_over_http(auth_dict, port)
+            with mock.patch.object(PartnerPortalSession, "_get_token", return_value="t"):
+                r = s.get("foo")
+            assert r.status_code == 512
+            assert call_count[0] == 1
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_urllib3_retry_forcelist_covers_500_through_511(
+        self,
+    ) -> None:
+        """Match ``status_forcelist=tuple(range(500, 512))`` (excludes 512)."""
+        from urllib3.util.retry import Retry
+
+        r = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=tuple(range(500, 512)),
+        )
+        for code in range(500, 512):
+            assert r.is_retry(method="GET", status_code=code)
+        assert not r.is_retry(method="GET", status_code=407)
+        assert not r.is_retry(method="GET", status_code=408)
+        assert not r.is_retry(method="GET", status_code=429)
+        assert not r.is_retry(method="GET", status_code=499)
+        assert not r.is_retry(method="GET", status_code=512)
+
+    def test_post_does_not_retry_by_default_urllib3(self, auth_dict: Dict[str, str]) -> None:
+        """POST is not in urllib3 Retry default allowed_methods; status 500 is not retried."""
+        handler_cls, call_count = _sequential_http_handler(
+            [(500, None), (200, b"{}")],
+        )
+        server, port = _start_local_server(handler_cls)
+        try:
+            s = _partner_portal_over_http(auth_dict, port)
+            with mock.patch.object(PartnerPortalSession, "_get_token", return_value="t"):
+                r = s.post("foo", json={})
+            assert r.status_code == 500
+            assert call_count[0] == 1
+        finally:
+            server.shutdown()
+            server.server_close()
