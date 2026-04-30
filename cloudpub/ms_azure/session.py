@@ -11,7 +11,7 @@ from cloudpub.utils import base_url, join_url
 
 log = logging.getLogger(__name__)
 
-AZURE_SESSION_TIMEOUT: float = float(os.environ.get("AZURE_SESSION_TIMEOUT", 5.0))
+AZURE_SESSION_TIMEOUT: float = float(os.environ.get("AZURE_SESSION_TIMEOUT", 15.0))
 
 
 class AccessToken:
