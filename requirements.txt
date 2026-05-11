@@ -8,13 +8,13 @@ attrs==26.1.0 \
     --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309 \
     --hash=sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32
     # via cloudpub (setup.py)
-boto3==1.43.2 \
-    --hash=sha256:796e859cfb5e93c55276ce746f8020f691eda6b68a0ec4ce4f6fd07a1cca6859 \
-    --hash=sha256:be951cc22769fbcda73fac523b031ee38db45c3ae2b0d828c76b8f6e8e683073
+boto3==1.43.6 \
+    --hash=sha256:179601ec2992726a718053bf41e43c223ceba397d31ceab11f64d9c910d9fc3a \
+    --hash=sha256:e6315effaf12b890b99956e6f8e2c3000a3f64e4ee91943cec3895ce9a836afb
     # via cloudpub (setup.py)
-botocore==1.43.2 \
-    --hash=sha256:7b2ec87b6d0720bff920451ce930e71c2a99cdea48d0eaa66ccf0b21ea747e03 \
-    --hash=sha256:b823454d751a1c24bb403b5b07ab65007689654abb21787df923684e0743976c
+botocore==1.43.6 \
+    --hash=sha256:b1e395b347356860398da42e61c808cf1e34b6fa7180cf2b9d87d986e1a06ba0 \
+    --hash=sha256:b6d1fdbc6f65a5fe0b7e947823aa37535d3f39f3ba4d21110fab1f55bbbcc04b
     # via
     #   boto3
     #   s3transfer
@@ -157,9 +157,9 @@ deepdiff==9.0.0 \
     --hash=sha256:4872005306237b5b50829803feff58a1dfd20b2b357a55de22e7ded65b2008a7 \
     --hash=sha256:b1ae0dd86290d86a03de5fbee728fde43095c1472ae4974bdab23ab4656305bd
     # via cloudpub (setup.py)
-idna==3.13 \
-    --hash=sha256:585ea8fe5d69b9181ec1afba340451fba6ba764af97026f92a91d4eef164a242 \
-    --hash=sha256:892ea0cde124a99ce773decba204c5552b69c3c67ffd5f232eb7696135bc8bb3
+idna==3.14 \
+    --hash=sha256:466d810d7a2cc1022bea9b037c39728d51ae7dad40d480fc9b7d7ecf98ba8ee3 \
+    --hash=sha256:e677eaf072e290f7b725f9acf0b3a2bd55f9fd6f7c70abe5f0e34823d0accf69
     # via requests
 jmespath==1.1.0 \
     --hash=sha256:472c87d80f36026ae83c6ddd0f1d05d4e510134ed462851fd5f754c8c3cbb88d \
@@ -195,9 +195,9 @@ tenacity==9.1.4 \
     --hash=sha256:6095a360c919085f28c6527de529e76a06ad89b23659fa881ae0649b867a9d55 \
     --hash=sha256:adb31d4c263f2bd041081ab33b498309a57c77f9acf2db65aadf0898179cf93a
     # via cloudpub (setup.py)
-urllib3==2.6.3 \
-    --hash=sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed \
-    --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4
+urllib3==2.7.0 \
+    --hash=sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c \
+    --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897
     # via
     #   botocore
     #   requests
