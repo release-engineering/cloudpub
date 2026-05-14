@@ -3,7 +3,7 @@ import os
 import threading
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 from unittest import mock
 
 import pytest
@@ -238,7 +238,7 @@ class TestPartnerPortalSession:
             )
 
 
-def _start_local_server(handler: type[BaseHTTPRequestHandler]) -> tuple[HTTPServer, int]:
+def _start_local_server(handler: Type[BaseHTTPRequestHandler]) -> Tuple[HTTPServer, int]:
     server = HTTPServer(("127.0.0.1", 0), handler)
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -246,8 +246,8 @@ def _start_local_server(handler: type[BaseHTTPRequestHandler]) -> tuple[HTTPServ
 
 
 def _sequential_http_handler(
-    responses: List[Tuple[int, bytes | None]],
-) -> tuple[type[BaseHTTPRequestHandler], List[int]]:
+    responses: List[Tuple[int, Optional[bytes]]],
+) -> Tuple[Type[BaseHTTPRequestHandler], List[int]]:
     """Build a handler that returns each (status, body) in order for GET/PUT."""
     call_count = [0]
 
