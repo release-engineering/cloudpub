@@ -363,7 +363,9 @@ class ProductDetailDescription(AttrsJSONDecodeMixin):
     long_description: str = field(validator=instance_of(str), metadata={"alias": "LongDescription"})
     """A detailed description of the product."""
 
-    manufacturer: str = field(validator=instance_of(str), metadata={"alias": "Manufacturer"})
+    manufacturer: Optional[str] = field(
+        validator=optional(instance_of(str)), metadata={"alias": "Manufacturer"}
+    )
     """The product's manufacturer name."""
 
     product_state: str = field(validator=instance_of(str), metadata={"alias": "ProductState"})
