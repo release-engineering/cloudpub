@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.3 - 2026-05-26
+
+- models: Make Manufacturer optional in ProductDetailDescription by @lslebodn in https://github.com/release-engineering/cloudpub/pull/205
+- update dependencies
+
 ## 1.7.2 - 2026-05-04
 
 - Azure: update AZURE_SESSION_TIMEOUT to 15s by @JAVGan in https://github.com/release-engineering/cloudpub/pull/195
