@@ -450,6 +450,35 @@ class AzureService(BaseService[AzurePublishingMetadata]):
                 NotFoundError, f"No such plan with name \"{plan_name} for {product_name}\""
             )
 
+    @staticmethod
+    def _prepare_resources_for_diff(offer_json: dict) -> dict:
+        """Prepare the offer JSON for diffing by sorting and filtering resources.
+
+        The Product Ingestion API does not guarantee the order of resources in the
+        resource-tree response. Sorting by durable ID ensures that DeepDiff compares
+        matching resources rather than resources that happen to share the same index.
+
+        Submission resources are filtered out as they always differ between submission
+        targets (e.g. draft vs live) due to their target-specific durable ID, status,
+        result and created fields.
+
+        Args:
+            offer_json (dict)
+                The serialized product JSON.
+        Returns:
+            dict: The product JSON with resources sorted and filtered.
+        """
+        prepared = offer_json.copy()
+        prepared["resources"] = sorted(
+            (
+                r
+                for r in offer_json["resources"]
+                if not (r.get("id") or "").startswith("submission/")
+            ),
+            key=lambda r: r.get("id", ""),
+        )
+        return prepared
+
     def diff_offer(self, product: Product, target: str) -> DeepDiff:
         """Compute the difference between the provided product and the one in the remote.
 
@@ -462,7 +491,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             DeepDiff: The diff data.
         """
         remote = self.get_product(product.id, target=target)
-        return DeepDiff(remote.to_json(), product.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES)
+        return DeepDiff(
+            self._prepare_resources_for_diff(remote.to_json()),
+            self._prepare_resources_for_diff(product.to_json()),
+            exclude_regex_paths=self.DIFF_EXCLUDES,
+        )
 
     def diff_two_offers(self, last_offer: Product, prev_offer: Product) -> DeepDiff:
         """Compute the difference between two provided products.
@@ -476,7 +509,9 @@ class AzureService(BaseService[AzurePublishingMetadata]):
             DeepDiff: The diff data.
         """
         return DeepDiff(
-            prev_offer.to_json(), last_offer.to_json(), exclude_regex_paths=self.DIFF_EXCLUDES
+            self._prepare_resources_for_diff(prev_offer.to_json()),
+            self._prepare_resources_for_diff(last_offer.to_json()),
+            exclude_regex_paths=self.DIFF_EXCLUDES,
         )
 
     def submit_to_status(
