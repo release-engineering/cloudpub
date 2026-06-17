@@ -98,7 +98,20 @@ def errors() -> List[Dict[str, Any]]:
         {
             "code": "conflict",
             "message": "Error message",
-            "details": [{"code": "invalidResource", "message": "Failure for resource"}],
+            "details": [
+                {"code": "invalidResource", "message": "Failure for resource", "details": []}
+            ],
+        }
+    ]
+
+
+@pytest.fixture
+def cert_error_invalid_schema() -> List[Dict[str, Any]]:
+    return [
+        {
+            "code": "internalServerError",
+            "message": "Certification failed.",
+            "details": {},
         }
     ]
 
@@ -629,3 +642,26 @@ def job_details_completed_failure_obj(
     job_details_completed_failure: Dict[str, Any],
 ) -> ConfigureStatus:
     return ConfigureStatus.from_json(job_details_completed_failure)
+
+
+@pytest.fixture
+def cert_error_failure() -> List[Dict[str, Any]]:
+    return [
+        {
+            "resourceId": "submission/2d541119",
+            "code": "internalServerError",
+            "message": "Operation failed",
+            "details": [
+                {
+                    "code": "invalidState",
+                    "message": "Certification",
+                    "details": [
+                        {
+                            "code": "invalidState",
+                            "message": "Issues found during Certification.",
+                        }
+                    ],
+                }
+            ],
+        }
+    ]
