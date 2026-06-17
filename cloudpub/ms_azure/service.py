@@ -90,7 +90,11 @@ class AzureService(BaseService[AzurePublishingMetadata]):
     AZURE_API_VERSION = os.environ.get("AZURE_API_VERSION", "2022-07-01")
     AZURE_SCHEMA_VERSION = os.environ.get("AZURE_SCHEMA_VERSION", "2022-07-01")
     CONFIGURE_SCHEMA = "https://schema.mp.microsoft.com/schema/configure/{AZURE_API_VERSION}"
-    DIFF_EXCLUDES = [r"root\['resources'\]\[[0-9]+\]\['url'\]"]
+    DIFF_EXCLUDES = [
+        r"root\['target'\]\['targetType'\]",
+        r"root\['resources'\]\[\d+\]\['url'\]",
+        r"root\['resources'\]\[\d+\]\['assets'\]\['[^']+'\]\['imageList'\]\[\d+\]\['url'\]",
+    ]
 
     def __init__(
         self,
