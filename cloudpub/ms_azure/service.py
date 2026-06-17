@@ -8,12 +8,18 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 from deepdiff import DeepDiff
 from requests import HTTPError
 from tenacity import RetryError, Retrying, retry
-from tenacity.retry import retry_if_exception_type, retry_if_result
+from tenacity.retry import retry_if_exception_type, retry_if_not_exception_type, retry_if_result
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 
 from cloudpub.common import BaseService
-from cloudpub.error import ConflictError, InvalidStateError, NotFoundError, Timeout
+from cloudpub.error import (
+    CertificationError,
+    ConflictError,
+    InvalidStateError,
+    NotFoundError,
+    Timeout,
+)
 from cloudpub.models.ms_azure import (
     RESOURCE_MAPING,
     AzureResource,
@@ -43,6 +49,7 @@ from cloudpub.ms_azure.utils import (
     TechnicalConfigLookUpData,
     create_disk_version_from_scratch,
     is_azure_job_not_complete,
+    is_certification_error,
     is_sas_present,
     logdiff,
     seek_disk_version,
@@ -190,11 +197,14 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         Returns:
             ConfigureStatus: The ConfigureStatus from JobID
         Raises:
+            CertificationError: If the job failed due to Certifications issues.
             InvalidStateError: If the job has failed.
         """
         job_details = self._query_job_details(job_id=job_id)
         if job_details.job_result == "failed":
             error_message = f"Job {job_id} failed: \n{job_details.errors}"
+            if is_certification_error(job_details.errors):
+                self._raise_error(CertificationError, error_message)
             self._raise_error(InvalidStateError, error_message)
         elif job_details.job_result == "succeeded":
             log.debug("Job %s succeeded", job_id)
@@ -731,6 +741,7 @@ class AzureService(BaseService[AzurePublishingMetadata]):
     @retry(
         wait=wait_fixed(wait=60),
         stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type(CertificationError),
         reraise=True,
     )
     def _publish_preview(
@@ -754,16 +765,18 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         if res.job_result != 'succeeded' or not self.get_submission_state(
             product.id, state="preview"
         ):
-            errors = "\n".join(res.errors)
             failure_msg = (
                 f"Failed to submit the product {product_name} ({product.id}) to preview. "
-                f"Status: {res.job_result} Errors: {errors}"
+                f"Status: {res.job_result} Errors: {res.errors}"
             )
+            if is_certification_error(res.errors):
+                self._raise_error(CertificationError, failure_msg)
             raise RuntimeError(failure_msg)
 
     @retry(
         wait=wait_fixed(wait=60),
         stop=stop_after_attempt(3),
+        retry=retry_if_not_exception_type(CertificationError),
         reraise=True,
     )
     def _publish_live(self, product: Product, product_name: str) -> None:
@@ -781,11 +794,12 @@ class AzureService(BaseService[AzurePublishingMetadata]):
         res = self.submit_to_status(product_id=product.id, status='live')
 
         if res.job_result != 'succeeded' or not self.get_submission_state(product.id, state="live"):
-            errors = "\n".join(res.errors)
             failure_msg = (
                 f"Failed to submit the product {product_name} ({product.id}) to live. "
-                f"Status: {res.job_result} Errors: {errors}"
+                f"Status: {res.job_result} Errors: {res.errors}"
             )
+            if is_certification_error(res.errors):
+                self._raise_error(CertificationError, failure_msg)
             raise RuntimeError(failure_msg)
 
     def _overwrite_disk_version(

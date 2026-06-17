@@ -5,6 +5,7 @@ from typing import Any, Dict
 import pytest
 from _pytest.logging import LogCaptureFixture
 
+from cloudpub.error import InvalidSchema
 from cloudpub.models.ms_azure import (
     ConfigureStatus,
     DiskVersion,
@@ -17,6 +18,7 @@ from cloudpub.ms_azure.utils import (
     create_disk_version_from_scratch,
     get_image_type_mapping,
     is_azure_job_not_complete,
+    is_certification_error,
     is_sas_present,
     update_skus,
 )
@@ -508,3 +510,39 @@ class TestAzureUtils:
         res.vm_images = sorted(res.vm_images, key=attrgetter("image_type"))
 
         assert res == disk_version_arm64_obj
+
+
+def test_is_certification_error(cert_error_failure: list[Dict[str, Any]]) -> None:
+    valid_non_certification_errors: list[Dict[str, Any]] = [
+        {
+            "code": "conflict",
+            "message": "Error message",
+            "details": [
+                {"code": "invalidResource", "message": "Failure for resource", "details": []}
+            ],
+        }
+    ]
+    assert is_certification_error(cert_error_failure) is True
+    assert is_certification_error(valid_non_certification_errors) is False
+    assert is_certification_error([]) is False
+
+
+@pytest.mark.parametrize(
+    "errors",
+    [
+        pytest.param([123], id="non-dict-error-item"),
+        pytest.param(
+            [
+                {
+                    "code": "internalServerError",
+                    "message": "Certification failed.",
+                    "details": {},
+                }
+            ],
+            id="non-list-details",
+        ),
+    ],
+)
+def test_is_certification_error_invalid_schema(errors: list[Any]) -> None:
+    with pytest.raises(InvalidSchema, match="Invalid schema"):
+        is_certification_error(errors)
