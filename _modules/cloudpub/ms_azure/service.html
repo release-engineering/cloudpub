@@ -125,7 +125,11 @@
     <span class="n">AZURE_API_VERSION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;AZURE_API_VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;2022-07-01&quot;</span><span class="p">)</span>
     <span class="n">AZURE_SCHEMA_VERSION</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;AZURE_SCHEMA_VERSION&quot;</span><span class="p">,</span> <span class="s2">&quot;2022-07-01&quot;</span><span class="p">)</span>
     <span class="n">CONFIGURE_SCHEMA</span> <span class="o">=</span> <span class="s2">&quot;https://schema.mp.microsoft.com/schema/configure/</span><span class="si">{AZURE_API_VERSION}</span><span class="s2">&quot;</span>
-    <span class="n">DIFF_EXCLUDES</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;root\[&#39;resources&#39;\]\[[0-9]+\]\[&#39;url&#39;\]&quot;</span><span class="p">]</span>
+    <span class="n">DIFF_EXCLUDES</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">r</span><span class="s2">&quot;root\[&#39;target&#39;\]\[&#39;targetType&#39;\]&quot;</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;root\[&#39;resources&#39;\]\[\d+\]\[&#39;url&#39;\]&quot;</span><span class="p">,</span>
+        <span class="sa">r</span><span class="s2">&quot;root\[&#39;resources&#39;\]\[\d+\]\[&#39;assets&#39;\]\[&#39;[^&#39;]+&#39;\]\[&#39;imageList&#39;\]\[\d+\]\[&#39;url&#39;\]&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 
 <div class="viewcode-block" id="AzureService.__init__">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.__init__">[docs]</a>
@@ -521,6 +525,35 @@
             <span class="p">)</span></div>
 
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_resources_for_diff</span><span class="p">(</span><span class="n">offer_json</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare the offer JSON for diffing by sorting and filtering resources.</span>
+
+<span class="sd">        The Product Ingestion API does not guarantee the order of resources in the</span>
+<span class="sd">        resource-tree response. Sorting by durable ID ensures that DeepDiff compares</span>
+<span class="sd">        matching resources rather than resources that happen to share the same index.</span>
+
+<span class="sd">        Submission resources are filtered out as they always differ between submission</span>
+<span class="sd">        targets (e.g. draft vs live) due to their target-specific durable ID, status,</span>
+<span class="sd">        result and created fields.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            offer_json (dict)</span>
+<span class="sd">                The serialized product JSON.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: The product JSON with resources sorted and filtered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">prepared</span> <span class="o">=</span> <span class="n">offer_json</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">prepared</span><span class="p">[</span><span class="s2">&quot;resources&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">r</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">offer_json</span><span class="p">[</span><span class="s2">&quot;resources&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;submission/&quot;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">prepared</span>
+
 <div class="viewcode-block" id="AzureService.diff_offer">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzureService.diff_offer">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">diff_offer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepDiff</span><span class="p">:</span>
@@ -535,7 +568,11 @@
 <span class="sd">            DeepDiff: The diff data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">remote</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">DeepDiff</span><span class="p">(</span><span class="n">remote</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">product</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">DeepDiff</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_resources_for_diff</span><span class="p">(</span><span class="n">remote</span><span class="o">.</span><span class="n">to_json</span><span class="p">()),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_resources_for_diff</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">to_json</span><span class="p">()),</span>
+            <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AzureService.diff_two_offers">
@@ -552,7 +589,9 @@
 <span class="sd">            DeepDiff: The diff data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">DeepDiff</span><span class="p">(</span>
-            <span class="n">prev_offer</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">last_offer</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_resources_for_diff</span><span class="p">(</span><span class="n">prev_offer</span><span class="o">.</span><span class="n">to_json</span><span class="p">()),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_resources_for_diff</span><span class="p">(</span><span class="n">last_offer</span><span class="o">.</span><span class="n">to_json</span><span class="p">()),</span>
+            <span class="n">exclude_regex_paths</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">DIFF_EXCLUDES</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
