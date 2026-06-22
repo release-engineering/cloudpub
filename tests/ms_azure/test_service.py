@@ -581,9 +581,10 @@ class TestAzureService:
         data_product["resources"][0]["id"] = "product/foo/bar"
 
         diff = azure_service.diff_offer(Product.from_json(data_product), target=target)
+        # After sorting by durable ID the product resource is at index 7
         assert diff == {
             'values_changed': {
-                "root['resources'][0]['id']": {
+                "root['resources'][7]['id']": {
                     'new_value': 'product/foo/bar',
                     'old_value': 'product/ffffffff-ffff-ffff-ffff-ffffffffffff',
                 },
@@ -600,14 +601,50 @@ class TestAzureService:
         last_offer = Product.from_json(data_product)
 
         diff = azure_service.diff_two_offers(last_offer, product_obj)
+        # After sorting by durable ID the product resource is at index 7
         assert diff == {
             'values_changed': {
-                "root['resources'][0]['id']": {
+                "root['resources'][7]['id']": {
                     'new_value': 'product/foo/bar',
                     'old_value': 'product/ffffffff-ffff-ffff-ffff-ffffffffffff',
                 },
             },
         }
+
+    def test_diff_two_offers_reordered_resources(
+        self,
+        azure_service: AzureService,
+        product_obj: Product,
+    ) -> None:
+        data_product = deepcopy(product_obj.to_json())
+        data_product["resources"] = list(reversed(data_product["resources"]))
+        reordered_offer = Product.from_json(data_product)
+
+        assert azure_service.diff_two_offers(reordered_offer, product_obj) == {}
+
+    def test_prepare_resources_for_diff_filters_submission(
+        self,
+        product_obj: Product,
+    ) -> None:
+        offer_json = product_obj.to_json()
+        # Ensure the fixture has a submission resource
+        submission_ids = [
+            r["id"] for r in offer_json["resources"] if r["id"].startswith("submission/")
+        ]
+        assert submission_ids, "Fixture should contain a submission resource"
+
+        prepared = AzureService._prepare_resources_for_diff(offer_json)
+
+        # Submission resources must be filtered out
+        prepared_ids = [r["id"] for r in prepared["resources"]]
+        for sid in submission_ids:
+            assert sid not in prepared_ids
+
+        # Non-submission resources must be preserved
+        assert len(prepared["resources"]) == len(offer_json["resources"]) - len(submission_ids)
+
+        # Resources must be sorted by durable ID
+        assert prepared_ids == sorted(prepared_ids)
 
     @pytest.mark.parametrize("target", ["preview", "live", "draft"])
     @mock.patch("cloudpub.ms_azure.AzureService.get_product")
@@ -2511,9 +2548,11 @@ class TestAzureService:
 
         # Present messages
         assert "The DiskVersion doesn't exist, creating one from scratch." in caplog.text
+        # After sorting by durable ID (with submission filtered out)
+        # the technical config resource is at index 11
         assert (
             "Found the following offer diff before publishing:\n"
-            "Item root['resources'][1]['vmImageVersions'][1] added to iterable."
+            "Item root['resources'][11]['vmImageVersions'][1] added to iterable."
         ) in caplog.text
         assert (
             'Updating the technical configuration for "example-product/plan-1" on "draft".'
