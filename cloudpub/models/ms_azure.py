@@ -67,7 +67,7 @@ class ConfigureStatus(AttrsJSONDecodeMixin):
     resource_uri: Optional[str] = field(metadata={"alias": "resourceUri", "hide_unset": True})
     """The resource URI related to the configure job."""
 
-    errors: List[str]
+    errors: List[Dict[str, Any]]
     """List of errors when the ``job_result`` is ``failed``."""
 
 

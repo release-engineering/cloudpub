@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 from deepdiff import DeepDiff
 
 from cloudpub.common import PublishingMetadata  # Cannot circular import AzurePublishingMetadata
+from cloudpub.error import InvalidSchema
 from cloudpub.models.ms_azure import (
     ConfigureStatus,
     DiskVersion,
@@ -544,3 +545,29 @@ def logdiff(diff: DeepDiff) -> None:
     """Log the offer diff if it exists."""
     if diff:
         log.warning("Found the following offer diff before publishing:\n%s", diff.pretty())
+
+
+def _contains_certification_error(item: Any) -> bool:
+    """Recursively inspect Azure error payloads for certification failures."""
+    if not isinstance(item, dict):
+        raise InvalidSchema(f"Invalid schema for error object: {item}")
+
+    code: str = item.get("code", "")
+    message: str = item.get("message", "")
+    if code == "invalidState" and "certification" in message.lower():
+        return True
+    if not isinstance(item.get('details'), list):
+        raise InvalidSchema(f"Invalid schema for 'details' inside error object: {item}")
+    for detail in item.get("details") or []:
+        if _contains_certification_error(detail):
+            return True
+    return False
+
+
+def is_certification_error(errors: List[Dict[str, Any]]) -> bool:
+    """Return True when Azure job errors indicate a certification failure.
+
+    Certification failures are permanent for a given submission and should not
+    be retried.
+    """
+    return any(_contains_certification_error(error) for error in errors)

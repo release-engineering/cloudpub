@@ -27,3 +27,11 @@ class ConflictError(RuntimeError):
 
 class Timeout(Exception):
     """Represent a missing resource."""
+
+
+class CertificationError(InvalidStateError):
+    """Report Azure Marketplace certification failure."""
+
+
+class InvalidSchema(RuntimeError):
+    """Report when an invalid schema is returned from cloud provider API."""
