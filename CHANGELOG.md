@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.4 - 2026-07-07
+
+- fix(SPSTRAT-760): Sort resources by durable ID before diffing offers and update DIFF EXCLUDE by @lslebodn in https://github.com/release-engineering/cloudpub/pull/210
+- Do not retry on certification errors by @ashwgit in https://github.com/release-engineering/cloudpub/pull/211
+- Update dependencies
+
 ## 1.7.3 - 2026-05-26
 
 - models: Make Manufacturer optional in ProductDetailDescription by @lslebodn in https://github.com/release-engineering/cloudpub/pull/205
