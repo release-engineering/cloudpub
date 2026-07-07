@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from copy import deepcopy
 from typing import Any, Dict, List
 from unittest import mock
@@ -12,7 +13,13 @@ from requests import Response
 from requests.exceptions import HTTPError
 
 from cloudpub.common import BaseService
-from cloudpub.error import ConflictError, InvalidStateError, NotFoundError, Timeout
+from cloudpub.error import (
+    CertificationError,
+    ConflictError,
+    InvalidStateError,
+    NotFoundError,
+    Timeout,
+)
 from cloudpub.models.ms_azure import (
     ConfigureStatus,
     CustomerLeads,
@@ -309,9 +316,16 @@ class TestAzureService:
         azure_service: AzureService,
         caplog: LogCaptureFixture,
         job_details_running_obj: ConfigureStatus,
-        job_details_completed_failure_obj: ConfigureStatus,
         errors: List[Dict[str, Any]],
     ) -> None:
+        job_details_completed_failure_obj = ConfigureStatus.from_json(
+            {
+                "jobId": "job_id_111",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": errors,
+            }
+        )
         mock_job_details.side_effect = [
             job_details_running_obj,
             job_details_running_obj,
@@ -328,6 +342,34 @@ class TestAzureService:
             assert mock_job_details.call_count == 4
             assert f"Job {job_id} failed" in caplog.text
             assert f"Job {job_id} succeeded" not in caplog.text
+
+    @mock.patch("cloudpub.ms_azure.AzureService._query_job_details")
+    def test_get_job_details_after_failed_completion_on_certification_error(
+        self,
+        mock_job_details: mock.MagicMock,
+        azure_service: AzureService,
+        job_details_running_obj: ConfigureStatus,
+        cert_error_failure: List[Dict[str, Any]],
+    ) -> None:
+        cert_error_response = ConfigureStatus.from_json(
+            {
+                "jobId": "job_id_111",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": cert_error_failure,
+            }
+        )
+        mock_job_details.side_effect = [
+            job_details_running_obj,
+            job_details_running_obj,
+            cert_error_response,
+        ]
+        job_id = "job_id_111"
+
+        with pytest.raises(CertificationError, match=f"Job {job_id} failed:"):
+            azure_service._wait_for_job_completion(job_id=job_id)
+
+        assert mock_job_details.call_count == 3
 
     @mock.patch("cloudpub.ms_azure.AzureService._wait_for_job_completion")
     @mock.patch("cloudpub.ms_azure.AzureService._configure")
@@ -977,7 +1019,10 @@ class TestAzureService:
                 "jobId": "1",
                 "jobStatus": "completed",
                 "jobResult": "failed",
-                "errors": ["failure1", "failure2"],
+                "errors": [
+                    {"code": "invalidState", "message": "message1", "details": []},
+                    {"code": "invalidState", "message": "message2", "details": []},
+                ],
             }
         )
         mock_is_sbpreview.return_value = False
@@ -987,7 +1032,7 @@ class TestAzureService:
         azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
         expected_err = (
             f"Failed to submit the product test-product \\({product_obj.id}\\) to preview. "
-            "Status: failed Errors: failure1\nfailure2"
+            f"Status: failed Errors: {re.escape(str(err_resp.errors))}"
         )
 
         # Test
@@ -1032,13 +1077,22 @@ class TestAzureService:
         product_obj: Product,
         azure_service: AzureService,
     ) -> None:
+        valid_non_certification_errors: list[Dict[str, Any]] = [
+            {
+                "code": "conflict",
+                "message": "Error message",
+                "details": [
+                    {"code": "invalidResource", "message": "Failure for resource", "details": []}
+                ],
+            }
+        ]
         # Prepare mocks
         err_resp = ConfigureStatus.from_json(
             {
                 "jobId": "1",
                 "jobStatus": "completed",
                 "jobResult": "failed",
-                "errors": ["failure1", "failure2"],
+                "errors": valid_non_certification_errors,
             }
         )
         mock_subst.side_effect = [err_resp for _ in range(3)]
@@ -1047,7 +1101,7 @@ class TestAzureService:
         azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
         expected_err = (
             f"Failed to submit the product test-product \\({product_obj.id}\\) to live. "
-            "Status: failed Errors: failure1\nfailure2"
+            f"Status: failed Errors: *"
         )
 
         # Test
@@ -2569,3 +2623,86 @@ class TestAzureService:
         mock_configure.assert_has_calls(
             [mock.call(resources=[expected_tc]), mock.call(resources=expected_modular_resources)]
         )
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.AzureService._is_submission_in_preview")
+    @mock.patch("cloudpub.ms_azure.AzureService._raise_error")
+    def test_publish_preview_fail_no_retry_on_certification_error(
+        self,
+        mock_raise_error: mock.MagicMock,
+        mock_is_sbpreview: mock.MagicMock,
+        mock_subst: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+        cert_error_failure: List[Dict[str, Any]],
+    ) -> None:
+        err_resp = ConfigureStatus.from_json(
+            {
+                "jobId": "1",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": cert_error_failure,
+            }
+        )
+        mock_is_sbpreview.return_value = False
+        mock_subst.side_effect = [err_resp for _ in range(3)]
+        mock_getsubst.side_effect = [None for _ in range(3)]
+        azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
+        expected_msg = (
+            f"Failed to submit the product test-product ({product_obj.id}) to preview. "
+            f"Status: failed Errors: {err_resp.errors}"
+        )
+        expected_err = (
+            f"Failed to submit the product test-product \\({product_obj.id}\\) to preview. "
+            r"Status: failed Errors: .*"
+        )
+        mock_raise_error.side_effect = CertificationError(expected_msg)
+
+        with pytest.raises(CertificationError, match=expected_err):
+            azure_service._publish_preview(product_obj, "test-product")
+
+        mock_raise_error.assert_called_once_with(CertificationError, expected_msg)
+        assert mock_subst.call_count == 1
+        assert mock_getsubst.call_count == 0
+
+    @mock.patch("cloudpub.ms_azure.AzureService.get_submission_state")
+    @mock.patch("cloudpub.ms_azure.AzureService.submit_to_status")
+    @mock.patch("cloudpub.ms_azure.AzureService._raise_error")
+    def test_publish_live_fail_no_retry_on_certification_error(
+        self,
+        mock_raise_error: mock.MagicMock,
+        mock_subst: mock.MagicMock,
+        mock_getsubst: mock.MagicMock,
+        product_obj: Product,
+        azure_service: AzureService,
+        cert_error_failure: List[Dict[str, Any]],
+    ) -> None:
+        err_resp = ConfigureStatus.from_json(
+            {
+                "jobId": "1",
+                "jobStatus": "completed",
+                "jobResult": "failed",
+                "errors": cert_error_failure,
+            }
+        )
+        mock_subst.side_effect = [err_resp for _ in range(3)]
+        mock_getsubst.side_effect = [None for _ in range(3)]
+        azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
+        expected_msg = (
+            f"Failed to submit the product test-product ({product_obj.id}) to live. "
+            f"Status: failed Errors: {err_resp.errors}"
+        )
+        expected_err = (
+            f"Failed to submit the product test-product \\({product_obj.id}\\) to live. "
+            r"Status: failed Errors: .*"
+        )
+        mock_raise_error.side_effect = CertificationError(expected_msg)
+
+        with pytest.raises(CertificationError, match=expected_err):
+            azure_service._publish_live(product_obj, "test-product")
+
+        mock_raise_error.assert_called_once_with(CertificationError, expected_msg)
+        assert mock_subst.call_count == 1
+        assert mock_getsubst.call_count == 0
