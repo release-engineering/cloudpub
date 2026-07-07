@@ -39,6 +39,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">deepdiff</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepDiff</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">PublishingMetadata</span>  <span class="c1"># Cannot circular import AzurePublishingMetadata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.error</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidSchema</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">cloudpub.models.ms_azure</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ConfigureStatus</span><span class="p">,</span>
     <span class="n">DiskVersion</span><span class="p">,</span>
@@ -583,6 +584,32 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Log the offer diff if it exists.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">diff</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_contains_certification_error</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively inspect Azure error payloads for certification failures.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InvalidSchema</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid schema for error object: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s2">&quot;invalidState&quot;</span> <span class="ow">and</span> <span class="s2">&quot;certification&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;details&#39;</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InvalidSchema</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid schema for &#39;details&#39; inside error object: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;details&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+        <span class="k">if</span> <span class="n">_contains_certification_error</span><span class="p">(</span><span class="n">detail</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">is_certification_error</span><span class="p">(</span><span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when Azure job errors indicate a certification failure.</span>
+
+<span class="sd">    Certification failures are permanent for a given submission and should not</span>
+<span class="sd">    be retried.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">_contains_certification_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">)</span>
 </pre></div>
 
           </div>
