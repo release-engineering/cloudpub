@@ -8,13 +8,13 @@ attrs==26.1.0 \
     --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309 \
     --hash=sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32
     # via cloudpub (setup.py)
-boto3==1.43.46 \
-    --hash=sha256:66c0d943b049a46a492ec4ec2ebe73c930b1842c7137bee83aad6d93e95d4d96 \
-    --hash=sha256:69453e2c1bcb9fd9806527ab99950cacfc2826cb0dce9a3a0414d19270c06c3c
+boto3==1.43.51 \
+    --hash=sha256:a97057bb609fd38c80448db6a93db770786775dabd651401debf09816d4553d7 \
+    --hash=sha256:b5a416cc703db73b69b22bef563c89c1fb14a4b10a93628d3c7abc4dd1aaf979
     # via cloudpub (setup.py)
-botocore==1.43.46 \
-    --hash=sha256:59f2e1ac3cdc66d191cae91c0804bc41847ce817dc8147cf43eaada8f76a5533 \
-    --hash=sha256:cb673891e623ae6e6a1bf24d94ef169504f3eb02584adb5d5bee2f6aae819b60
+botocore==1.43.51 \
+    --hash=sha256:7c2c538c932bddc95834e177ce6f91dcc388c6a7934b4f8d0db13caa30e3e543 \
+    --hash=sha256:e0e5e88585fdb01dcb6b533ac2dd3f18d5d45092a14ccbfd330e3576a4152128
     # via
     #   boto3
     #   s3transfer
