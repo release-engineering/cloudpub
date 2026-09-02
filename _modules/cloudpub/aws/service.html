@@ -76,12 +76,12 @@
 <div class="viewcode-block" id="AWSVersionMetadata">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSVersionMetadata">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AWSVersionMetadata</span><span class="p">(</span><span class="n">PublishingMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A collection of metadata necessary for publishing a AMI into a product.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A collection of metadata necessary for publishing a AMI into a product."""</span>
 
 <div class="viewcode-block" id="AWSVersionMetadata.__init__">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSVersionMetadata.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_mapping</span><span class="p">:</span> <span class="n">VersionMapping</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new AWS Version Metadata object.</span>
 
 <span class="sd">        Args:</span>
@@ -90,7 +90,7 @@
 <span class="sd">            marketplace_entity_type (str)</span>
 <span class="sd">                Product type of the AWS product</span>
 <span class="sd">                Example: AmiProduct</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">marketplace_entity_type</span> <span class="o">=</span> <span class="n">marketplace_entity_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">version_mapping</span> <span class="o">=</span> <span class="n">version_mapping</span>
 
@@ -102,7 +102,7 @@
 <div class="viewcode-block" id="AWSProductService">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AWSProductService</span><span class="p">(</span><span class="n">BaseService</span><span class="p">[</span><span class="n">AWSVersionMetadata</span><span class="p">]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new service provider for AWS using Boto3.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Create a new service provider for AWS using Boto3."""</span>
 
     <span class="c1"># Boto3 docs</span>
     <span class="c1"># https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html</span>
@@ -113,11 +113,11 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">access_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">secret_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;us-east-1&quot;</span><span class="p">,</span>
+        <span class="n">region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"us-east-1"</span><span class="p">,</span>
         <span class="n">attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">288</span><span class="p">,</span>
         <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">600</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        AWS cloud provider service.</span>
 
 <span class="sd">        Args:</span>
@@ -127,7 +127,7 @@
 <span class="sd">                AWS account secret access key</span>
 <span class="sd">            region (str, optional)</span>
 <span class="sd">                AWS region for compute operations</span>
-<span class="sd">                This defaults to &#39;us-east-1&#39;</span>
+<span class="sd">                This defaults to 'us-east-1'</span>
 <span class="sd">            attempts (int, optional)</span>
 <span class="sd">                Max number of times to poll</span>
 <span class="sd">                while waiting for changeset</span>
@@ -136,14 +136,14 @@
 <span class="sd">                Seconds between polling</span>
 <span class="sd">                while waiting for changeset</span>
 <span class="sd">                Defaults to 600</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">(</span>
             <span class="n">aws_access_key_id</span><span class="o">=</span><span class="n">access_id</span><span class="p">,</span>
             <span class="n">aws_secret_access_key</span><span class="o">=</span><span class="n">secret_key</span><span class="p">,</span>
             <span class="n">region_name</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;marketplace-catalog&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">"marketplace-catalog"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_changeset_attempts</span> <span class="o">=</span> <span class="n">attempts</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_changeset_interval</span> <span class="o">=</span> <span class="n">interval</span>
 
@@ -152,14 +152,14 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_product_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="n">ProductDetailResponse</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">details</span><span class="o">.</span><span class="n">versions</span><span class="p">:</span>
-            <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">details</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="s2">&quot;The details from the response are: &quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="s2">&quot;This product has no versions&quot;</span><span class="p">)</span>
+            <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">details</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span> <span class="s2">"The details from the response are: "</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="s2">"This product has no versions"</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AWSProductService.get_product_by_id">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_by_id">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_product_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductDetailResponse</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a product detail by it&#39;s id.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get a product detail by it's id.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str)</span>
@@ -169,14 +169,14 @@
 <span class="sd">            ProductDetailResponse: The details for a product</span>
 <span class="sd">        Raises:</span>
 <span class="sd">            NotFoundError when the product is not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rsp</span> <span class="o">=</span> <span class="n">DescribeEntityResponse</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">describe_entity</span><span class="p">(</span><span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span> <span class="n">EntityId</span><span class="o">=</span><span class="n">entity_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">describe_entity</span><span class="p">(</span><span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span> <span class="n">EntityId</span><span class="o">=</span><span class="n">entity_id</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">rsp</span><span class="o">.</span><span class="n">details_document</span><span class="p">:</span>
             <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such product with EntityId: </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"No such product with EntityId: </span><span class="se">\"</span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">rsp</span><span class="o">.</span><span class="n">details_document</span></div>
 
@@ -186,8 +186,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_product_by_name</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">product_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductDetailResponse</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a product detail by it&#39;s name.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get a product detail by it's name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            marketplace_entity_type (str)</span>
@@ -200,12 +200,12 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            NotFoundError when the product is not found.</span>
 <span class="sd">            InvalidStateError when more than one product is found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">filter_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;ValueList&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">product_name</span><span class="p">]}]</span>
+<span class="sd">        """</span>
+        <span class="n">filter_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"Name"</span><span class="p">:</span> <span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"ValueList"</span><span class="p">:</span> <span class="p">[</span><span class="n">product_name</span><span class="p">]}]</span>
 
         <span class="n">entity_rsp</span> <span class="o">=</span> <span class="n">ListEntitiesResponse</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">list_entities</span><span class="p">(</span>
-                <span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span>
+                <span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span>
                 <span class="n">EntityType</span><span class="o">=</span><span class="n">marketplace_entity_type</span><span class="p">,</span>
                 <span class="n">FilterList</span><span class="o">=</span><span class="n">filter_list</span><span class="p">,</span>
             <span class="p">)</span>
@@ -213,17 +213,17 @@
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_rsp</span><span class="o">.</span><span class="n">entity_summary_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">entity_rsp</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such product with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"No such product with name </span><span class="se">\"</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_rsp</span><span class="o">.</span><span class="n">entity_summary_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">entity_rsp</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">InvalidStateError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Multiple responses found for </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">InvalidStateError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Multiple responses found for </span><span class="se">\"</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># We should only get one response based on filtering</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entity_rsp</span><span class="o">.</span><span class="n">entity_summary_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;entity_id&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">entity_rsp</span><span class="o">.</span><span class="n">entity_summary_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">"entity_id"</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_id</span><span class="p">(</span><span class="n">entity_rsp</span><span class="o">.</span><span class="n">entity_summary_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">entity_id</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such product with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"No such product with name </span><span class="se">\"</span><span class="si">{</span><span class="n">product_name</span><span class="si">}</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.get_product_version_details">
@@ -231,8 +231,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_product_version_details</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version_id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProductVersionsResponse</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a product detail by it&#39;s name.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get a product detail by it's name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str)</span>
@@ -243,7 +243,7 @@
 <span class="sd">            ProductVersionsResponse: The details for the first response of a product</span>
 <span class="sd">        Raises:</span>
 <span class="sd">            NotFoundError when the product is not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_id</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_product_versions</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
@@ -252,13 +252,13 @@
                 <span class="k">if</span> <span class="n">delivery_option</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">version_id</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">version</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such version with id </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">version_id</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"No such version with id </span><span class="se">\"</span><span class="si">{</span><span class="n">version_id</span><span class="si">}</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.get_product_versions">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_versions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_product_versions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GroupedVersions</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the titles, ids, and date created of all the versions of a product.</span>
 
 <span class="sd">        Args:</span>
@@ -268,7 +268,7 @@
 <span class="sd">            Dict[str, GroupedVersions]: A dictionary of versions</span>
 <span class="sd">        Raises:</span>
 <span class="sd">            NotFoundError when the product is not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_id</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_product_versions</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
@@ -283,9 +283,9 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">ProductVersionsVirtualizationSource</span><span class="p">):</span>
                     <span class="n">ami_id_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
             <span class="n">delivery_options</span><span class="p">:</span> <span class="n">GroupedVersions</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;delivery_options&quot;</span><span class="p">:</span> <span class="n">delivery_options_list</span><span class="p">,</span>
-                <span class="s2">&quot;created_date&quot;</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">creation_date</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-                <span class="s2">&quot;ami_ids&quot;</span><span class="p">:</span> <span class="n">ami_id_list</span><span class="p">,</span>
+                <span class="s2">"delivery_options"</span><span class="p">:</span> <span class="n">delivery_options_list</span><span class="p">,</span>
+                <span class="s2">"created_date"</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">creation_date</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+                <span class="s2">"ami_ids"</span><span class="p">:</span> <span class="n">ami_id_list</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="n">version_ids</span><span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">version_title</span><span class="p">]</span> <span class="o">=</span> <span class="n">delivery_options</span>  <span class="c1"># type: ignore</span>
         <span class="k">return</span> <span class="n">version_ids</span></div>
@@ -294,8 +294,8 @@
 <div class="viewcode-block" id="AWSProductService.get_product_version_by_name">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_version_by_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_product_version_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeliveryOption</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a version detail by it&#39;s name.</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Get a version detail by it's name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str)</span>
@@ -306,23 +306,23 @@
 <span class="sd">            DeliveryOption: The delivery options of a version</span>
 <span class="sd">        Raises:</span>
 <span class="sd">            NotFoundError when the product is not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_by_id</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_product_versions</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">details</span><span class="o">.</span><span class="n">versions</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">version</span><span class="o">.</span><span class="n">version_title</span> <span class="o">==</span> <span class="n">version_name</span><span class="p">:</span>
-                <span class="c1"># ATM we&#39;re not batching Delivery options so</span>
+                <span class="c1"># ATM we're not batching Delivery options so</span>
                 <span class="c1"># the first one should be the one we want.</span>
                 <span class="k">return</span> <span class="n">version</span><span class="o">.</span><span class="n">delivery_options</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No such version with name </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">version_name</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"No such version with name </span><span class="se">\"</span><span class="si">{</span><span class="n">version_name</span><span class="si">}</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.get_product_active_changesets">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.get_product_active_changesets">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_product_active_changesets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListChangeSet</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the active changesets for a product.</span>
 
 <span class="sd">        Args:</span>
@@ -330,14 +330,14 @@
 <span class="sd">                The Id of the entity to get active changesets from</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            str: A change set id</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">filter_list</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;EntityId&quot;</span><span class="p">,</span> <span class="s2">&quot;ValueList&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">entity_id</span><span class="p">]},</span>
-            <span class="p">{</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;Status&quot;</span><span class="p">,</span> <span class="s2">&quot;ValueList&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;APPLYING&quot;</span><span class="p">,</span> <span class="s2">&quot;PREPARING&quot;</span><span class="p">]},</span>
+            <span class="p">{</span><span class="s2">"Name"</span><span class="p">:</span> <span class="s2">"EntityId"</span><span class="p">,</span> <span class="s2">"ValueList"</span><span class="p">:</span> <span class="p">[</span><span class="n">entity_id</span><span class="p">]},</span>
+            <span class="p">{</span><span class="s2">"Name"</span><span class="p">:</span> <span class="s2">"Status"</span><span class="p">,</span> <span class="s2">"ValueList"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"APPLYING"</span><span class="p">,</span> <span class="s2">"PREPARING"</span><span class="p">]},</span>
         <span class="p">]</span>
 
         <span class="n">changeset_list</span> <span class="o">=</span> <span class="n">ListChangeSetsResponse</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">list_change_sets</span><span class="p">(</span><span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span> <span class="n">FilterList</span><span class="o">=</span><span class="n">filter_list</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">list_change_sets</span><span class="p">(</span><span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span> <span class="n">FilterList</span><span class="o">=</span><span class="n">filter_list</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">changeset_list</span><span class="o">.</span><span class="n">change_set_list</span></div>
 
@@ -345,13 +345,13 @@
 <div class="viewcode-block" id="AWSProductService.wait_active_changesets">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.wait_active_changesets">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">wait_active_changesets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the first active changeset, if there is one, and wait for it to finish.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str)</span>
 <span class="sd">                The Id of the entity to wait for active changesets</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">changeset_not_complete</span><span class="p">(</span><span class="n">change_set_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ListChangeSet</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">change_set_list</span><span class="p">:</span>
@@ -368,7 +368,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">r</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_product_active_changesets</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">RetryError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">Timeout</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Timed out waiting for </span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="s2"> to be unlocked&quot;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">Timeout</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Timed out waiting for </span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="s2"> to be unlocked"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.set_restrict_versions">
@@ -376,7 +376,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">set_restrict_versions</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delivery_option_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Restrict version(s) of a product by their id.</span>
 
 <span class="sd">        Args:</span>
@@ -389,32 +389,32 @@
 <span class="sd">                A list of strs of delivery options to restrict. Normally version Ids.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            str: A change set id</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">change_details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;DeliveryOptionIds&quot;</span><span class="p">:</span> <span class="n">delivery_option_ids</span><span class="p">}</span>
+<span class="sd">        """</span>
+        <span class="n">change_details</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"DeliveryOptionIds"</span><span class="p">:</span> <span class="n">delivery_option_ids</span><span class="p">}</span>
 
         <span class="n">rsp</span><span class="p">:</span> <span class="n">ChangeSetResponse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">start_change_set</span><span class="p">(</span>
-            <span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span>
+            <span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span>
             <span class="n">ChangeSet</span><span class="o">=</span><span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;ChangeType&quot;</span><span class="p">:</span> <span class="s2">&quot;RestrictDeliveryOptions&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Entity&quot;</span><span class="p">:</span> <span class="p">{</span>
-                        <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="n">marketplace_entity_type</span> <span class="o">+</span> <span class="s2">&quot;@1.0&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;Identifier&quot;</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span>
+                    <span class="s2">"ChangeType"</span><span class="p">:</span> <span class="s2">"RestrictDeliveryOptions"</span><span class="p">,</span>
+                    <span class="s2">"Entity"</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"Type"</span><span class="p">:</span> <span class="n">marketplace_entity_type</span> <span class="o">+</span> <span class="s2">"@1.0"</span><span class="p">,</span>
+                        <span class="s2">"Identifier"</span><span class="p">:</span> <span class="n">entity_id</span><span class="p">,</span>
                     <span class="p">},</span>
-                    <span class="s2">&quot;Details&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">change_details</span><span class="p">),</span>
+                    <span class="s2">"Details"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">change_details</span><span class="p">),</span>
                 <span class="p">},</span>
             <span class="p">],</span>
         <span class="p">)</span>
 
-        <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">&quot;The response from the restrict version was: &quot;</span><span class="p">)</span>
+        <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">"The response from the restrict version was: "</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">rsp</span><span class="p">[</span><span class="s2">&quot;ChangeSetId&quot;</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">rsp</span><span class="p">[</span><span class="s2">"ChangeSetId"</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.cancel_change_set">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.cancel_change_set">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">cancel_change_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Cancel the publish of a new version in progress.</span>
 
 <span class="sd">        Args:</span>
@@ -422,20 +422,20 @@
 <span class="sd">                A change set id to cancel</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            str: A change set id</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rsp</span><span class="p">:</span> <span class="n">ChangeSetResponse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">cancel_change_set</span><span class="p">(</span>
-            <span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span> <span class="n">ChangeSetId</span><span class="o">=</span><span class="n">change_set_id</span>
+            <span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span> <span class="n">ChangeSetId</span><span class="o">=</span><span class="n">change_set_id</span>
         <span class="p">)</span>
 
-        <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">&quot;The response from cancelling a changeset was: &quot;</span><span class="p">)</span>
+        <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">"The response from cancelling a changeset was: "</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">rsp</span><span class="p">[</span><span class="s2">&quot;ChangeSetId&quot;</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">rsp</span><span class="p">[</span><span class="s2">"ChangeSetId"</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.check_publish_status">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.check_publish_status">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">check_publish_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check the status of a change set.</span>
 
 <span class="sd">        Args:</span>
@@ -445,23 +445,23 @@
 <span class="sd">            str: Status of the publish</span>
 <span class="sd">        Raises:</span>
 <span class="sd">            InvalidStateError if the job failed</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rsp</span> <span class="o">=</span> <span class="n">DescribeChangeSetReponse</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">describe_change_set</span><span class="p">(</span>
-                <span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span> <span class="n">ChangeSetId</span><span class="o">=</span><span class="n">change_set_id</span>
+                <span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span> <span class="n">ChangeSetId</span><span class="o">=</span><span class="n">change_set_id</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">status</span> <span class="o">=</span> <span class="n">rsp</span><span class="o">.</span><span class="n">status</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Current change status is </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Current change status is </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
 
-        <span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;failed&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"failed"</span><span class="p">:</span>
             <span class="n">failure_code</span> <span class="o">=</span> <span class="n">rsp</span><span class="o">.</span><span class="n">failure_code</span>
-            <span class="c1"># ATM we&#39;re not batching changesets so</span>
+            <span class="c1"># ATM we're not batching changesets so</span>
             <span class="c1"># the first one should be the one we want.</span>
             <span class="n">failure_list</span> <span class="o">=</span> <span class="n">rsp</span><span class="o">.</span><span class="n">change_set</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">error_details</span>
-            <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">&quot;The response from the status was: &quot;</span><span class="p">)</span>
+            <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">"The response from the status was: "</span><span class="p">)</span>
             <span class="c1"># Check if message is a URL and download the message.</span>
             <span class="n">added_messages</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">failure</span> <span class="ow">in</span> <span class="n">failure_list</span><span class="p">:</span>
@@ -470,7 +470,7 @@
             <span class="n">failure_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">added_messages</span><span class="p">)</span>
             <span class="n">error_list_str</span> <span class="o">=</span> <span class="n">convert_error_list_str</span><span class="p">(</span><span class="n">failure_list</span><span class="p">)</span>
             <span class="n">error_message</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Changeset </span><span class="si">{</span><span class="n">change_set_id</span><span class="si">}</span><span class="s2"> failed with code </span><span class="si">{</span><span class="n">failure_code</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">error_list_str</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Changeset </span><span class="si">{</span><span class="n">change_set_id</span><span class="si">}</span><span class="s2"> failed with code </span><span class="si">{</span><span class="n">failure_code</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">error_list_str</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">InvalidStateError</span><span class="p">,</span> <span class="n">error_message</span><span class="p">)</span>
 
@@ -480,19 +480,19 @@
 <div class="viewcode-block" id="AWSProductService.wait_for_changeset">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.wait_for_changeset">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_changeset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Wait until ChangeSet is complete.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            change_set_id (str)</span>
 <span class="sd">                Id for the change set to wait on</span>
 <span class="sd">        Raises:</span>
-<span class="sd">            Timeout when the status doesn&#39;t change to either</span>
-<span class="sd">            &#39;Succeeded&#39; or &#39;Failed&#39; within the set retry time.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            Timeout when the status doesn't change to either</span>
+<span class="sd">            'Succeeded' or 'Failed' within the set retry time.</span>
+<span class="sd">        """</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">changeset_not_complete</span><span class="p">(</span><span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;succeeded&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"succeeded"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">True</span>
@@ -506,7 +506,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">r</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_publish_status</span><span class="p">,</span> <span class="n">change_set_id</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">RetryError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">Timeout</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Timed out waiting for </span><span class="si">{</span><span class="n">change_set_id</span><span class="si">}</span><span class="s2"> to finish&quot;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_error</span><span class="p">(</span><span class="n">Timeout</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Timed out waiting for </span><span class="si">{</span><span class="n">change_set_id</span><span class="si">}</span><span class="s2"> to finish"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AWSProductService.restrict_versions">
@@ -518,7 +518,7 @@
         <span class="n">restrict_major</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">restrict_minor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Restrict the old versions of a release.</span>
 
 <span class="sd">        Args:</span>
@@ -535,7 +535,7 @@
 <span class="sd">                Example: 3</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            List[str]: List of AMI ids of restricted versions</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">versions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_versions</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
         <span class="n">version_tree</span> <span class="o">=</span> <span class="n">create_version_tree</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span>
 
@@ -561,7 +561,7 @@
         <span class="n">restrict_ami_ids</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">patch_ami_ids</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">restrict_delivery_ids</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Restricting these minor version(s) with id(s): </span><span class="si">{</span><span class="n">restrict_delivery_ids</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Restricting these minor version(s) with id(s): </span><span class="si">{</span><span class="n">restrict_delivery_ids</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">change_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_restrict_versions</span><span class="p">(</span>
                 <span class="n">entity_id</span><span class="p">,</span> <span class="n">marketplace_entity_type</span><span class="p">,</span> <span class="n">restrict_delivery_ids</span>
             <span class="p">)</span>
@@ -573,21 +573,21 @@
 <div class="viewcode-block" id="AWSProductService.publish">
 <a class="viewcode-back" href="../../../cloud_providers/aws.html#cloudpub.aws.AWSProductService.publish">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AWSVersionMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add new version to an existing product.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            new_version_details (VersionMapping): A model of the version mapping</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">change_set</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;ChangeType&quot;</span><span class="p">:</span> <span class="s2">&quot;AddDeliveryOptions&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Entity&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metadata</span><span class="o">.</span><span class="n">marketplace_entity_type</span><span class="si">}</span><span class="s2">@1.0&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Identifier&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span>
+            <span class="s2">"ChangeType"</span><span class="p">:</span> <span class="s2">"AddDeliveryOptions"</span><span class="p">,</span>
+            <span class="s2">"Entity"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"Type"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">metadata</span><span class="o">.</span><span class="n">marketplace_entity_type</span><span class="si">}</span><span class="s2">@1.0"</span><span class="p">,</span>
+                <span class="s2">"Identifier"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span>
             <span class="p">},</span>
-            <span class="c1"># AWS accepts &#39;Details&#39; as a JSON string.</span>
+            <span class="c1"># AWS accepts 'Details' as a JSON string.</span>
             <span class="c1"># So we convert it here.</span>
-            <span class="s2">&quot;DetailsDocument&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">version_mapping</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+            <span class="s2">"DetailsDocument"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">version_mapping</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
@@ -596,26 +596,26 @@
             <span class="n">org_version_details</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_product_version_by_name</span><span class="p">(</span>
                 <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">version_mapping</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">version_title</span>
             <span class="p">)</span>
-            <span class="c1"># ATM we&#39;re not batching Delivery options so</span>
+            <span class="c1"># ATM we're not batching Delivery options so</span>
             <span class="c1"># the first one should be the one we want.</span>
             <span class="n">json_mapping</span><span class="o">.</span><span class="n">delivery_options</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">org_version_details</span><span class="o">.</span><span class="n">id</span>
 
-            <span class="n">change_set</span><span class="p">[</span><span class="s2">&quot;ChangeType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;UpdateDeliveryOptions&quot;</span>
-            <span class="n">change_set</span><span class="p">[</span><span class="s2">&quot;DetailsDocument&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_mapping</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+            <span class="n">change_set</span><span class="p">[</span><span class="s2">"ChangeType"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"UpdateDeliveryOptions"</span>
+            <span class="n">change_set</span><span class="p">[</span><span class="s2">"DetailsDocument"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_mapping</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">keepdraft</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sending draft version to </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">marketplace_entity_type</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Sending draft version to </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">marketplace_entity_type</span><span class="p">)</span>
             <span class="n">rsp</span><span class="p">:</span> <span class="n">ChangeSetResponse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">start_change_set</span><span class="p">(</span>
-                <span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span> <span class="n">ChangeSet</span><span class="o">=</span><span class="p">[</span><span class="n">change_set</span><span class="p">],</span> <span class="n">Intent</span><span class="o">=</span><span class="s2">&quot;VALIDATE&quot;</span>
+                <span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span> <span class="n">ChangeSet</span><span class="o">=</span><span class="p">[</span><span class="n">change_set</span><span class="p">],</span> <span class="n">Intent</span><span class="o">=</span><span class="s2">"VALIDATE"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Publishing new version in </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">marketplace_entity_type</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Publishing new version in </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">marketplace_entity_type</span><span class="p">)</span>
             <span class="n">rsp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marketplace</span><span class="o">.</span><span class="n">start_change_set</span><span class="p">(</span>
-                <span class="n">Catalog</span><span class="o">=</span><span class="s2">&quot;AWSMarketplace&quot;</span><span class="p">,</span> <span class="n">ChangeSet</span><span class="o">=</span><span class="p">[</span><span class="n">change_set</span><span class="p">],</span> <span class="n">Intent</span><span class="o">=</span><span class="s2">&quot;APPLY&quot;</span>
+                <span class="n">Catalog</span><span class="o">=</span><span class="s2">"AWSMarketplace"</span><span class="p">,</span> <span class="n">ChangeSet</span><span class="o">=</span><span class="p">[</span><span class="n">change_set</span><span class="p">],</span> <span class="n">Intent</span><span class="o">=</span><span class="s2">"APPLY"</span>
             <span class="p">)</span>
-        <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">&quot;The response from publishing was: &quot;</span><span class="p">)</span>
+        <span class="n">pprint_debug_logging</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">rsp</span><span class="p">,</span> <span class="s2">"The response from publishing was: "</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_changeset</span><span class="p">(</span><span class="n">rsp</span><span class="p">[</span><span class="s2">&quot;ChangeSetId&quot;</span><span class="p">])</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_changeset</span><span class="p">(</span><span class="n">rsp</span><span class="p">[</span><span class="s2">"ChangeSetId"</span><span class="p">])</span></div>
 </div>
 
 </pre></div>

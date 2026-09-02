@@ -101,9 +101,9 @@ and publish it.</p>
 
 <span class="c1"># Instantiate the AzurePublishingMetadata with the required information</span>
 <span class="n">metadata</span> <span class="o">=</span> <span class="n">AzurePublishingMetadata</span><span class="p">(</span>
-  <span class="n">destination</span><span class="o">=</span><span class="s2">&quot;product-example/plan-example&quot;</span><span class="p">,</span>
-  <span class="n">sas_uri</span><span class="o">=</span><span class="s2">&quot;https://foo.com/bar/image.vhd&quot;</span><span class="p">,</span>
-  <span class="n">disk_version</span><span class="o">=</span><span class="s2">&quot;2.1.0&quot;</span><span class="p">,</span>
+  <span class="n">destination</span><span class="o">=</span><span class="s2">"product-example/plan-example"</span><span class="p">,</span>
+  <span class="n">sas_uri</span><span class="o">=</span><span class="s2">"https://foo.com/bar/image.vhd"</span><span class="p">,</span>
+  <span class="n">disk_version</span><span class="o">=</span><span class="s2">"2.1.0"</span><span class="p">,</span>
   <span class="n">keepdraft</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># When `False` it means publish to live.</span>
 <span class="p">)</span>
 
@@ -119,32 +119,32 @@ and publish it.</p>
 <span class="c1"># Fill out the version metadata</span>
 
 <span class="n">example_version_mapping</span> <span class="o">=</span> <span class="n">VersionMapping</span><span class="p">({</span>
-  <span class="s2">&quot;Version&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;VersionTitle&quot;</span><span class="p">:</span> <span class="s2">&quot;example-changeset&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ReleaseNotes&quot;</span><span class="p">:</span> <span class="s2">&quot;https://access.redhat.com/foo/bar&quot;</span>
+  <span class="s2">"Version"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"VersionTitle"</span><span class="p">:</span> <span class="s2">"example-changeset"</span><span class="p">,</span>
+    <span class="s2">"ReleaseNotes"</span><span class="p">:</span> <span class="s2">"https://access.redhat.com/foo/bar"</span>
   <span class="p">},</span>
-  <span class="s2">&quot;DeliveryOptions&quot;</span><span class="p">:</span> <span class="p">[</span>
+  <span class="s2">"DeliveryOptions"</span><span class="p">:</span> <span class="p">[</span>
   <span class="p">{</span>
-    <span class="s2">&quot;Details&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;AmiDeliveryOptionDetails&quot;</span><span class="p">:</span> <span class="p">{</span>
-      <span class="s2">&quot;AmiSource&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;AmiId&quot;</span><span class="p">:</span> <span class="s2">&quot;ami-123412341234&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;AccessRoleArn&quot;</span><span class="p">:</span> <span class="s2">&quot;arn:aws:iam::12341234:role/example&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;UserName&quot;</span><span class="p">:</span> <span class="s2">&quot;example-user&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;OperatingSystemName&quot;</span><span class="p">:</span> <span class="s2">&quot;EXAMPLE&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;OperatingSystemVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;EXAMPLE-1.2&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ScanningPort&quot;</span><span class="p">:</span> <span class="mi">22</span>
+    <span class="s2">"Details"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"AmiDeliveryOptionDetails"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"AmiSource"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"AmiId"</span><span class="p">:</span> <span class="s2">"ami-123412341234"</span><span class="p">,</span>
+        <span class="s2">"AccessRoleArn"</span><span class="p">:</span> <span class="s2">"arn:aws:iam::12341234:role/example"</span><span class="p">,</span>
+        <span class="s2">"UserName"</span><span class="p">:</span> <span class="s2">"example-user"</span><span class="p">,</span>
+        <span class="s2">"OperatingSystemName"</span><span class="p">:</span> <span class="s2">"EXAMPLE"</span><span class="p">,</span>
+        <span class="s2">"OperatingSystemVersion"</span><span class="p">:</span> <span class="s2">"EXAMPLE-1.2"</span><span class="p">,</span>
+        <span class="s2">"ScanningPort"</span><span class="p">:</span> <span class="mi">22</span>
       <span class="p">},</span>
-      <span class="s2">&quot;UsageInstructions&quot;</span><span class="p">:</span> <span class="s2">&quot;Example.&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;RecommendedInstanceType&quot;</span><span class="p">:</span> <span class="s2">&quot;m5.large&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;SecurityGroups&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="s2">"UsageInstructions"</span><span class="p">:</span> <span class="s2">"Example."</span><span class="p">,</span>
+      <span class="s2">"RecommendedInstanceType"</span><span class="p">:</span> <span class="s2">"m5.large"</span><span class="p">,</span>
+      <span class="s2">"SecurityGroups"</span><span class="p">:</span> <span class="p">[</span>
         <span class="p">{</span>
-          <span class="s2">&quot;FromPort&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
-          <span class="s2">&quot;IpProtocol&quot;</span><span class="p">:</span> <span class="s2">&quot;tcp&quot;</span><span class="p">,</span>
-          <span class="s2">&quot;CidrIps&quot;</span><span class="p">:</span> <span class="p">[</span>
-          <span class="s2">&quot;0.0.0.0/0&quot;</span>
+          <span class="s2">"FromPort"</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
+          <span class="s2">"IpProtocol"</span><span class="p">:</span> <span class="s2">"tcp"</span><span class="p">,</span>
+          <span class="s2">"CidrIps"</span><span class="p">:</span> <span class="p">[</span>
+          <span class="s2">"0.0.0.0/0"</span>
           <span class="p">],</span>
-          <span class="s2">&quot;ToPort&quot;</span><span class="p">:</span> <span class="mi">22</span>
+          <span class="s2">"ToPort"</span><span class="p">:</span> <span class="mi">22</span>
         <span class="p">}</span>
       <span class="p">]</span>
     <span class="p">}</span>
@@ -153,12 +153,12 @@ and publish it.</p>
 
 <span class="c1"># Instantiate the AWSVersionMetadata with the required information</span>
 <span class="n">metadata</span> <span class="o">=</span> <span class="n">AWSVersionMetadata</span><span class="p">(</span>
-  <span class="n">destination</span><span class="o">=</span><span class="s2">&quot;product-example/plan-example&quot;</span><span class="p">,</span>
-  <span class="n">sas_uri</span><span class="o">=</span><span class="s2">&quot;https://foo.com/bar/image.vhd&quot;</span><span class="p">,</span>
-  <span class="n">disk_version</span><span class="o">=</span><span class="s2">&quot;2.1.0&quot;</span><span class="p">,</span>
+  <span class="n">destination</span><span class="o">=</span><span class="s2">"product-example/plan-example"</span><span class="p">,</span>
+  <span class="n">sas_uri</span><span class="o">=</span><span class="s2">"https://foo.com/bar/image.vhd"</span><span class="p">,</span>
+  <span class="n">disk_version</span><span class="o">=</span><span class="s2">"2.1.0"</span><span class="p">,</span>
   <span class="n">keepdraft</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># When `False` it means publish to live.</span>
-  <span class="n">marketplace_entity_type</span> <span class="o">=</span> <span class="s2">&quot;AmiProduct&quot;</span><span class="p">,</span>
-  <span class="n">entity_id</span> <span class="o">=</span> <span class="s2">&quot;1234-1234-1234-2134&quot;</span><span class="p">,</span>
+  <span class="n">marketplace_entity_type</span> <span class="o">=</span> <span class="s2">"AmiProduct"</span><span class="p">,</span>
+  <span class="n">entity_id</span> <span class="o">=</span> <span class="s2">"1234-1234-1234-2134"</span><span class="p">,</span>
   <span class="n">version_mapping</span> <span class="o">=</span> <span class="n">example_version_mapping</span>
 <span class="p">)</span>
 

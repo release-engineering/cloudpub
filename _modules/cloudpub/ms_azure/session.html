@@ -44,33 +44,33 @@
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">AZURE_SESSION_TIMEOUT</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;AZURE_SESSION_TIMEOUT&quot;</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">))</span>
+<span class="n">AZURE_SESSION_TIMEOUT</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"AZURE_SESSION_TIMEOUT"</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="AccessToken">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.AccessToken">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AccessToken</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represent the Microsoft API Authorization token.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Represent the Microsoft API Authorization token."""</span>
 
 <div class="viewcode-block" id="AccessToken.__init__">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.AccessToken.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new AccessToken object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            json (dict)</span>
 <span class="sd">                The login response with from Microsoft.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">expires_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;expires_on&quot;</span><span class="p">]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span> <span class="o">=</span> <span class="n">json</span><span class="p">[</span><span class="s2">&quot;access_token&quot;</span><span class="p">]</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Obtained token with expiration date on </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expires_on</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expires_on</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">json</span><span class="p">[</span><span class="s2">"expires_on"</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span> <span class="o">=</span> <span class="n">json</span><span class="p">[</span><span class="s2">"access_token"</span><span class="p">]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Obtained token with expiration date on </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expires_on</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AccessToken.is_expired">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.AccessToken.is_expired">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_expired</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the token is expired and False otherwise.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return True if the token is expired and False otherwise."""</span>
         <span class="k">if</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">expires_on</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span></div>
@@ -81,14 +81,14 @@
 <div class="viewcode-block" id="PartnerPortalSession">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PartnerPortalSession</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implement the session for Azure API using the Active Directory credentials.</span>
 
-<span class="sd">    It&#39;s expected to be instantiated through the factory method</span>
+<span class="sd">    It's expected to be instantiated through the factory method</span>
 <span class="sd">    :meth:`~PartnerPortalSession.make_graph_api_session`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">LOGIN_URL_TMPL</span> <span class="o">=</span> <span class="s2">&quot;https://login.microsoftonline.com/</span><span class="si">{AZURE_TENANT_ID}</span><span class="s2">/oauth2/token&quot;</span>
+    <span class="n">LOGIN_URL_TMPL</span> <span class="o">=</span> <span class="s2">"https://login.microsoftonline.com/</span><span class="si">{AZURE_TENANT_ID}</span><span class="s2">/oauth2/token"</span>
 
 <div class="viewcode-block" id="PartnerPortalSession.__init__">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession.__init__">[docs]</a>
@@ -99,7 +99,7 @@
         <span class="n">mandatory_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new PartnerPortalSession object.</span>
 
 <span class="sd">        Args:</span>
@@ -109,7 +109,7 @@
 <span class="sd">                The API prefix URL.</span>
 <span class="sd">            mandatory_params (dict, optional)</span>
 <span class="sd">                Mandatory parameters to pass for each API request, if any.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_auth_keys</span><span class="p">(</span><span class="n">auth_keys</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prefix_url</span> <span class="o">=</span> <span class="n">prefix_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">base_url</span><span class="p">(</span><span class="n">prefix_url</span><span class="p">)</span>
@@ -117,24 +117,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_token</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AccessToken</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_additional_args</span> <span class="o">=</span> <span class="n">kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
-        <span class="n">total_retries</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;total_retries&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="n">backoff_factor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;backoff_factor&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">status_forcelist</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;status_forcelist&quot;</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">512</span><span class="p">)))</span>
+        <span class="n">total_retries</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"total_retries"</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">backoff_factor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"backoff_factor"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">status_forcelist</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"status_forcelist"</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">512</span><span class="p">)))</span>
         <span class="n">retries</span> <span class="o">=</span> <span class="n">Retry</span><span class="p">(</span>
             <span class="n">total</span><span class="o">=</span><span class="n">total_retries</span><span class="p">,</span>
             <span class="n">backoff_factor</span><span class="o">=</span><span class="n">backoff_factor</span><span class="p">,</span>
             <span class="n">status_forcelist</span><span class="o">=</span><span class="n">status_forcelist</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">&#39;https://&#39;</span><span class="p">,</span> <span class="n">HTTPAdapter</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="n">retries</span><span class="p">))</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">'https://'</span><span class="p">,</span> <span class="n">HTTPAdapter</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="n">retries</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="PartnerPortalSession.make_graph_api_session">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession.make_graph_api_session">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">make_graph_api_session</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">auth_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">schema_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;2022-03-01-preview3&#39;</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;PartnerPortalSession&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">auth_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">schema_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'2022-03-01-preview3'</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'PartnerPortalSession'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a PartnerPortalSession for the Microsoft Graph API.</span>
 
 <span class="sd">        Args:</span>
@@ -145,43 +145,43 @@
 <span class="sd">                Defaults to ``2022-03-01-preview3``.</span>
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError on authentication failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating a session with Azure Private Offer API&quot;</span><span class="p">)</span>
-        <span class="n">mparams</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;$version&#39;</span><span class="p">:</span> <span class="n">schema_version</span><span class="p">}</span>
-        <span class="n">prefix_url</span> <span class="o">=</span> <span class="s2">&quot;https://graph.microsoft.com/rp/product-ingestion&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating a session with Azure Private Offer API"</span><span class="p">)</span>
+        <span class="n">mparams</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'$version'</span><span class="p">:</span> <span class="n">schema_version</span><span class="p">}</span>
+        <span class="n">prefix_url</span> <span class="o">=</span> <span class="s2">"https://graph.microsoft.com/rp/product-ingestion"</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">auth_keys</span><span class="o">=</span><span class="n">auth_keys</span><span class="p">,</span> <span class="n">prefix_url</span><span class="o">=</span><span class="n">prefix_url</span><span class="p">,</span> <span class="n">mandatory_params</span><span class="o">=</span><span class="n">mparams</span><span class="p">)</span></div>
 
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_auth_keys</span><span class="p">(</span><span class="n">auth_keys</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate whether auth_keys contains all required keys.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Validate whether auth_keys contains all required keys."""</span>
         <span class="n">mandatory_keys</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;AZURE_CLIENT_ID&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;AZURE_TENANT_ID&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;AZURE_API_SECRET&quot;</span><span class="p">,</span>
+            <span class="s2">"AZURE_CLIENT_ID"</span><span class="p">,</span>
+            <span class="s2">"AZURE_TENANT_ID"</span><span class="p">,</span>
+            <span class="s2">"AZURE_API_SECRET"</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">mandatory_keys</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Validating mandatory key </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Validating mandatory key </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">auth_keys</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">auth_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
-                <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;The key/value for &quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&quot; must be set.&#39;</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'The key/value for "</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">" must be set.'</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">auth_keys</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_login</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AccessToken</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the authentication token from Microsoft.&quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Retrieving the bearer token from Microsoft&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Retrieve the authentication token from Microsoft."""</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Retrieving the bearer token from Microsoft"</span><span class="p">)</span>
         <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">LOGIN_URL_TMPL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span><span class="p">)</span>
 
         <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="s2">"Accept"</span><span class="p">:</span> <span class="s2">"application/json"</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;resource&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
-            <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span><span class="p">[</span><span class="s2">&quot;AZURE_CLIENT_ID&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;client_secret&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span><span class="p">[</span><span class="s2">&quot;AZURE_API_SECRET&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;grant_type&quot;</span><span class="p">:</span> <span class="s2">&quot;client_credentials&quot;</span><span class="p">,</span>
+            <span class="s2">"resource"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
+            <span class="s2">"client_id"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span><span class="p">[</span><span class="s2">"AZURE_CLIENT_ID"</span><span class="p">],</span>
+            <span class="s2">"client_secret"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span><span class="p">[</span><span class="s2">"AZURE_API_SECRET"</span><span class="p">],</span>
+            <span class="s2">"grant_type"</span><span class="p">:</span> <span class="s2">"client_credentials"</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">AZURE_SESSION_TIMEOUT</span><span class="p">)</span>
@@ -189,19 +189,19 @@
         <span class="k">return</span> <span class="n">AccessToken</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_token</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Request a new bearer token from Microsoft.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Request a new bearer token from Microsoft."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token</span><span class="o">.</span><span class="n">is_expired</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_login</span><span class="p">()</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Serving the bearer token&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Serving the bearer token"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_token</span><span class="o">.</span><span class="n">access_token</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_request</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a generic API request.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Execute a generic API request."""</span>
         <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_token</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"Accept"</span><span class="p">:</span> <span class="s2">"application/json"</span><span class="p">,</span>
+            <span class="s2">"Authorization"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Bearer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_token</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mandatory_params</span><span class="p">:</span>
@@ -209,10 +209,10 @@
                 <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mandatory_params</span><span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Sending a </span><span class="si">%s</span><span class="s2"> request to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Sending a </span><span class="si">%s</span><span class="s2"> request to </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
         <span class="n">formatted_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefix_url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">auth_keys</span><span class="p">)</span>
         <span class="n">url</span> <span class="o">=</span> <span class="n">join_url</span><span class="p">(</span><span class="n">formatted_url</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-        <span class="n">timeout</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="n">AZURE_SESSION_TIMEOUT</span><span class="p">)</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"timeout"</span><span class="p">,</span> <span class="n">AZURE_SESSION_TIMEOUT</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">request</span><span class="p">(</span>
             <span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">)</span>
@@ -220,22 +220,22 @@
 <div class="viewcode-block" id="PartnerPortalSession.get">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession.get">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute an API GET request.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">"""Execute an API GET request."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s2">"get"</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PartnerPortalSession.post">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession.post">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute an API POST request.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s2">&quot;post&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">json</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">"""Execute an API POST request."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s2">"post"</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">json</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PartnerPortalSession.put">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.session.PartnerPortalSession.put">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute an API PUT request.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s2">&quot;put&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">json</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">"""Execute an API PUT request."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="s2">"put"</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">json</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

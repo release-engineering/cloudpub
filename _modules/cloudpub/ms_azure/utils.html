@@ -58,7 +58,7 @@
 <div class="viewcode-block" id="AzurePublishingMetadata">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.ms_azure.AzurePublishingMetadata">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AzurePublishingMetadata</span><span class="p">(</span><span class="n">PublishingMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A collection of metadata necessary for publishing a VHD Image into a product.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A collection of metadata necessary for publishing a VHD Image into a product."""</span>
 
     <span class="c1"># Note: This class must be defined here as it would cause circular import with `service.py` on</span>
     <span class="c1"># typing annotation for functions in this module.</span>
@@ -69,12 +69,12 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">disk_version</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">sku_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">generation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span><span class="p">,</span>
+        <span class="n">generation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"V2"</span><span class="p">,</span>
         <span class="n">support_legacy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">recommended_sizes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new AzurePublishingMetadata object.</span>
 
 <span class="sd">        Args:</span>
@@ -101,21 +101,21 @@
 <span class="sd">                Default to ``False``.</span>
 <span class="sd">            **kwargs</span>
 <span class="sd">                Arguments for :class:`~cloudpub.common.PublishingMetadata`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">disk_version</span> <span class="o">=</span> <span class="n">disk_version</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sku_id</span> <span class="o">=</span> <span class="n">sku_id</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sku_id</span> <span class="o">=</span> <span class="n">sku_id</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"destination"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generation</span> <span class="o">=</span> <span class="n">generation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">support_legacy</span> <span class="o">=</span> <span class="n">support_legacy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recommended_sizes</span> <span class="o">=</span> <span class="n">recommended_sizes</span> <span class="ow">or</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;legacy_sku_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">check_base_sas_only</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;check_base_sas_only&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modular_push</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;modular_push&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"legacy_sku_id"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_base_sas_only</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"check_base_sas_only"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modular_push</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"modular_push"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">False</span>
 
-        <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V1&quot;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">support_legacy</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">"V1"</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">support_legacy</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="ow">and</span> <span class="n">sku_id</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sku_id</span><span class="si">}</span><span class="s2">-gen1&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">legacy_sku_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sku_id</span><span class="si">}</span><span class="s2">-gen1"</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__validate</span><span class="p">()</span>
         <span class="c1"># Adjust the x86_64 architecture string for Azure</span>
@@ -124,7 +124,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;architecture&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"architecture"</span><span class="p">:</span>
             <span class="n">arch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__convert_arch</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">arch</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -132,31 +132,31 @@
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">__convert_arch</span><span class="p">(</span><span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">converter</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;x86_64&quot;</span><span class="p">:</span> <span class="s2">&quot;x64&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;aarch64&quot;</span><span class="p">:</span> <span class="s2">&quot;arm64&quot;</span><span class="p">,</span>
+            <span class="s2">"x86_64"</span><span class="p">:</span> <span class="s2">"x64"</span><span class="p">,</span>
+            <span class="s2">"aarch64"</span><span class="p">:</span> <span class="s2">"arm64"</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">return</span> <span class="n">converter</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">arch</span>
+        <span class="k">return</span> <span class="n">converter</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="n">arch</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">mandatory</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;disk_version&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;generation&quot;</span><span class="p">,</span>
+            <span class="s2">"disk_version"</span><span class="p">,</span>
+            <span class="s2">"generation"</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">mandatory</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The parameter </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2"> must not be None.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The parameter </span><span class="se">\"</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="se">\"</span><span class="s2"> must not be None."</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">generation</span> <span class="o">!=</span> <span class="s2">&quot;V1&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">generation</span> <span class="o">!=</span> <span class="s2">&quot;V2&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">generation</span> <span class="o">!=</span> <span class="s2">"V1"</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">generation</span> <span class="o">!=</span> <span class="s2">"V2"</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Invalid generation </span><span class="se">\&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">generation</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">. Expected: </span><span class="se">\&quot;</span><span class="s2">V1</span><span class="se">\&quot;</span><span class="s2"> or </span><span class="se">\&quot;</span><span class="s2">V2</span><span class="se">\&quot;</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Invalid generation </span><span class="se">\"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">generation</span><span class="si">}</span><span class="se">\"</span><span class="s2">. Expected: </span><span class="se">\"</span><span class="s2">V1</span><span class="se">\"</span><span class="s2"> or </span><span class="se">\"</span><span class="s2">V2</span><span class="se">\"</span><span class="s2">."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;https://&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid SAS URI </span><span class="se">\&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">. Expected: http/https URL.&quot;</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"https://"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid SAS URI </span><span class="se">\"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="si">}</span><span class="se">\"</span><span class="s2">. Expected: http/https URL."</span><span class="p">)</span></div>
 
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">TechnicalConfigLookUpData</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A typed dict to be used for private methods data exchange.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A typed dict to be used for private methods data exchange."""</span>
 
     <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span>
     <span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span>
@@ -167,18 +167,18 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_image_type_mapping</span><span class="p">(</span><span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">generation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the image type required by VMImageDefinition.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return the image type required by VMImageDefinition."""</span>
     <span class="n">gen_map</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;V2&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen2&quot;</span><span class="p">,</span>
+        <span class="s2">"V2"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen2"</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span><span class="p">:</span>
-        <span class="n">gen_map</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;V1&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen1&quot;</span><span class="p">})</span>
-    <span class="k">return</span> <span class="n">gen_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">architecture</span> <span class="o">==</span> <span class="s2">"x64"</span><span class="p">:</span>
+        <span class="n">gen_map</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">"V1"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">architecture</span><span class="si">}</span><span class="s2">Gen1"</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">gen_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_sas_eq</span><span class="p">(</span><span class="n">sas1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sas2</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">base_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Compare 2 SAS URI and determine where they&#39;re equivalent.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Compare 2 SAS URI and determine where they're equivalent.</span>
 
 <span class="sd">    Equivalent SAS URIs have the same URL with the parameters differing only for:</span>
 
@@ -199,24 +199,24 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        True when both SAS URIs are equivalent, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">base_sas1</span> <span class="o">=</span> <span class="n">sas1</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">base_sas2</span> <span class="o">=</span> <span class="n">sas2</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">unique_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;st&#39;</span><span class="p">,</span> <span class="s1">&#39;se&#39;</span><span class="p">,</span> <span class="s1">&#39;sv&#39;</span><span class="p">,</span> <span class="s1">&#39;sig&#39;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="n">base_sas1</span> <span class="o">=</span> <span class="n">sas1</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"?"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">base_sas2</span> <span class="o">=</span> <span class="n">sas2</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"?"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">unique_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'st'</span><span class="p">,</span> <span class="s1">'se'</span><span class="p">,</span> <span class="s1">'sv'</span><span class="p">,</span> <span class="s1">'sig'</span><span class="p">]</span>
 
     <span class="n">params_sas1</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">get_url_params</span><span class="p">(</span><span class="n">sas1</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="p">}</span>
     <span class="n">params_sas2</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">get_url_params</span><span class="p">(</span><span class="n">sas2</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="p">}</span>
 
     <span class="c1"># Base URL differs</span>
     <span class="k">if</span> <span class="n">base_sas1</span> <span class="o">!=</span> <span class="n">base_sas2</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Got different base SAS: </span><span class="si">%s</span><span class="s2"> - Expected: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">base_sas1</span><span class="p">,</span> <span class="n">base_sas2</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Got different base SAS: </span><span class="si">%s</span><span class="s2"> - Expected: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">base_sas1</span><span class="p">,</span> <span class="n">base_sas2</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">base_only</span><span class="p">:</span>
         <span class="c1"># Parameters lengh differs</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">params_sas2</span><span class="p">):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;Got different lengh of SAS parameters: len(</span><span class="si">%s</span><span class="s2">) - Expected len(</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="s2">"Got different lengh of SAS parameters: len(</span><span class="si">%s</span><span class="s2">) - Expected len(</span><span class="si">%s</span><span class="s2">)"</span><span class="p">,</span>
                 <span class="n">params_sas1</span><span class="p">,</span>
                 <span class="n">params_sas2</span><span class="p">,</span>
             <span class="p">)</span>
@@ -225,7 +225,7 @@
         <span class="c1"># Parameters values differs</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params_sas1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The SAS parameter </span><span class="si">%s</span><span class="s2"> doesn&#39;t match </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"The SAS parameter </span><span class="si">%s</span><span class="s2"> doesn't match </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">params_sas2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
                 <span class="k">return</span> <span class="kc">False</span>
 
     <span class="c1"># Equivalent SAS</span>
@@ -233,19 +233,19 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_sas_present</span><span class="p">(</span><span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span> <span class="n">sas_uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">base_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check whether the given SAS URI is already present in the disk_version.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        tech_config (VMIPlanTechConfig)</span>
-<span class="sd">            The plan&#39;s technical configuraion to seek the SAS_URI.</span>
+<span class="sd">            The plan's technical configuraion to seek the SAS_URI.</span>
 <span class="sd">        sas_uri (str)</span>
-<span class="sd">            The SAS URI to check whether it&#39;s present or not in disk version.</span>
+<span class="sd">            The SAS URI to check whether it's present or not in disk version.</span>
 <span class="sd">        base_only (bool):</span>
 <span class="sd">            When True it will only compare the base SAS and not its arguments. Defaults to False.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True when the SAS is present in the plan, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">is_sas_eq</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">sas_uri</span><span class="p">,</span> <span class="n">base_only</span><span class="p">):</span>
@@ -254,7 +254,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_azure_job_not_complete</span><span class="p">(</span><span class="n">job_details</span><span class="p">:</span> <span class="n">ConfigureStatus</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check if the job status from a `configure` request is not completed.</span>
 
 <span class="sd">    Args:</span>
@@ -262,23 +262,23 @@
 <span class="sd">            The job details status.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: False if job completed, True otherwise</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Checking if the job </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> is still running&quot;</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;job </span><span class="si">%s</span><span class="s2"> is in </span><span class="si">%s</span><span class="s2"> state&quot;</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span> <span class="o">!=</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Checking if the job </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2"> is still running"</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"job </span><span class="si">%s</span><span class="s2"> is in </span><span class="si">%s</span><span class="s2"> state"</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_id</span><span class="p">,</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">job_details</span><span class="o">.</span><span class="n">job_status</span> <span class="o">!=</span> <span class="s2">"completed"</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when the legagy V1 SKU is supported, False otherwise.</span>
+<span class="w">    </span><span class="sd">"""Return True when the legagy V1 SKU is supported, False otherwise.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        metadata: The incoming publishing metadata.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True when V1 is supported, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span> <span class="ow">and</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">"x64"</span> <span class="ow">and</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_all_skus_present</span><span class="p">(</span><span class="n">old_skus</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">],</span> <span class="n">disk_versions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -301,13 +301,13 @@
     <span class="n">security_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">]:</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_skuid</span><span class="p">(</span><span class="n">arch</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">arch</span> <span class="o">==</span> <span class="s2">&quot;x64&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">arch</span> <span class="o">==</span> <span class="s2">"x64"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">plan_name</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">plan_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_safe_security_type</span><span class="p">(</span><span class="n">image_type</span><span class="p">):</span>
-        <span class="c1"># Arches which aren&#39;t x86Gen2 (like ARM64) doesn&#39;t work well with security type</span>
-        <span class="k">if</span> <span class="n">image_type</span> <span class="o">!=</span> <span class="s2">&quot;x64Gen2&quot;</span><span class="p">:</span>
+        <span class="c1"># Arches which aren't x86Gen2 (like ARM64) doesn't work well with security type</span>
+        <span class="k">if</span> <span class="n">image_type</span> <span class="o">!=</span> <span class="s2">"x64Gen2"</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">security_type</span>
 
@@ -316,25 +316,25 @@
     <span class="k">for</span> <span class="n">disk_version</span> <span class="ow">in</span> <span class="n">disk_versions</span><span class="p">:</span>
         <span class="c1"># Each disk version may have multiple images (Gen1 / Gen2)</span>
         <span class="k">for</span> <span class="n">vmid</span> <span class="ow">in</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
-            <span class="c1"># We&#39;ll name the main generation SKU as &quot;{plan_name}&quot; and</span>
-            <span class="c1"># the alternate generation SKU as &quot;{plan-name}-genX&quot;</span>
-            <span class="n">arch</span> <span class="o">=</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;Gen&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># We'll name the main generation SKU as "{plan_name}" and</span>
+            <span class="c1"># the alternate generation SKU as "{plan-name}-genX"</span>
+            <span class="n">arch</span> <span class="o">=</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"Gen"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">new_img_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">default_gen</span><span class="p">)</span>
             <span class="n">new_img_alt_type</span> <span class="o">=</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">alt_gen</span><span class="p">)</span>
 
-            <span class="c1"># we just want to add SKU whenever it&#39;s not set</span>
+            <span class="c1"># we just want to add SKU whenever it's not set</span>
             <span class="n">skuid</span> <span class="o">=</span> <span class="n">get_skuid</span><span class="p">(</span><span class="n">arch</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_type</span><span class="p">:</span>
                 <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_type</span><span class="p">,</span> <span class="n">skuid</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">vmid</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">new_img_alt_type</span><span class="p">:</span>
-                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_alt_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">skuid</span><span class="si">}</span><span class="s2">-gen</span><span class="si">{</span><span class="n">alt_gen</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">sku_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">new_img_alt_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">skuid</span><span class="si">}</span><span class="s2">-gen</span><span class="si">{</span><span class="n">alt_gen</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Return the expected SKUs list</span>
     <span class="n">res</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">VMISku</span><span class="o">.</span><span class="n">from_json</span><span class="p">({</span><span class="s2">&quot;image_type&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;security_type&quot;</span><span class="p">:</span> <span class="n">get_safe_security_type</span><span class="p">(</span><span class="n">k</span><span class="p">)})</span>
+        <span class="n">VMISku</span><span class="o">.</span><span class="n">from_json</span><span class="p">({</span><span class="s2">"image_type"</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">"id"</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">"security_type"</span><span class="p">:</span> <span class="n">get_safe_security_type</span><span class="p">(</span><span class="n">k</span><span class="p">)})</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sku_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">]</span>
-    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">"id"</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_security_type</span><span class="p">(</span><span class="n">old_skus</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
@@ -352,7 +352,7 @@
     <span class="n">plan_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">old_skus</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMISku</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the expected VMISku list based on given DiskVersion.</span>
 
 <span class="sd">    Args:</span>
@@ -367,14 +367,14 @@
 <span class="sd">            when set.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        The updated list with VMISkus.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">old_skus</span><span class="p">:</span>
-        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span> <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">&quot;V1&quot;</span> <span class="k">else</span> <span class="s2">&quot;V1&quot;</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">"V2"</span> <span class="k">if</span> <span class="n">generation</span> <span class="o">==</span> <span class="s2">"V1"</span> <span class="k">else</span> <span class="s2">"V1"</span>
         <span class="k">return</span> <span class="n">_build_skus</span><span class="p">(</span>
             <span class="n">disk_versions</span><span class="p">,</span> <span class="n">default_gen</span><span class="o">=</span><span class="n">generation</span><span class="p">,</span> <span class="n">alt_gen</span><span class="o">=</span><span class="n">alt_gen</span><span class="p">,</span> <span class="n">plan_name</span><span class="o">=</span><span class="n">plan_name</span>
         <span class="p">)</span>
 
-    <span class="c1"># If we have SKUs for each image we don&#39;t need to update them as they&#39;re already</span>
+    <span class="c1"># If we have SKUs for each image we don't need to update them as they're already</span>
     <span class="c1"># properly set.</span>
     <span class="k">if</span> <span class="n">_all_skus_present</span><span class="p">(</span><span class="n">old_skus</span><span class="p">,</span> <span class="n">disk_versions</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">old_skus</span>
@@ -382,26 +382,26 @@
     <span class="c1"># Update SKUs to create the alternate gen.</span>
     <span class="n">security_type</span> <span class="o">=</span> <span class="n">_get_security_type</span><span class="p">(</span><span class="n">old_skus</span><span class="p">)</span>
 
-    <span class="c1"># The alternate plan for x64 name ends with the suffix &quot;-genX&quot; and we can&#39;t change that once</span>
-    <span class="c1"># the offer is live, otherwise it will raise &quot;BadRequest&quot; with the message:</span>
-    <span class="c1"># &quot;The property &#39;PlanId&#39; is locked by a previous submission&quot;.</span>
+    <span class="c1"># The alternate plan for x64 name ends with the suffix "-genX" and we can't change that once</span>
+    <span class="c1"># the offer is live, otherwise it will raise "BadRequest" with the message:</span>
+    <span class="c1"># "The property 'PlanId' is locked by a previous submission".</span>
     <span class="n">osku</span> <span class="o">=</span> <span class="n">old_skus</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># Default Gen2 cases</span>
-    <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen1&quot;</span><span class="p">):</span>
-        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
-        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
-    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen2&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen2&quot;</span><span class="p">):</span>
-        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
-        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
+    <span class="k">if</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"Gen1"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"gen1"</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">"V2"</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">"V1"</span>
+    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"Gen2"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"gen2"</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">"V2"</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">"V1"</span>
 
     <span class="c1"># Default Gen1 cases</span>
-    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen1&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen1&quot;</span><span class="p">):</span>
-        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
-        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
-    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Gen2&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gen2&quot;</span><span class="p">):</span>
-        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">&quot;V1&quot;</span>
-        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">&quot;V2&quot;</span>
+    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"Gen1"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"gen1"</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">"V1"</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">"V2"</span>
+    <span class="k">elif</span> <span class="n">osku</span><span class="o">.</span><span class="n">image_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"Gen2"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">osku</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"gen2"</span><span class="p">):</span>
+        <span class="n">default_gen</span> <span class="o">=</span> <span class="s2">"V1"</span>
+        <span class="n">alt_gen</span> <span class="o">=</span> <span class="s2">"V2"</span>
 
     <span class="k">return</span> <span class="n">_build_skus</span><span class="p">(</span>
         <span class="n">disk_versions</span><span class="p">,</span>
@@ -415,7 +415,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">create_disk_version_from_scratch</span><span class="p">(</span>
     <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">VMImageSource</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiskVersion</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create a new DiskVersion with the required data for publishing.</span>
 
 <span class="sd">    Args:</span>
@@ -423,24 +423,24 @@
 <span class="sd">            The VHD publishing metadata.</span>
 <span class="sd">        source (VMImageSource):</span>
 <span class="sd">            The VMImageSource with the updated SAS URI.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">vm_images</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">{</span>
-            <span class="s2">&quot;imageType&quot;</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">),</span>
-            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+            <span class="s2">"imageType"</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">),</span>
+            <span class="s2">"source"</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
         <span class="p">}</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">):</span>
         <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;imageType&quot;</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
+                <span class="s2">"imageType"</span><span class="p">:</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">"V1"</span><span class="p">),</span>
+                <span class="s2">"source"</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
             <span class="p">}</span>
         <span class="p">)</span>
     <span class="n">json</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;versionNumber&quot;</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">disk_version</span><span class="p">,</span>
-        <span class="s2">&quot;vmImages&quot;</span><span class="p">:</span> <span class="n">vm_images</span><span class="p">,</span>
-        <span class="s2">&quot;lifecycleState&quot;</span><span class="p">:</span> <span class="s2">&quot;generallyAvailable&quot;</span><span class="p">,</span>
+        <span class="s2">"versionNumber"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">disk_version</span><span class="p">,</span>
+        <span class="s2">"vmImages"</span><span class="p">:</span> <span class="n">vm_images</span><span class="p">,</span>
+        <span class="s2">"lifecycleState"</span><span class="p">:</span> <span class="s2">"generallyAvailable"</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="n">DiskVersion</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">json</span><span class="p">)</span>
 
@@ -448,7 +448,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">seek_disk_version</span><span class="p">(</span>
     <span class="n">tech_config</span><span class="p">:</span> <span class="n">VMIPlanTechConfig</span><span class="p">,</span> <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiskVersion</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the requested DiskVersion when it exists.</span>
 
 <span class="sd">    Args:</span>
@@ -459,26 +459,26 @@
 <span class="sd">            if there are existing disk versions.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        The expected disk version when found.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="s2">&quot;Seeking the DiskVersion with version number </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="s2">"Seeking the DiskVersion with version number </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2"> for plan </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">version_number</span><span class="p">,</span>
         <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">dv</span> <span class="ow">in</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">disk_versions</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">version_number</span> <span class="ow">and</span> <span class="n">dv</span><span class="o">.</span><span class="n">version_number</span> <span class="o">==</span> <span class="n">version_number</span><span class="p">:</span>  <span class="c1"># Metadata set</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Found the DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> for plan </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Found the DiskVersion </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2"> for plan </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="n">tech_config</span><span class="o">.</span><span class="n">plan_id</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">dv</span>
 
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Disk Version </span><span class="si">%s</span><span class="s2"> was not found.&quot;</span><span class="p">,</span> <span class="n">version_number</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Disk Version </span><span class="si">%s</span><span class="s2"> was not found."</span><span class="p">,</span> <span class="n">version_number</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">None</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_vm_image_definitions</span><span class="p">(</span>
     <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">VMImageDefinition</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create a list of VMImageDefinition from scratch using the incoming source and metadata.</span>
 
 <span class="sd">    Args:</span>
@@ -488,8 +488,8 @@
 <span class="sd">            The VMImageDefinition to use as source.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        A list with the new VMImageDefinitions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating VMImageDefinitions for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating VMImageDefinitions for </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">)</span>
     <span class="n">vm_images</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -501,18 +501,18 @@
     <span class="k">if</span> <span class="n">is_legacy_gen_supported</span><span class="p">(</span><span class="n">metadata</span><span class="p">):</span>
         <span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">VMImageDefinition</span><span class="p">(</span>
-                <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
+                <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">"V1"</span><span class="p">),</span>
                 <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
             <span class="p">)</span>
         <span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;VMImageDefinitions created for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">vm_images</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VMImageDefinitions created for </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">destination</span><span class="p">,</span> <span class="n">vm_images</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">vm_images</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">set_new_sas_disk_version</span><span class="p">(</span>
     <span class="n">disk_version</span><span class="p">:</span> <span class="n">DiskVersion</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">AzurePublishingMetadata</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">VMImageSource</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiskVersion</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Change the SAS URI of an existing Disk Version.</span>
 
 <span class="sd">    Args:</span>
@@ -524,14 +524,14 @@
 <span class="sd">            The VMImageSource with the new SAS URI</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        The changed disk version with the given source.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up a new SAS disk version for </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
-    <span class="c1"># If we already have a VMImageDefinition let&#39;s use it</span>
+<span class="sd">    """</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Setting up a new SAS disk version for </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">)</span>
+    <span class="c1"># If we already have a VMImageDefinition let's use it</span>
     <span class="k">if</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> contains inner images.&quot;</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"The DiskVersion </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2"> contains inner images."</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Adjusting the VMImages from existing DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-            <span class="s2">&quot; to fit the new image with SAS </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="s2">"Adjusting the VMImages from existing DiskVersion </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">"</span>
+            <span class="s2">" to fit the new image with SAS </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">."</span><span class="p">,</span>
             <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span>
         <span class="p">)</span>
@@ -543,7 +543,7 @@
                 <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="n">metadata</span><span class="o">.</span><span class="n">generation</span><span class="p">)</span>
             <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
                 <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span>
-                <span class="ow">and</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+                <span class="ow">and</span> <span class="n">img</span><span class="o">.</span><span class="n">image_type</span> <span class="o">==</span> <span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">"V1"</span><span class="p">)</span>  <span class="c1"># noqa</span>
             <span class="p">):</span>
                 <span class="n">is_arch_present</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">img</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">os_disk</span><span class="o">.</span><span class="n">uri</span>
@@ -553,7 +553,7 @@
             <span class="k">if</span> <span class="n">metadata</span><span class="o">.</span><span class="n">support_legacy</span><span class="p">:</span>
                 <span class="n">disk_version</span><span class="o">.</span><span class="n">vm_images</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">VMImageDefinition</span><span class="p">(</span>
-                        <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">),</span>
+                        <span class="n">image_type</span><span class="o">=</span><span class="n">get_image_type_mapping</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">"V1"</span><span class="p">),</span>
                         <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="o">.</span><span class="n">to_json</span><span class="p">(),</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
@@ -568,10 +568,10 @@
     <span class="c1"># If no VMImages, we need to create them from scratch</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;The DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> does not contain inner images.&quot;</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span>
+            <span class="s2">"The DiskVersion </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2"> does not contain inner images."</span><span class="p">,</span> <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span>
         <span class="p">)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Setting the new image </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> on DiskVersion </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="s2">"Setting the new image </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2"> on DiskVersion </span><span class="se">\"</span><span class="si">%s</span><span class="se">\"</span><span class="s2">."</span><span class="p">,</span>
             <span class="n">metadata</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span>
             <span class="n">disk_version</span><span class="o">.</span><span class="n">version_number</span><span class="p">,</span>
         <span class="p">)</span>
@@ -581,34 +581,34 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">logdiff</span><span class="p">(</span><span class="n">diff</span><span class="p">:</span> <span class="n">DeepDiff</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Log the offer diff if it exists.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Log the offer diff if it exists."""</span>
     <span class="k">if</span> <span class="n">diff</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">())</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Found the following offer diff before publishing:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">diff</span><span class="o">.</span><span class="n">pretty</span><span class="p">())</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_contains_certification_error</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively inspect Azure error payloads for certification failures.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Recursively inspect Azure error payloads for certification failures."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">InvalidSchema</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid schema for error object: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">InvalidSchema</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid schema for error object: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s2">&quot;invalidState&quot;</span> <span class="ow">and</span> <span class="s2">&quot;certification&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+    <span class="n">code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"code"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"message"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">code</span> <span class="o">==</span> <span class="s2">"invalidState"</span> <span class="ow">and</span> <span class="s2">"certification"</span> <span class="ow">in</span> <span class="n">message</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
         <span class="k">return</span> <span class="kc">True</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;details&#39;</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">InvalidSchema</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid schema for &#39;details&#39; inside error object: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;details&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'details'</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InvalidSchema</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid schema for 'details' inside error object: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"details"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
         <span class="k">if</span> <span class="n">_contains_certification_error</span><span class="p">(</span><span class="n">detail</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_certification_error</span><span class="p">(</span><span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when Azure job errors indicate a certification failure.</span>
+<span class="w">    </span><span class="sd">"""Return True when Azure job errors indicate a certification failure.</span>
 
 <span class="sd">    Certification failures are permanent for a given submission and should not</span>
 <span class="sd">    be retried.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">_contains_certification_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">)</span>
 </pre></div>
 

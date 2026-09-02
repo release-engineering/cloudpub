@@ -45,42 +45,42 @@
 <a class="viewcode-back" href="../../../cloud_providers/models/base.html#cloudpub.models.common.AttrsJSONDecodeMixin">[docs]</a>
 <span class="nd">@define</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AttrsJSONDecodeMixin</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implement the default JSON (de)serialization for attrs decorated classes.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Implement the default JSON (de)serialization for attrs decorated classes."""</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_assert_json_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Ensure the given JSON is an instance of `dict`.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            json (Any)</span>
 <span class="sd">                A JSON response to ensure its a dictionary.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Got an unsupported JSON type: </span><span class="se">\&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">json</span><span class="p">)</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">. Expected: </span><span class="se">\&quot;</span><span class="s2">&lt;class &#39;dict&#39;&gt;</span><span class="se">\&#39;</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Got an unsupported JSON type: </span><span class="se">\"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">json</span><span class="p">)</span><span class="si">}</span><span class="se">\"</span><span class="s2">. Expected: </span><span class="se">\"</span><span class="s2">&lt;class 'dict'&gt;</span><span class="se">\'</span><span class="s2">"</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_preprocess_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Preprocess the JSON before converting it to class object.</span>
 
-<span class="sd">        It&#39;s intended to be overriden by base classes which needs to do it.</span>
+<span class="sd">        It's intended to be overriden by base classes which needs to do it.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            json (dict)</span>
 <span class="sd">                A JSON containing the data to be converted.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The modified JSON.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">json</span>
 
 <div class="viewcode-block" id="AttrsJSONDecodeMixin.from_json">
 <a class="viewcode-back" href="../../../cloud_providers/models/base.html#cloudpub.models.common.AttrsJSONDecodeMixin.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert a JSON dictionary into class object.</span>
 
 <span class="sd">        Args:</span>
@@ -88,11 +88,11 @@
 <span class="sd">                A JSON containing a the attrs class keys.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            The converted object from JSON.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">json</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="c1"># Ensure it&#39;s a dictionary</span>
+        <span class="c1"># Ensure it's a dictionary</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">_assert_json_dict</span><span class="p">(</span><span class="n">json</span><span class="p">)</span>
 
         <span class="c1"># Copy the JSON so we can modify the data without destroying the original dict.</span>
@@ -101,17 +101,17 @@
         <span class="c1"># Resolve the aliases in JSON to avoid breaking the class construction</span>
         <span class="n">attributes</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Attribute</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__attrs_attrs__</span>  <span class="c1"># type: ignore</span>
         <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span>
-            <span class="n">alias</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alias&quot;</span><span class="p">)</span>
+            <span class="n">alias</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alias"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">alias</span><span class="p">:</span>
                 <span class="n">alias_value</span> <span class="o">=</span> <span class="n">json_copy</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">alias_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">json_copy</span><span class="p">[</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">alias_value</span>
             <span class="c1"># Add defaults to unset attributes when required</span>
-            <span class="n">default</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+            <span class="n">default</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"default"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">default</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">json_copy</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
                 <span class="n">json_copy</span><span class="p">[</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
             <span class="c1"># If a constant is set we need to override the value coming from JSON</span>
-            <span class="n">constant</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;const&quot;</span><span class="p">)</span>
+            <span class="n">constant</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"const"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">constant</span><span class="p">:</span>
                 <span class="n">json_copy</span><span class="p">[</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">constant</span>
 
@@ -125,14 +125,14 @@
 
         <span class="c1"># Log any unused attributes</span>
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">json_copy</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ignoring unknown attribute </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Ignoring unknown attribute </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span></div>
 
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_serialize_value</span><span class="p">(</span><span class="n">attribute</span><span class="p">:</span> <span class="n">Attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iteractively parse and serialize the received value to a Python builtin.</span>
+<span class="w">        </span><span class="sd">"""Iteractively parse and serialize the received value to a Python builtin.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            attribute (Attribute): The attrs attribute to receive the value</span>
@@ -140,24 +140,24 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Any: The parsed/serialized value</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;to_json&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">"to_json"</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;to_json&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;to_json&quot;</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">"to_json"</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">"to_json"</span><span class="p">):</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">value</span>
 
 <div class="viewcode-block" id="AttrsJSONDecodeMixin.to_json">
 <a class="viewcode-back" href="../../../cloud_providers/models/base.html#cloudpub.models.common.AttrsJSONDecodeMixin.to_json">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert a class object mapped by attrs into a dictionary.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict: The JSON from object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># To avoid recursively messing with the internal parameters we will make a copy of self</span>
         <span class="n">self_copy</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
@@ -173,13 +173,13 @@
         <span class="n">json</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span>
             <span class="n">self_copy</span><span class="p">,</span>
             <span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="nb">filter</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="ow">not</span> <span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hide_unset&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="nb">filter</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="ow">not</span> <span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hide_unset"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="c1"># Resolve back the aliases</span>
         <span class="n">attributes</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">self_copy</span><span class="o">.</span><span class="n">__attrs_attrs__</span>  <span class="c1"># type: ignore</span>
         <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span>
-            <span class="n">alias</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;alias&quot;</span><span class="p">)</span>
+            <span class="n">alias</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"alias"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">alias</span> <span class="ow">and</span> <span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">json</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
