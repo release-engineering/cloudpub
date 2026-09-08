@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.5 - 2026-09-08
+
+- fix: update AZURE_SESSION_TIMEOUT to 20.0 by @JAVGan in https://github.com/release-engineering/cloudpub/pull/220
+- actions: update release.yml to deploy on PyPI by @JAVGan in https://github.com/release-engineering/cloudpub/pull/218
+- Update dependencies
+
 ## 1.7.4 - 2026-07-07
 
 - fix(SPSTRAT-760): Sort resources by durable ID before diffing offers and update DIFF EXCLUDE by @lslebodn in https://github.com/release-engineering/cloudpub/pull/210
