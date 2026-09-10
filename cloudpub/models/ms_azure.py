@@ -505,6 +505,75 @@ class TableLeadConfiguration(LeadConfiguration):
     """
 
 
+class CallToAction(str, Enum):
+    """Define the ``CallToAction`` enum for :class:`~cloudpub.models.ms_azure.CommercialMarketplaceSetup`."""  # noqa: E501
+
+    free = "free"
+    free_trial = "freeTrial"
+    contact_me = "contactMe"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@define
+class CommercialMarketplaceSetup(AzureProductLinkedResource):
+    """
+    Represent the commercial marketplace setup section.
+
+    `Schema definition for CommercialMarketplaceSetup <https://schema.mp.microsoft.com/schema/commercial-marketplace-setup/2022-03-01-preview2>`_
+    """  # noqa E501
+
+    sell_through_microsoft: bool = field(
+        metadata={"alias": "sellThroughMicrosoft"},
+    )
+    """Whether the product is sold through Microsoft."""
+
+    call_to_action: Optional[CallToAction] = field(
+        default=None,
+        metadata={
+            "alias": "callToAction",
+            "hide_unset": True,
+        },
+    )
+    """
+    The call to action for the marketplace listing when it's not sold through Microsoft.
+
+    Expected value (one of):
+
+    * ``free``
+    * ``freeTrial``
+    * ``contactMe``
+    """
+
+    access_url: Optional[str] = field(
+        default=None,
+        metadata={
+            "alias": "accessUrl",
+            "hide_unset": True,
+        },
+    )
+    """The URL customers are redirected to when ``call_to_action`` is ``free`` or ``freeTrial``."""
+
+    use_microsoft_license_management_service: Optional[bool] = field(
+        default=None,
+        metadata={
+            "alias": "useMicrosoftLicenseManagementService",
+            "hide_unset": True,
+        },
+    )
+    """Whether to use Microsoft's license management service."""
+
+    require_license_for_install: Optional[bool] = field(
+        default=None,
+        metadata={
+            "alias": "requireLicenseForInstall",
+            "hide_unset": True,
+        },
+    )
+    """Whether a license is required to install the product."""
+
+
 @define
 class CustomerLeads(AzureProductLinkedResource):
     """
@@ -1762,6 +1831,7 @@ class CoreVMIPlanTechConfig(VMIPlanTechConfig):
 
 RESOURCE_MAPING = {
     "product": ProductSummary,
+    "commercial-marketplace-setup": CommercialMarketplaceSetup,
     "customer-leads": CustomerLeads,
     "test-drive": TestDrive,
     "plan": PlanSummary,

@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 
 from cloudpub.models.ms_azure import (
+    CommercialMarketplaceSetup,
     ConfigureStatus,
     CustomerLeads,
     DiskVersion,
@@ -196,6 +197,23 @@ def more_products_list(product_summary) -> Dict[str, Any]:
         copy_dict['identity'] = {"externalId": f"product-{i + 1}"}
         values.append(copy_dict)
     return {"value": values}
+
+
+@pytest.fixture
+def commercial_marketplace_setup() -> Dict[str, Any]:
+    return {
+        "$schema": "https://schema.mp.microsoft.com/schema/commercial-marketplace-setup/2022-03-01-preview2",  # noqa: E501
+        "id": "commercial-marketplace-setup/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "sellThroughMicrosoft": True,
+    }
+
+
+@pytest.fixture
+def commercial_marketplace_setup_obj(
+    commercial_marketplace_setup: Dict[str, Any],
+) -> CommercialMarketplaceSetup:
+    return CommercialMarketplaceSetup.from_json(commercial_marketplace_setup)
 
 
 @pytest.fixture
@@ -475,6 +493,7 @@ def submission(publish_target: Dict[str, str]) -> Dict[str, Any]:
 def product(
     publish_target: Dict[str, str],
     product_summary: Dict[str, str],
+    commercial_marketplace_setup: Dict[str, Any],
     customer_leads: Dict[str, str],
     test_drive: Dict[str, Any],
     plan_summary: Dict[str, Any],
@@ -494,6 +513,7 @@ def product(
         "target": publish_target,
         "resources": [
             product_summary,
+            commercial_marketplace_setup,
             technical_config,
             customer_leads,
             test_drive,
