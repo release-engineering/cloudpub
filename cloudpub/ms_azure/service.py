@@ -23,6 +23,7 @@ from cloudpub.error import (
 from cloudpub.models.ms_azure import (
     RESOURCE_MAPING,
     AzureResource,
+    CommercialMarketplaceSetup,
     ConfigureStatus,
     CustomerLeads,
     DiskVersion,
@@ -62,6 +63,7 @@ log = logging.getLogger(__name__)
 
 
 AZURE_PRODUCT_RESOURCES = Union[
+    CommercialMarketplaceSetup,
     CustomerLeads,
     Listing,
     ListingAsset,

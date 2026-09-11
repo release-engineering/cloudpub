@@ -623,10 +623,10 @@ class TestAzureService:
         data_product["resources"][0]["id"] = "product/foo/bar"
 
         diff = azure_service.diff_offer(Product.from_json(data_product), target=target)
-        # After sorting by durable ID the product resource is at index 7
+        # After sorting by durable ID the product resource is at index 8
         assert diff == {
             'values_changed': {
-                "root['resources'][7]['id']": {
+                "root['resources'][8]['id']": {
                     'new_value': 'product/foo/bar',
                     'old_value': 'product/ffffffff-ffff-ffff-ffff-ffffffffffff',
                 },
@@ -643,10 +643,10 @@ class TestAzureService:
         last_offer = Product.from_json(data_product)
 
         diff = azure_service.diff_two_offers(last_offer, product_obj)
-        # After sorting by durable ID the product resource is at index 7
+        # After sorting by durable ID the product resource is at index 8
         assert diff == {
             'values_changed': {
-                "root['resources'][7]['id']": {
+                "root['resources'][8]['id']": {
                     'new_value': 'product/foo/bar',
                     'old_value': 'product/ffffffff-ffff-ffff-ffff-ffffffffffff',
                 },
@@ -2606,7 +2606,7 @@ class TestAzureService:
         # the technical config resource is at index 11
         assert (
             "Found the following offer diff before publishing:\n"
-            "Item root['resources'][11]['vmImageVersions'][1] added to iterable."
+            "Item root['resources'][12]['vmImageVersions'][1] added to iterable."
         ) in caplog.text
         assert (
             'Updating the technical configuration for "example-product/plan-1" on "draft".'

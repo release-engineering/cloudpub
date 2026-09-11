@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from cloudpub.models.ms_azure import (
+    CallToAction,
+    CommercialMarketplaceSetup,
     CoreVMIPlanTechConfig,
     CustomerLeads,
     DeprecationAlternative,
@@ -31,6 +33,60 @@ def test_serialize_deserialize_json(disk_version: Dict[str, Any]) -> None:
 def test_serialize_product_tojson(product: Dict[str, Any], product_obj: Product) -> None:
     """Test the Product overridden method `to_json`."""
     assert product_obj.to_json() == product
+
+
+@pytest.mark.parametrize("call_to_action", ["free", "freeTrial", "contactMe"])
+def test_call_to_action_render_str(call_to_action: str) -> None:
+    c = CallToAction(call_to_action)
+    assert str(c) == call_to_action
+
+
+def test_commercial_marketplace_setup(
+    commercial_marketplace_setup: Dict[str, Any],
+    commercial_marketplace_setup_obj: CommercialMarketplaceSetup,
+) -> None:
+    """Test the CommercialMarketplaceSetup (de)serialization and properties."""
+    assert commercial_marketplace_setup_obj.sell_through_microsoft is True
+    assert commercial_marketplace_setup_obj.call_to_action is None
+    assert commercial_marketplace_setup_obj.access_url is None
+    assert commercial_marketplace_setup_obj.use_microsoft_license_management_service is None
+    assert commercial_marketplace_setup_obj.require_license_for_install is None
+    assert commercial_marketplace_setup_obj.product_id == "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    assert commercial_marketplace_setup_obj.resource == "commercial-marketplace-setup"
+    assert commercial_marketplace_setup_obj.to_json() == commercial_marketplace_setup
+
+
+def test_commercial_marketplace_setup_free_trial() -> None:
+    """Test CommercialMarketplaceSetup when not sold through Microsoft."""
+    data = {
+        "$schema": "https://schema.mp.microsoft.com/schema/commercial-marketplace-setup/2022-03-01-preview2",  # noqa: E501
+        "id": "commercial-marketplace-setup/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "sellThroughMicrosoft": False,
+        "callToAction": "freeTrial",
+        "accessUrl": "https://example.com/trial",
+    }
+    obj = CommercialMarketplaceSetup.from_json(data)
+    assert obj.sell_through_microsoft is False
+    assert obj.call_to_action == CallToAction.free_trial
+    assert obj.access_url == "https://example.com/trial"
+    assert obj.to_json() == data
+
+
+def test_commercial_marketplace_setup_with_license_mgmt() -> None:
+    """Test CommercialMarketplaceSetup with optional license management fields."""
+    data = {
+        "$schema": "https://schema.mp.microsoft.com/schema/commercial-marketplace-setup/2022-03-01-preview2",  # noqa: E501
+        "id": "commercial-marketplace-setup/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "product": "product/ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "sellThroughMicrosoft": True,
+        "useMicrosoftLicenseManagementService": True,
+        "requireLicenseForInstall": True,
+    }
+    obj = CommercialMarketplaceSetup.from_json(data)
+    assert obj.use_microsoft_license_management_service is True
+    assert obj.require_license_for_install is True
+    assert obj.to_json() == data
 
 
 def test_azure_resource_props(
