@@ -583,6 +583,75 @@
 
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">CallToAction</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Define the ``CallToAction`` enum for :class:`~cloudpub.models.ms_azure.CommercialMarketplaceSetup`."""</span>  <span class="c1"># noqa: E501</span>
+
+    <span class="n">free</span> <span class="o">=</span> <span class="s2">"free"</span>
+    <span class="n">free_trial</span> <span class="o">=</span> <span class="s2">"freeTrial"</span>
+    <span class="n">contact_me</span> <span class="o">=</span> <span class="s2">"contactMe"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+
+<span class="nd">@define</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CommercialMarketplaceSetup</span><span class="p">(</span><span class="n">AzureProductLinkedResource</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Represent the commercial marketplace setup section.</span>
+
+<span class="sd">    `Schema definition for CommercialMarketplaceSetup &lt;https://schema.mp.microsoft.com/schema/commercial-marketplace-setup/2022-03-01-preview2&gt;`_</span>
+<span class="sd">    """</span>  <span class="c1"># noqa E501</span>
+
+    <span class="n">sell_through_microsoft</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"alias"</span><span class="p">:</span> <span class="s2">"sellThroughMicrosoft"</span><span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Whether the product is sold through Microsoft."""</span>
+
+    <span class="n">call_to_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CallToAction</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"alias"</span><span class="p">:</span> <span class="s2">"callToAction"</span><span class="p">,</span>
+            <span class="s2">"hide_unset"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The call to action for the marketplace listing when it's not sold through Microsoft.</span>
+
+<span class="sd">    Expected value (one of):</span>
+
+<span class="sd">    * ``free``</span>
+<span class="sd">    * ``freeTrial``</span>
+<span class="sd">    * ``contactMe``</span>
+<span class="sd">    """</span>
+
+    <span class="n">access_url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"alias"</span><span class="p">:</span> <span class="s2">"accessUrl"</span><span class="p">,</span>
+            <span class="s2">"hide_unset"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">"""The URL customers are redirected to when ``call_to_action`` is ``free`` or ``freeTrial``."""</span>
+
+    <span class="n">use_microsoft_license_management_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"alias"</span><span class="p">:</span> <span class="s2">"useMicrosoftLicenseManagementService"</span><span class="p">,</span>
+            <span class="s2">"hide_unset"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Whether to use Microsoft's license management service."""</span>
+
+    <span class="n">require_license_for_install</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"alias"</span><span class="p">:</span> <span class="s2">"requireLicenseForInstall"</span><span class="p">,</span>
+            <span class="s2">"hide_unset"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Whether a license is required to install the product."""</span>
+
+
 <div class="viewcode-block" id="CustomerLeads">
 <a class="viewcode-back" href="../../../cloud_providers/azure.html#cloudpub.models.ms_azure.CustomerLeads">[docs]</a>
 <span class="nd">@define</span>
@@ -1930,6 +1999,7 @@
 
 <span class="n">RESOURCE_MAPING</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"product"</span><span class="p">:</span> <span class="n">ProductSummary</span><span class="p">,</span>
+    <span class="s2">"commercial-marketplace-setup"</span><span class="p">:</span> <span class="n">CommercialMarketplaceSetup</span><span class="p">,</span>
     <span class="s2">"customer-leads"</span><span class="p">:</span> <span class="n">CustomerLeads</span><span class="p">,</span>
     <span class="s2">"test-drive"</span><span class="p">:</span> <span class="n">TestDrive</span><span class="p">,</span>
     <span class="s2">"plan"</span><span class="p">:</span> <span class="n">PlanSummary</span><span class="p">,</span>
