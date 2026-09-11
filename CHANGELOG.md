@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## 1.7.6 - 2026-09-11
+    - Add support for resource type commercial-marketplace-setup by @ashwgit in #230
 ## 1.7.5 - 2026-09-08
 
 - fix: update AZURE_SESSION_TIMEOUT to 20.0 by @JAVGan in https://github.com/release-engineering/cloudpub/pull/220
