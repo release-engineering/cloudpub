@@ -556,9 +556,12 @@ def _contains_certification_error(item: Any) -> bool:
     message: str = item.get("message", "")
     if code == "invalidState" and "certification" in message.lower():
         return True
-    if not isinstance(item.get('details'), list):
+    details = item.get('details')
+    if details is None:
+        return False
+    if not isinstance(details, list):
         raise InvalidSchema(f"Invalid schema for 'details' inside error object: {item}")
-    for detail in item.get("details") or []:
+    for detail in details:
         if _contains_certification_error(detail):
             return True
     return False

@@ -522,8 +522,24 @@ def test_is_certification_error(cert_error_failure: list[Dict[str, Any]]) -> Non
             ],
         }
     ]
+    # Inner-errors (in "details") may omit their own "details" field. This must not raise
+    # InvalidSchema — it just means no further nesting, so it's not a certification error.
+    no_details_non_certification_error: list[Dict[str, Any]] = [
+        {
+            "resourceId": "virtual-machine-plan-technical-configuration/test",
+            "code": "conflict",
+            "message": "PackageSet failed CreateUpdate with response code: BadRequest",
+            "details": [
+                {
+                    "code": "invalidState",
+                    "message": "PackageSet failed CreateUpdate with response code: BadRequest",
+                }
+            ],
+        }
+    ]
     assert is_certification_error(cert_error_failure) is True
     assert is_certification_error(valid_non_certification_errors) is False
+    assert is_certification_error(no_details_non_certification_error) is False
     assert is_certification_error([]) is False
 
 
