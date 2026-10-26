@@ -987,7 +987,7 @@ class TestAzureService:
             mock.MagicMock(),  # Success on 3rd call
         ]
         # Remove the retry sleep
-        azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
+        azure_service._publish_preview.retry.sleep = mock.Mock()
 
         # Test
         azure_service._publish_preview(product_obj, "test-product")
@@ -1029,7 +1029,7 @@ class TestAzureService:
         mock_subst.side_effect = [err_resp for _ in range(3)]
         mock_getsubst.side_effect = [None for _ in range(3)]
         # Remove the retry sleep
-        azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
+        azure_service._publish_preview.retry.sleep = mock.Mock()
         expected_err = (
             f"Failed to submit the product test-product \\({product_obj.id}\\) to preview. "
             f"Status: failed Errors: {re.escape(str(err_resp.errors))}"
@@ -1058,7 +1058,7 @@ class TestAzureService:
             mock.MagicMock(),  # Success on 3rd call
         ]
         # Remove the retry sleep
-        azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
+        azure_service._publish_live.retry.sleep = mock.Mock()
 
         # Test
         azure_service._publish_live(product_obj, "test-product")
@@ -1098,7 +1098,7 @@ class TestAzureService:
         mock_subst.side_effect = [err_resp for _ in range(3)]
         mock_getsubst.side_effect = [None for _ in range(3)]
         # Remove the retry sleep
-        azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
+        azure_service._publish_live.retry.sleep = mock.Mock()
         expected_err = (
             f"Failed to submit the product test-product \\({product_obj.id}\\) to live. "
             f"Status: failed Errors: *"
@@ -2649,7 +2649,7 @@ class TestAzureService:
         mock_is_sbpreview.return_value = False
         mock_subst.side_effect = [err_resp for _ in range(3)]
         mock_getsubst.side_effect = [None for _ in range(3)]
-        azure_service._publish_preview.retry.sleep = mock.Mock()  # type: ignore
+        azure_service._publish_preview.retry.sleep = mock.Mock()
         expected_msg = (
             f"Failed to submit the product test-product ({product_obj.id}) to preview. "
             f"Status: failed Errors: {err_resp.errors}"
@@ -2689,7 +2689,7 @@ class TestAzureService:
         )
         mock_subst.side_effect = [err_resp for _ in range(3)]
         mock_getsubst.side_effect = [None for _ in range(3)]
-        azure_service._publish_live.retry.sleep = mock.Mock()  # type: ignore
+        azure_service._publish_live.retry.sleep = mock.Mock()
         expected_msg = (
             f"Failed to submit the product test-product ({product_obj.id}) to live. "
             f"Status: failed Errors: {err_resp.errors}"
