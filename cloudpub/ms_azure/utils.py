@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import logging
 from operator import attrgetter
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from deepdiff import DeepDiff
 
 from cloudpub.common import PublishingMetadata  # Cannot circular import AzurePublishingMetadata
-from cloudpub.error import InvalidSchema
 from cloudpub.models.ms_azure import (
+    AzureError,
+    AzureInnerError,
     ConfigureStatus,
     DiskVersion,
     PlanSummary,
@@ -547,24 +548,16 @@ def logdiff(diff: DeepDiff) -> None:
         log.warning("Found the following offer diff before publishing:\n%s", diff.pretty())
 
 
-def _contains_certification_error(item: Any) -> bool:
+def _contains_certification_error(item: Union[AzureError, AzureInnerError]) -> bool:
     """Recursively inspect Azure error payloads for certification failures."""
-    if not isinstance(item, dict):
-        raise InvalidSchema(f"Invalid schema for error object: {item}")
-
-    code: str = item.get("code", "")
-    message: str = item.get("message", "")
-    if code == "invalidState" and "certification" in message.lower():
+    if item.code == "invalidState" and "certification" in (item.message or "").lower():
         return True
-    if not isinstance(item.get('details'), list):
-        raise InvalidSchema(f"Invalid schema for 'details' inside error object: {item}")
-    for detail in item.get("details") or []:
-        if _contains_certification_error(detail):
-            return True
-    return False
+    if not item.details:
+        return False
+    return any(_contains_certification_error(detail) for detail in item.details)
 
 
-def is_certification_error(errors: List[Dict[str, Any]]) -> bool:
+def is_certification_error(errors: List[AzureError]) -> bool:
     """Return True when Azure job errors indicate a certification failure.
 
     Certification failures are permanent for a given submission and should not

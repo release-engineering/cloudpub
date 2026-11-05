@@ -5,8 +5,8 @@ from typing import Any, Dict
 import pytest
 from _pytest.logging import LogCaptureFixture
 
-from cloudpub.error import InvalidSchema
 from cloudpub.models.ms_azure import (
+    AzureError,
     ConfigureStatus,
     DiskVersion,
     VMImageSource,
@@ -522,27 +522,30 @@ def test_is_certification_error(cert_error_failure: list[Dict[str, Any]]) -> Non
             ],
         }
     ]
-    assert is_certification_error(cert_error_failure) is True
-    assert is_certification_error(valid_non_certification_errors) is False
-    assert is_certification_error([]) is False
-
-
-@pytest.mark.parametrize(
-    "errors",
-    [
-        pytest.param([123], id="non-dict-error-item"),
-        pytest.param(
-            [
+    # Inner-errors (in "details") may omit their own "details" field. This must not raise
+    # InvalidSchema — it just means no further nesting, so it's not a certification error.
+    no_details_non_certification_error: list[Dict[str, Any]] = [
+        {
+            "resourceId": "virtual-machine-plan-technical-configuration/test",
+            "code": "conflict",
+            "message": "PackageSet failed CreateUpdate with response code: BadRequest",
+            "details": [
                 {
-                    "code": "internalServerError",
-                    "message": "Certification failed.",
-                    "details": {},
+                    "code": "invalidState",
+                    "message": "PackageSet failed CreateUpdate with response code: BadRequest",
                 }
             ],
-            id="non-list-details",
-        ),
-    ],
-)
-def test_is_certification_error_invalid_schema(errors: list[Any]) -> None:
-    with pytest.raises(InvalidSchema, match="Invalid schema"):
-        is_certification_error(errors)
+        }
+    ]
+    assert is_certification_error([AzureError.from_json(e) for e in cert_error_failure]) is True
+    assert (
+        is_certification_error([AzureError.from_json(e) for e in valid_non_certification_errors])
+        is False
+    )
+    assert (
+        is_certification_error(
+            [AzureError.from_json(e) for e in no_details_non_certification_error]
+        )
+        is False
+    )
+    assert is_certification_error([]) is False

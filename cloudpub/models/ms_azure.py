@@ -13,6 +13,7 @@ from attrs import Attribute, define, field
 from attrs.setters import NO_OP
 from attrs.validators import deep_iterable, instance_of, optional
 
+from cloudpub.error import InvalidSchema
 from cloudpub.models.common import AttrsJSONDecodeMixin
 
 MASKED_SECRET: str = "*********"
@@ -26,6 +27,120 @@ def _mask_secret(value: str) -> str:
     if value and value != MASKED_SECRET:
         value = MASKED_SECRET
     return value
+
+
+def _convert_inner_error_details(value: Any) -> Any:
+    """Convert a raw ``details`` payload into a list of :class:`AzureInnerError`.
+
+    Non-list values are passed through unchanged so :func:`_validate_details_is_list`
+    can report the schema violation.
+    """
+    if value is None or not isinstance(value, list):
+        return value
+    return [AzureInnerError.from_json(item) for item in value]
+
+
+def _validate_details_is_list(instance: Any, attribute: Attribute, value: Any) -> None:
+    """Ensure a ``details`` field is either unset or a list."""
+    if value is not None and not isinstance(value, list):
+        raise InvalidSchema(
+            f"Invalid schema for \"details\" on {type(instance).__name__}: {value!r}"
+        )
+
+
+@define
+class AzureInnerError(AttrsJSONDecodeMixin):
+    """Represent an Azure Product Ingestion API `inner-error`_ object.
+
+    .. _inner-error: https://schema.mp.microsoft.com/schema/inner-error/2022-07-01
+    """
+
+    code: str = field(validator=instance_of(str))
+    """
+    The inner error code.
+
+    Expected value (one of):
+
+    * ``businessValidationError``
+    * ``collectionLimitExceeded``
+    * ``invalidId``
+    * ``invalidEntityStatus``
+    * ``invalidRequest``
+    * ``invalidResource``
+    * ``invalidState``
+    * ``notDeployed``
+    * ``notSupported``
+    * ``operationCanceled``
+    * ``productLocked``
+    * ``resourceNotFound``
+    * ``schemaValidationError``
+    """
+
+    message: Optional[str] = field(default=None, validator=optional(instance_of(str)))
+    """The inner error message."""
+
+    details: Optional[List["AzureInnerError"]] = field(
+        default=None,
+        converter=_convert_inner_error_details,
+        validator=_validate_details_is_list,
+    )
+    """Further nested :class:`~cloudpub.models.ms_azure.AzureInnerError`, if any."""
+
+    @classmethod
+    def _assert_json_dict(cls, json: Any) -> None:
+        if not isinstance(json, dict):
+            raise InvalidSchema(f"Invalid schema for error object: {json!r}")
+
+
+@define
+class AzureError(AttrsJSONDecodeMixin):
+    """Represent an Azure Product Ingestion API `error`_ object.
+
+    .. _error: https://schema.mp.microsoft.com/schema/error/2022-07-01
+    """
+
+    code: str = field(validator=instance_of(str))
+    """
+    The error code.
+
+    Expected value (one of):
+
+    * ``badRequest``
+    * ``unauthorized``
+    * ``forbidden``
+    * ``notFound``
+    * ``methodNotAllowed``
+    * ``requestTimeout``
+    * ``conflict``
+    * ``locked``
+    * ``internalServerError``
+    * ``notImplemented``
+    * ``serviceUnavailable``
+    """
+
+    message: Optional[str] = field(default=None, validator=optional(instance_of(str)))
+    """The error message."""
+
+    details: Optional[List[AzureInnerError]] = field(
+        default=None,
+        converter=_convert_inner_error_details,
+        validator=_validate_details_is_list,
+    )
+    """The list of :class:`~cloudpub.models.ms_azure.AzureInnerError` with further details."""
+
+    @classmethod
+    def _assert_json_dict(cls, json: Any) -> None:
+        if not isinstance(json, dict):
+            raise InvalidSchema(f"Invalid schema for error object: {json!r}")
+
+
+def _convert_errors(value: Any) -> List[AzureError]:
+    """Convert the raw ``errors`` payload of a :class:`ConfigureStatus` into `AzureError`s."""
+    if not value:
+        return []
+    if not isinstance(value, list):
+        raise InvalidSchema(f"Invalid schema for \"errors\": {value!r}")
+    return [AzureError.from_json(item) for item in value]
 
 
 @define
@@ -67,8 +182,8 @@ class ConfigureStatus(AttrsJSONDecodeMixin):
     resource_uri: Optional[str] = field(metadata={"alias": "resourceUri", "hide_unset": True})
     """The resource URI related to the configure job."""
 
-    errors: List[Dict[str, Any]]
-    """List of errors when the ``job_result`` is ``failed``."""
+    errors: List[AzureError] = field(converter=_convert_errors)
+    """List of :class:`~cloudpub.models.ms_azure.AzureError` when ``job_result`` is ``failed``."""
 
 
 @define
