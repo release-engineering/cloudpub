@@ -2,9 +2,13 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
+from cloudpub.error import InvalidSchema
 from cloudpub.models.ms_azure import (
+    AzureError,
+    AzureInnerError,
     CallToAction,
     CommercialMarketplaceSetup,
+    ConfigureStatus,
     CoreVMIPlanTechConfig,
     CustomerLeads,
     DeprecationAlternative,
@@ -222,3 +226,30 @@ def test_vmisku_security_type(sec_types: Optional[List[str]]) -> None:
         sku_dict.update({"securityType": sec_types})
 
     assert VMISku.from_json(sku_dict).to_json() == sku_dict
+
+
+@pytest.mark.parametrize("cls", [AzureError, AzureInnerError])
+def test_azure_error_from_json_invalid_schema(cls: Any) -> None:
+    """Test that a non-dict error/inner-error object raises InvalidSchema."""
+    with pytest.raises(InvalidSchema, match="Invalid schema for error object"):
+        cls.from_json("not-a-dict")
+
+
+def test_configure_status_errors_invalid_schema(
+    job_details_not_started: Dict[str, Any],
+) -> None:
+    """Test that a non-list "errors" payload raises InvalidSchema."""
+    job_details_not_started.update({"errors": "not-a-list"})
+    with pytest.raises(InvalidSchema, match='Invalid schema for "errors"'):
+        ConfigureStatus.from_json(job_details_not_started)
+
+
+def test_azure_error_details_not_a_list_invalid_schema() -> None:
+    """Test that a non-list "details" field raises InvalidSchema."""
+    error = {
+        "code": "internalServerError",
+        "message": "Certification failed.",
+        "details": {},
+    }
+    with pytest.raises(InvalidSchema, match='Invalid schema for "details"'):
+        AzureError.from_json(error)
